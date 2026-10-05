@@ -2,7 +2,7 @@
 (function (O) {
   const U = O.UI, h = U.h;
   const NAV = [
-    ['#/', 'Painel', 'home'], ['#/produtos', 'Produtos', 'flask'], ['#/nova', 'Nova homologação', 'plus'], ['#/fds', 'Analisador de FDS', 'file'], '-',
+    ['#/', 'Início', 'home'], ['#/painel', 'Painel', 'grid'], ['#/produtos', 'Produtos', 'flask'], ['#/nova', 'Nova homologação', 'plus'], ['#/fds', 'Analisador de FDS', 'file'], '-',
     ['#/locais', 'Locais de armazenamento', 'pin'], ['#/matriz', 'Matriz de segregação', 'grid'], ['#/legal', 'Base técnico-legal', 'scale'], ['#/config', 'Configurações', 'gear'],
   ];
   const root = document.getElementById('app');
@@ -11,7 +11,7 @@
   function shell() {
     root.innerHTML = '';
     side = h('aside', { class: 'side', id: 'side' },
-      h('div', { class: 'brand' }, h('span', { html: O.Pic.logo(40) }), h('div', {}, h('b', {}, 'QUIM 360'), h('span', {}, 'Orbit 360 | Produtos químicos'))),
+      h('a', { class: 'brand', href: '#/', style: 'text-decoration:none' }, h('span', { html: O.Pic.logo(44) }), h('div', {}, h('b', {}, 'QUIM 360'), h('span', {}, 'Orbit 360 | Produtos químicos'))),
       h('nav', { class: 'nav', 'aria-label': 'Principal' }, NAV.map((n) => (n === '-' ? h('div', { class: 'sep' }) : h('a', { href: n[0], 'data-h': n[0] }, U.icon(n[2]), n[1])))),
       h('p', { class: 'small', style: 'padding:12px 8px' }, 'Os dados ficam neste navegador. Exporte em Configurações para backup.'));
     main = h('main', { class: 'main', id: 'main' });
@@ -24,12 +24,14 @@
     const hash = location.hash || '#/';
     const parts = hash.replace(/^#\//, '').split('/');
     main.innerHTML = '';
+    document.querySelector('.app').classList.remove('capa');
     side.classList.remove('open');
     side.querySelectorAll('a').forEach((a) => a.classList.toggle('on', a.getAttribute('data-h') === ('#/' + (parts[0] === 'produto' || parts[0] === 'homologar' || parts[0] === 'doc' ? 'produtos' : parts[0]))));
     const V = O.Views;
     try {
       switch (parts[0]) {
-        case '': V.painel(main); break;
+        case '': V.capa(main); break;
+        case 'painel': V.painel(main); break;
         case 'produtos': V.produtos(main); break;
         case 'produto': V.produto(main, parts[1], parts[2]); break;
         case 'doc': V.doc(main, parts[1], parts[2]); break;
@@ -49,5 +51,6 @@
   O.route = route;
   window.addEventListener('hashchange', route);
   O.Views.aplicarWatch();
+  try { document.querySelector('link[rel=icon]').href = O.LOGO.mark.src; } catch (e) { /* ícone padrão */ }
   route();
 })(window.O360 = window.O360 || {});

@@ -14,7 +14,7 @@
     const r = (b) => {
       switch (b.t) {
         case 'cover':
-          return `<header class="d-cover"><div class="d-cover-logo">${O.Pic.logo(46)}</div><div><div class="d-cover-org">Orbit 360${b.org ? ' | ' + esc(b.org) : ''}</div><h1>${esc(b.titulo)}</h1><p class="d-cover-sub">${esc(b.sub)}</p></div></header><table class="d-kv d-meta">${b.meta.map((m) => `<tr><th>${esc(m[0])}</th><td>${esc(m[1])}</td></tr>`).join('')}</table>`;
+          return `<header class="d-cover"><div class="d-cover-logo">${O.Pic.lockup(112)}</div><div class="d-cover-txt"><div class="d-cover-org">${b.org ? esc(b.org) : 'QUIM 360'}</div><h1>${esc(b.titulo)}</h1><p class="d-cover-sub">${esc(b.sub)}</p></div></header><table class="d-kv d-meta">${b.meta.map((m) => `<tr><th>${esc(m[0])}</th><td>${esc(m[1])}</td></tr>`).join('')}</table>`;
         case 'h1': return `<h2 class="d-h1">${esc(b.text)}</h2>`;
         case 'h2': return `<h3 class="d-h2">${esc(b.text)}</h3>`;
         case 'p': return `<p class="d-p${b.small ? ' small' : ''}${b.bold ? ' bold' : ''}">${esc(b.text)}</p>`;
@@ -24,7 +24,7 @@
         case 'check': return `<ul class="d-check">${b.items.map((i) => `<li><span class="bx"></span>${esc(i)}</li>`).join('')}</ul>`;
         case 'callout': { const t = TONE[b.tone] || TONE.info; return `<div class="d-callout" style="border-left-color:${t.bar};background:${t.bg};color:${t.fg}"><strong>${esc(b.title)}</strong><div>${esc(b.text)}</div></div>`; }
         case 'imgs': return `<div class="d-imgs">${b.items.map((i) => `<figure>${i.svg}${i.cap ? `<figcaption>${esc(i.cap)}</figcaption>` : ''}</figure>`).join('')}</div>`;
-        case 'box': return `<div class="d-box" style="border-color:${b.border || '#dc2626'}">${b.children.map(r).join('')}</div>`;
+        case 'box': return `<div class="d-box" style="border-color:${b.border || '#dc2626'};${b.bg ? 'background:' + b.bg : ''}">${b.children.map(r).join('')}</div>`;
         case 'qr': return `<figure class="d-qr">${O.Pic.qr(b.text, 120)}<figcaption>${esc(b.cap)}<br><span class="mono">${esc(b.text.length > 80 ? b.text.slice(0, 80) + '…' : b.text)}</span></figcaption></figure>`;
         case 'sign': return `<div class="d-sign">${b.rows.map((s) => `<div><div class="line"></div><div>${esc(s[0])}</div><div class="small">${esc(s[1])}</div></div>`).join('')}</div>`;
         case 'pagebreak': return '<div class="d-break"></div>';
@@ -38,8 +38,8 @@
   const DOC_CSS = `
   .doc{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#111827;background:#fff;font-size:11pt;line-height:1.5;text-align:left}
   .doc *{box-sizing:border-box}
-  .d-cover{display:flex;gap:16px;align-items:center;background:#0f172a;color:#fff;padding:18px 22px;border-radius:8px 8px 0 0;border-bottom:4px solid #60a5fa}
-  .d-cover h1{margin:2px 0 4px;font-size:22pt;line-height:1.2;color:#fff}
+  .d-cover{display:flex;gap:20px;align-items:center;background:#111420;color:#fff;padding:18px 22px;border-radius:8px 8px 0 0;border-bottom:4px solid #60a5fa}
+  .d-cover-logo{flex:none}.d-cover-txt{min-width:0}.d-cover h1{margin:2px 0 4px;font-size:22pt;line-height:1.2;color:#fff}
   .d-cover-org{color:#60a5fa;font-weight:700;font-size:10pt}
   .d-cover-sub{margin:0;color:#93c5fd;font-size:10pt}
   .d-h1{font-size:15pt;margin:20px 0 8px;color:#0f172a;border-bottom:2px solid #60a5fa;padding-bottom:3px;break-after:avoid}
@@ -66,6 +66,7 @@
   .d-sign{display:flex;gap:40px;margin-top:36px}.d-sign>div{flex:1}.d-sign .line{border-top:1px solid #111;margin-bottom:4px}
   .mono{font-family:Consolas,'Courier New',monospace;font-size:7.5pt;word-break:break-all}
   .d-break{break-after:page;height:0}
+  .d-box .d-table td,.d-box .d-kv td{background:#fff!important}.d-box .d-table tr:nth-child(even) td{background:#fff!important}
   `;
 
   function printPdf(blocks, titulo) {
@@ -122,12 +123,12 @@
     async function conv(b) {
       switch (b.t) {
         case 'cover': {
-          const logo = await png(O.Pic.logo(64), 64, 64, true);
+          const L = O.LOGO.lockup; const lh = 112; const lw = Math.round(lh * L.w / L.h);
           const t = new D.Table({ width: { size: W, type: D.WidthType.DXA }, borders: noBorders, rows: [new D.TableRow({ children: [new D.TableCell({
-            shading: { type: D.ShadingType.CLEAR, fill: '0F172A', color: 'auto' }, margins: { top: 200, bottom: 200, left: 240, right: 240 }, borders: { ...noBorders, bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } },
+            shading: { type: D.ShadingType.CLEAR, fill: '111420', color: 'auto' }, margins: { top: 160, bottom: 160, left: 200, right: 200 }, borders: { ...noBorders, bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } },
             children: [
-              new D.Paragraph({ children: [new D.ImageRun({ type: 'png', data: b64ToU8(logo), transformation: { width: 40, height: 40 } }), run('   Orbit 360' + (b.org ? ' | ' + b.org : ''), { bold: true, color: '60A5FA', size: 22 })] }),
-              new D.Paragraph({ spacing: { before: 120, after: 60 }, children: [run(b.titulo, { bold: true, color: 'FFFFFF', size: 52 })] }),
+              new D.Paragraph({ children: [new D.ImageRun({ type: 'jpg', data: O.Pic.dataBytes('lockup'), transformation: { width: lw, height: lh } })] }),
+              new D.Paragraph({ spacing: { before: 100, after: 60 }, children: [run(b.titulo, { bold: true, color: 'FFFFFF', size: 48 })] }),
               new D.Paragraph({ children: [run(b.sub, { color: '93C5FD', size: 20 })] }),
             ] })] })] });
           const kv = await conv({ t: 'kv', rows: b.meta });
@@ -157,7 +158,7 @@
         case 'box': {
           const kids = [];
           for (const c of b.children) kids.push(...await conv(c));
-          return [new D.Table({ width: { size: W, type: D.WidthType.DXA }, rows: [new D.TableRow({ cantSplit: true, children: [new D.TableCell({ width: { size: W, type: D.WidthType.DXA }, borders: allB((b.border || '#dc2626').replace('#', '').toUpperCase(), 24), margins: { top: 140, bottom: 140, left: 200, right: 200 }, children: kids.filter((k) => !(k instanceof D.Table && false)) })] })] }), par('')];
+          return [new D.Table({ width: { size: W, type: D.WidthType.DXA }, rows: [new D.TableRow({ cantSplit: true, children: [new D.TableCell({ width: { size: W, type: D.WidthType.DXA }, borders: allB((b.border || '#dc2626').replace('#', '').toUpperCase(), 24), shading: b.bg ? { type: D.ShadingType.CLEAR, fill: b.bg.replace('#', '').toUpperCase(), color: 'auto' } : undefined, margins: { top: 140, bottom: 140, left: 200, right: 200 }, children: kids.filter((k) => !(k instanceof D.Table && false)) })] })] }), par('')];
         }
         case 'qr': {
           const data = await png(O.Pic.qr(b.text, 120), 120, 120);

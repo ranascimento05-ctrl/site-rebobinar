@@ -65,11 +65,12 @@
     return `<svg ${NS} viewBox="0 0 ${dim} ${dim}" width="${s}" height="${s}" shape-rendering="crispEdges" role="img" aria-label="QR Code"><rect width="${dim}" height="${dim}" fill="#fff"/><path d="${d}" fill="#0f172a"/></svg>`;
   }
 
-  // logo Orbit 360 (fundo escuro): órbitas concêntricas por disciplina
-  function logo(size, withText) {
-    const s = size || 40;
-    const svg = `<svg ${NS} viewBox="0 0 100 100" width="${s}" height="${s}" role="img" aria-label="Orbit 360"><rect width="100" height="100" rx="18" fill="#0f172a"/><g fill="none" stroke-width="3"><ellipse cx="50" cy="50" rx="38" ry="38" stroke="#8b5cf6"/><ellipse cx="50" cy="50" rx="30" ry="30" stroke="#06b6d4" transform="rotate(-25 50 50)" stroke-dasharray="120 70"/><ellipse cx="50" cy="50" rx="22" ry="22" stroke="#10b981" transform="rotate(35 50 50)" stroke-dasharray="90 50"/><ellipse cx="50" cy="50" rx="14" ry="14" stroke="#60a5fa"/></g><line x1="50" y1="8" x2="50" y2="92" stroke="#60a5fa" stroke-width="1" opacity=".6"/><line x1="8" y1="50" x2="92" y2="50" stroke="#60a5fa" stroke-width="1" opacity=".6"/><circle cx="50" cy="50" r="4" fill="#60a5fa"/><g fill="none" stroke="#60a5fa" stroke-width="2"><circle cx="82" cy="18" r="7"/><circle cx="82" cy="18" r="3"/></g></svg>`;
-    return svg;
+  // Logo oficial Orbit 360: recortes da arte original (data/logo.js)
+  function logo(size) { const L = O.LOGO.mark; const s = size || 40; return `<img src="${L.src}" width="${s}" height="${s}" alt="Orbit 360" style="display:block;border-radius:8px">`; }
+  function lockup(h) { const L = O.LOGO.lockup; const hh = h || 90; return `<img src="${L.src}" height="${hh}" width="${Math.round(hh * L.w / L.h)}" alt="Orbit 360 | Consultoria em SSMA" style="display:block">`; }
+  function dataBytes(key) {
+    const src = O.LOGO[key].src; const bin = atob(src.split(',')[1]); const u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u;
   }
 
   function svgToPng(svg, w, h, scale, transparent) {
@@ -92,5 +93,5 @@
     });
   }
 
-  O.Pic = { ghs, transporte, painel, qr, logo, svgToPng };
+  O.Pic = { ghs, transporte, painel, qr, logo, lockup, dataBytes, svgToPng };
 })(window.O360 = window.O360 || {});

@@ -172,36 +172,45 @@
   function isolamento(classe) {
     return { '2.1': 100, '2.2': 50, '2.3': 100, '3': 50, '4.1': 50, '4.2': 50, '4.3': 50, '5.1': 50, '5.2': 50, '6.1': 100, '8': 50, '9': 25 }[classe] || 50;
   }
+  function trecho(sec, chaves, max, fallback) {
+    // extrai as linhas da seção que contêm uma das palavras-chave; sem correspondência, devolve o início da seção (salvo fallback === false)
+    const linhas = (sec || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    const achadas = linhas.filter((l) => chaves.some((k) => l.toLowerCase().includes(k)));
+    if (!achadas.length && fallback === false) return '';
+    return corta((achadas.length ? achadas : linhas).join('\n'), max || 500);
+  }
+  function telefones(p) {
+    const c = cfg();
+    return [['Corpo de Bombeiros', '193'], ['Defesa Civil', '199'], ['Polícia Rodoviária Federal', '191'], ['Pró-Química (ABIQUIM, 24 h)', '0800 11 8270'], ['Fabricante / fornecedor', p.emerg.telefoneFornecedor || '—'], ['Empresa / expedidor', c.telEmergencia || '—']];
+  }
+
+  // Ficha de emergência: sequência de campos da ABNT NBR 7503 (identificação, riscos, EPI, ações em caso de acidente, telefones)
   function fichaEmergencia(p) {
     const s = p.fds.secoes || {};
-    const c = cfg();
     const B = [];
-    B.push(capa('Ficha de emergência', 'QUIM 360 | Ficha de Emergência | ' + nz(p.nome), p, [['Estrutura', 'ABNT NBR 7503 e Manual ABIQUIM']]));
-    B.push({ t: 'imgs', items: [{ svg: O.Pic.painel(p.imdg.numeroRisco, p.imdg.onu, 240), w: 240, h: 120, cap: 'Painel de segurança' }]
-      .concat(E.classesDoProduto(p).map((cl) => ({ svg: O.Pic.transporte(cl, 110), w: 110, h: 110, cap: 'Rótulo de risco ' + cl }))) });
-    B.push({ t: 'kv', rows: [
-      ['Nome apropriado para embarque', nz(p.imdg.nome || p.nome)], ['Número ONU', nz(p.imdg.onu)],
-      ['Classe / subclasse', nz(p.imdg.classe) + (p.imdg.subrisco ? ' (subsidiário ' + p.imdg.subrisco + ')' : '')],
-      ['Número de risco', nz(p.imdg.numeroRisco)], ['Grupo de embalagem', nz(p.imdg.pg)],
-      ['Aspecto e propriedades', corta(s[9], 300) || '—'],
-    ] });
-    B.push({ t: 'callout', tone: 'crit', title: 'Telefones de emergência', text: 'Pró-Química (ABIQUIM, 24 h): 0800 11 8270 | Corpo de Bombeiros: 193 | Defesa Civil: 199' + (c.telEmergencia ? ' | Empresa: ' + c.telEmergencia : '') + (p.emerg.telefoneFornecedor ? ' | Fornecedor: ' + p.emerg.telefoneFornecedor : '') });
+    B.push(capa('Ficha de emergência', 'QUIM 360 | Ficha de Emergência | ' + nz(p.nome), p, [['Estrutura', 'ABNT NBR 7503, Resolução ANTT 5.947/21 e Manual ABIQUIM']]));
+    B.push({ t: 'imgs', items: [{ svg: O.Pic.painel(p.imdg.numeroRisco, p.imdg.onu, 240), w: 240, h: 120, cap: 'Número de risco e número ONU' }].concat(E.classesDoProduto(p).map((cl, i) => ({ svg: O.Pic.transporte(cl, 110), w: 110, h: 110, cap: (i === 0 ? 'Risco principal ' : 'Risco subsidiário ') + cl }))) });
+    B.push({ t: 'table', head: ['Nome apropriado para embarque', 'Classe ou subclasse', 'Grupo de embalagem'], widths: [58, 24, 18], rows: [[nz(p.imdg.nome || p.nome), nz(p.imdg.classe) + (p.imdg.subrisco ? ' (subsidiário ' + p.imdg.subrisco + ')' : ''), nz(p.imdg.pg)]] });
+    B.push({ t: 'table', head: ['Aspecto', 'Descrição'], widths: [18, 82], rows: [['Estado físico, cor e odor', trecho(s[9], ['estado físico', 'aspecto', 'odor'], 220, false) || corta(s[9], 220) || '—'], ['Ponto de fulgor e densidade', [p.imdg.pontoFulgor !== '' ? 'Ponto de fulgor: ' + p.imdg.pontoFulgor + ' °C' : '', trecho(s[9], ['densidade'], 100, false)].filter(Boolean).join('. ') || '—']] });
     B.push({ t: 'h1', text: 'Riscos' });
-    B.push({ t: 'table', head: ['Tipo', 'Descrição'], widths: [22, 78], rows: [
-      ['Fogo e explosão', corta(s[5], 500) || '—'],
-      ['Saúde', (p.ghs.h || []).length ? p.ghs.h.map((h) => h + ': ' + (G.hText(h) || '')).join('. ') : '—'],
-      ['Meio ambiente', (p.amb.derramamento || corta(s[12], 300)) || '—'],
-    ] });
-    B.push({ t: 'h1', text: 'Ações de emergência' });
-    B.push({ t: 'table', head: ['Situação', 'Ação'], widths: [22, 78], rows: [
-      ['Isolamento inicial', 'Isolar a área em no mínimo ' + isolamento(p.imdg.classe) + ' m em todas as direções. Valor genérico por classe: confirme a distância da ficha do número ONU no Manual ABIQUIM.'],
-      ['Vazamento ou derramamento', corta(s[6], 700) || '—'],
-      ['Fogo', corta(s[5], 700) || '—'],
-      ['Primeiros socorros', corta(s[4], 800) || '—'],
-      ['EPI para a equipe de resposta', corta(s[8], 500) || '—'],
-      ['Descarte', corta(s[13], 300) || '—'],
-    ] });
-    if (p.emerg.observacoes) B.push({ t: 'p', text: 'Observações: ' + p.emerg.observacoes });
+    B.push({ t: 'table', head: ['Fogo e explosão', 'Saúde', 'Meio ambiente'], widths: [34, 33, 33], rows: [[
+      trecho(s[5], ['perigo', 'explos', 'inflam', 'vapor', 'combust'], 420),
+      ((p.ghs.h || []).length ? p.ghs.h.map((h) => h + ' ' + (G.hText(h) || '')).join('. ') : trecho(s[11], [], 300)),
+      nz(p.amb.derramamento ? p.amb.derramamento : trecho(s[12], [], 300)),
+    ]] });
+    B.push({ t: 'h1', text: 'Equipamento de proteção individual para emergência' });
+    B.push({ t: 'p', text: trecho(s[8], ['respirat', 'luva', 'olho', 'óculos', 'roupa', 'vestimenta', 'calçado', 'epi', 'proteção'], 500) || '—' });
+    B.push({ t: 'h1', text: 'Em caso de acidente' });
+    B.push({ t: 'p', bold: true, text: 'Isolamento inicial: no mínimo ' + isolamento(p.imdg.classe) + ' m em todas as direções (valor genérico por classe: confirme pelo número ONU no Manual ABIQUIM).' });
+    B.push({ t: 'table', head: ['Vazamento ou derramamento', 'Fogo', 'Poluição'], widths: [34, 33, 33], rows: [[
+      trecho(s[6], ['elimin', 'conter', 'absor', 'isol', 'ferrament', 'recolh'], 520),
+      trecho(s[5], ['extin', 'espuma', 'pó', 'co2', 'água', 'bombeiro', 'combat'], 460),
+      trecho(s[6], ['pluvial', 'corpo', 'esgoto', 'solo', 'ambient'], 300, false) || trecho(s[12], [], 260) || '—',
+    ]] });
+    B.push({ t: 'table', head: ['Primeiros socorros', 'Notas para o médico'], widths: [60, 40], rows: [[corta(s[4], 700) || '—', trecho(s[4], ['médico', 'sintoma', 'tratamento'], 300) || ((p.ghs.h || []).slice(0, 4).join(', ') || '—')]] });
+    B.push({ t: 'h1', text: 'Telefones de emergência' });
+    B.push({ t: 'table', head: ['Órgão', 'Telefone'], widths: [60, 40], rows: telefones(p) });
+    B.push({ t: 'kv', rows: [['Observações', p.emerg.observacoes || ''], ['Descarte (Seção 13)', corta(s[13], 240) || '—'], ['Data de emissão', fmtData(new Date().toISOString())]] });
     B.push({ t: 'p', small: true, text: 'Conteúdo extraído da FDS do fornecedor. Em caso de divergência, vale a FDS vigente e o Manual para Atendimento de Emergências com Produtos Perigosos da ABIQUIM.' });
     return B;
   }
@@ -260,25 +269,26 @@
     return B;
   }
 
-  // ---------------------------------------------------------------- Envelope
+  // ---------------------------------------------------------------- Envelope (ABNT NBR 7503)
   function envelope(p) {
-    const c = cfg();
-    const B = [];
-    B.push(capa('Envelope para transporte', 'QUIM 360 | Envelope de Transporte | ' + nz(p.nome), p, [['Base', 'ABNT NBR 7503 e Resolução ANTT 5.947/21']]));
-    B.push({ t: 'imgs', items: [{ svg: O.Pic.painel(p.imdg.numeroRisco, p.imdg.onu, 300), w: 300, h: 150, cap: 'Painel de segurança' }].concat(E.classesDoProduto(p).map((cl) => ({ svg: O.Pic.transporte(cl, 130), w: 130, h: 130, cap: 'Rótulo de risco ' + cl }))) });
-    B.push({ t: 'kv', rows: [
-      ['Nome apropriado para embarque', nz(p.imdg.nome || p.nome)], ['Número ONU', nz(p.imdg.onu)], ['Classe / subclasse', nz(p.imdg.classe) + (p.imdg.subrisco ? ' / ' + p.imdg.subrisco : '')],
-      ['Número de risco', nz(p.imdg.numeroRisco)], ['Grupo de embalagem', nz(p.imdg.pg)],
-      ['Expedidor', ''], ['Destinatário', ''], ['Placa do veículo / motorista', ''], ['Quantidade e tipo de embalagem', ''],
+    const cl = E.classesDoProduto(p);
+    const inner = [];
+    inner.push({ t: 'p', bold: true, text: 'ENVELOPE PARA TRANSPORTE' });
+    inner.push({ t: 'p', small: true, text: 'Transporte terrestre de produtos perigosos | ABNT NBR 7503 | Resolução ANTT 5.947/21' });
+    inner.push({ t: 'imgs', items: [{ svg: O.Pic.painel(p.imdg.numeroRisco, p.imdg.onu, 280), w: 280, h: 140, cap: 'Número de risco e número ONU' }].concat(cl.map((x, i) => ({ svg: O.Pic.transporte(x, 120), w: 120, h: 120, cap: (i === 0 ? 'Risco principal ' : 'Risco subsidiário ') + x }))) });
+    inner.push({ t: 'table', head: ['Nome apropriado para embarque', 'Classe ou subclasse', 'Grupo de embalagem'], widths: [56, 24, 20], rows: [[nz(p.imdg.nome || p.nome), nz(p.imdg.classe) + (p.imdg.subrisco ? ' / ' + p.imdg.subrisco : ''), nz(p.imdg.pg)]] });
+    inner.push({ t: 'p', bold: true, text: 'Telefones de emergência' });
+    inner.push({ t: 'table', head: ['Órgão', 'Telefone'], widths: [62, 38], rows: telefones(p) });
+    inner.push({ t: 'p', bold: true, text: 'Em caso de acidente ou emergência, o condutor deve:' });
+    inner.push({ t: 'list', ordered: true, items: [
+      'Parar o veículo em local seguro, desligar o motor e acionar o freio de estacionamento.', 'Sinalizar a via e afastar as pessoas, ficando de costas para o vento.', 'Não fumar e eliminar qualquer fonte de ignição.',
+      'Acionar os telefones de emergência informando número ONU, nome do produto, local e quantidade.', 'Não tocar no produto nem tentar conter o vazamento sem EPI e treinamento.', 'Entregar a ficha de emergência e os documentos do transporte à equipe de resposta.',
     ] });
-    B.push({ t: 'callout', tone: 'crit', title: 'Telefones de emergência', text: 'Pró-Química (ABIQUIM, 24 h): 0800 11 8270 | Bombeiros: 193 | Defesa Civil: 199' + (c.telEmergencia ? ' | Empresa: ' + c.telEmergencia : '') });
-    B.push({ t: 'h1', text: 'Conduta do motorista em emergência' });
-    B.push({ t: 'list', ordered: true, items: [
-      'Pare o veículo em local seguro, desligue o motor e acione o freio de estacionamento.', 'Sinalize a área e afaste as pessoas, de costas para o vento.', 'Não fume e elimine qualquer fonte de ignição.',
-      'Acione os telefones de emergência e informe número ONU, local e quantidade.', 'Não toque no produto nem tente conter o vazamento sem EPI e treinamento. Aguarde o apoio e entregue a ficha de emergência à equipe de resposta.',
-    ] });
-    B.push({ t: 'pagebreak' });
-    return B.concat(fichaEmergencia(p).filter((b) => b.t !== 'cover'));
+    inner.push({ t: 'p', bold: true, text: 'Contém: ficha de emergência, documento fiscal e documentos do transporte.' });
+    inner.push({ t: 'kv', rows: [['Expedidor', ''], ['Destinatário', ''], ['Veículo (placa) e condutor', '']] });
+    // a primeira página é a face do envelope; a capa da marca fica na ficha de emergência que vai dentro dele
+    const B = [{ t: 'box', border: '#c2410c', bg: '#fdba74', children: inner }, { t: 'pagebreak' }];
+    return B.concat(fichaEmergencia(p));
   }
 
   // ---------------------------------------------------------------- Treinamento

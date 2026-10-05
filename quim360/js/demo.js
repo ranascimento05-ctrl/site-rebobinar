@@ -34,7 +34,7 @@
       a.par = { tem: true, descricao: 'Parecer de Higiene Ocupacional (demonstração)', pgrIndicador: 'nao_requer', pgrPrazo: '', pgrResponsavel: '' };
       a.dec = { valor: 'sim', justificativa: 'Atende aos critérios internos. Homologado para limpeza de peças na oficina.', data: new Date().toISOString(), numero: S.proximoNumero(), sharepoint: '' };
       a.trein.gerar = true; a.status = 'homologado';
-      ['ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano'].forEach((k) => { a.confirmadas[k] = new Date().toISOString(); });
+      ['fds0', 'ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano'].forEach((k) => { a.confirmadas[k] = new Date().toISOString(); });
       a.etapa = 'saida';
       S.salvarProduto(a);
 
@@ -46,6 +46,21 @@
       ['ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'decisao'].forEach((k) => { b.confirmadas[k] = new Date().toISOString(); });
       b.etapa = 'saida';
       S.salvarProduto(b);
+
+      const al = S.novoLocal('Almoxarifado de limpeza (demonstração)', 'Almoxarifado');
+      al.espacoM = 4; al.descricao = 'Prateleiras com bacia de contenção para produtos de limpeza.'; S.salvarLocal(al);
+      const c = produtoBase('alcalino', al.id);
+      c.ghs.nenhum = true; c.ghs.confirmado = true;
+      c.ocup = { risco: true, subst: '', eng: 'Lava-olhos e chuveiro de emergência próximos.', adm: 'Treinamento prévio e sinalização GHS.', epi: 'Luvas de PVC ou neoprene, óculos de ampla visão, protetor facial e avental.' };
+      c.amb = { risco: false, contencao: '', residuos: '', derramamento: '' };
+      c.hig = { tlv: false, parecerExigidoOk: false, pgr: 'coberto', dosimetria: false, justificativa: 'Sem agente com limite NR-15 ou TLV.', tlvAgentes: '' };
+      c.comp.incompDeclaradas = true; c.comp.localOk = 'sim'; c.comp.controles = ['bacia', 'sinalizacao']; c.comp.limite = '100 L';
+      c.par = { tem: false, descricao: '', pgrIndicador: 'nao_requer', pgrPrazo: '', pgrResponsavel: '' };
+      c.dec = { valor: 'sim', justificativa: 'Atende aos critérios internos.', data: new Date().toISOString(), numero: S.proximoNumero(), sharepoint: '' };
+      c.trein.gerar = true; c.status = 'homologado';
+      ['ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano'].forEach((k) => { c.confirmadas[k] = new Date().toISOString(); });
+      c.etapa = 'saida';
+      S.salvarProduto(c);
     },
   };
 })(window.O360 = window.O360 || {});

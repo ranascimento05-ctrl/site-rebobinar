@@ -167,6 +167,11 @@
     if (/fontes? de ignicao|chamas|faiscas|calor/.test(s10)) tags.add('ignicao');
     c.incompativeis = [...tags];
 
+    // limites de exposição (Seção 8) e temperatura de armazenamento (Seção 7)
+    const lim = (secoes[8] || '').split('\n').map((x) => x.trim()).filter((x) => /tlv|twa|stel|nr-?\s?15|limite de (?:exposi|toler)|\bppm\b|mg\/m/i.test(x));
+    c.limitesExposicao = lim.join('; ').slice(0, 300);
+    const tm = (secoes[7] || '').match(/(?:temperatura|armazen)[^.\n]{0,60}?(?:inferior a|m[aá]xima(?: de)?|n[aã]o exceder|at[eé]|abaixo de)\s*(\d{1,3})\s*°\s*c/i);
+    c.tempMax = tm ? tm[1] + ' °C' : '';
     // PFAS
     const pfasHits = [];
     if (T.PFAS_TERMS.test(text)) pfasHits.push('termo no texto: ' + (text.match(T.PFAS_TERMS) || [''])[0]);

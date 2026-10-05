@@ -27,6 +27,8 @@
     p.imdg.naoRegulado = !c.onu && !c.classeRisco;
     p.comp.incompativeis = c.incompativeis || [];
     p.comp.grupos = E.gruposSugeridos(p);
+    if (c.limitesExposicao) p.hig.tlvAgentes = p.hig.tlvAgentes || c.limitesExposicao;
+    if (c.tempMax && !p.comp.tempMax) p.comp.tempMax = c.tempMax;
     p.fds.analisada = true;
     p.fds.sug = { cmrCas: c.cmrCas, pfas: c.pfasIndicios, hDesc: c.hDesconhecidas, faltantes: res.secoesFaltantes };
   }
@@ -72,9 +74,9 @@
   };
 
   // ---------------------------------------------------------- definição das etapas
-  const ORDER = ['ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano', 'saida'];
+  const ORDER = ['fds0', 'ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano', 'saida'];
   const TITLES = {
-    ctx: ['Onde será usado e armazenado', null], ident: ['1 Identificação do produto', null], finalidade: ['2 Finalidade do uso', null], lista: ['3 Lista de homologados', null],
+    fds0: ['Envio da FDS', null], ctx: ['Onde será usado e armazenado', null], ident: ['1 Identificação do produto', null], finalidade: ['2 Finalidade do uso', null], lista: ['3 Lista de homologados', null],
     sim: ['4 Similaridade (read-across)', null], fds: ['5 Validação da FDS', null], fds2: ['6 Data e idioma da FDS', null], ghs: ['7 Classificação GHS', null],
     impactos: ['8 Impactos ocupacionais e ambientais', null], pgr: ['9 Interface com o PGR', null], imdg: ['10 Classificação IMDG', null], compat: ['11 Compatibilidade e segregação', null],
     pareceres: ['12 Pareceres e gatilho do PGR', null], decisao: ['13 Decisão', null], plano: ['14 Plano de ação', null], saida: ['15 Saída em Word e PDF', null],
@@ -83,8 +85,10 @@
   function visiveis(p) {
     const fim = p.lista.naLista === true;
     const rej = !!p.rejeicaoAuto;
+    const triRej = !!(p.fds.analisada && E.triagem(p).reprovado);
     return ORDER.filter((id) => {
-      if (fim) return ['ctx', 'ident', 'finalidade', 'lista', 'saida'].includes(id);
+      if (triRej && ['fds', 'fds2'].includes(id) && !p.confirmadas[id] && !fim) return false;
+      if (fim) return ['fds0', 'ctx', 'ident', 'finalidade', 'lista', 'saida'].includes(id);
       if (rej && ['impactos', 'pgr', 'compat', 'pareceres', 'plano'].includes(id)) return false;
       if (rej && id === 'imdg' && !p.confirmadas.imdg && p.confirmadas.ghs) return false;
       if (id === 'plano') return ['homologado', 'condicionado'].includes(p.status);
@@ -107,6 +111,25 @@
 
   // cada etapa: { render(p, api) -> Node, validar(p) -> [erros], depois(p) -> opcional }
   const STEPS = {
+    // ------------------------------------------------ envio da FDS e análise automática
+    fds0: {
+      render(p, api) {
+        const w = h('div');
+        w.appendChild(U.q('', 'Envie a FDS. O app lê o documento e preenche tudo que consta nela.'));
+        w.appendChild(fdsPanel(p, api.rerender));
+        if (p.fds.analisada) {
+          const L = O.Auto.lido(p), F = O.Auto.faltam(p);
+          w.appendChild(h('div', { class: 'grid g2' },
+            h('div', { class: 'card' }, h('h3', {}, 'Lido da FDS'), h('ul', { style: 'margin:0 0 0 18px;padding:0' }, L.map((x) => h('li', {}, x)))),
+            h('div', { class: 'card' }, h('h3', {}, 'Falta informar'), h('ul', { style: 'margin:0 0 0 18px;padding:0' }, F.map((x) => h('li', {}, x))))));
+          const tri = E.triagem(p);
+          if (tri.criticos.length) w.appendChild(U.alert('crit', 'Reprovação automática identificada na FDS', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']')));
+          w.appendChild(h('div', { class: 'opts' }, U.flag(p, 'modoAuto', 'Confirmar automaticamente as etapas que a FDS responde por completo', 'Você revisa tudo na decisão. Etapas com conflito ou dado faltante sempre param para você.', api.rerender)));
+        } else w.appendChild(h('p', { class: 'small' }, 'Sem FDS, todas as respostas serão manuais. Você pode enviar a FDS depois, em qualquer etapa.'));
+        return w;
+      },
+      validar: () => [],
+    },
     // ------------------------------------------------ contexto
     ctx: {
       render(p, api) {
@@ -158,6 +181,7 @@
         const w = h('div');
         w.appendChild(U.q(3, 'O produto já está na lista de produtos homologados?'));
         const hom = S.produtos().filter((x) => x.id !== p.id && ['homologado', 'condicionado'].includes(x.status));
+        if (p.auto && p.auto.listaSug) { const sg = S.produto(p.auto.listaSug); if (sg) w.appendChild(U.alert('warn', 'Produto com o mesmo nome já homologado', sg.nome + ' | ' + sg.dec.numero + '. Confirme se é o mesmo produto e fornecedor.')); }
         const par = hom.filter((x) => p.nome && x.nome.toLowerCase().includes(p.nome.toLowerCase().slice(0, 12)));
         if (par.length) w.appendChild(h('div', { class: 'sug' }, h('h4', {}, 'Registros parecidos na lista'), par.map((x) => h('div', { class: 'row' }, h('span', {}, x.nome + ' | ' + x.dec.numero), h('button', { class: 'btn sm sec', onclick: () => { p.lista.naLista = true; p.lista.numero = x.dec.numero; U.salvarJa(p); api.rerender(); } }, 'É este produto')))));
         w.appendChild(U.radio(p, 'lista.naLista', [{ v: true, label: 'Sim', hint: 'Encaminhar para aprovação de compra' }, { v: false, label: 'Não', hint: 'Prosseguir para a análise da FDS' }], { onChange: api.rerender }));
@@ -173,6 +197,7 @@
         const w = h('div');
         w.appendChild(U.q(4, 'Existe produto já homologado de composição equivalente?'));
         w.appendChild(U.radio(p, 'sim.ativa', [{ v: true, label: 'Sim', hint: 'Aplicar a via simplificada' }, { v: false, label: 'Não', hint: 'Análise completa' }], { onChange: api.rerender }));
+        if (p.auto && p.auto.simSug) { const sg = S.produto(p.auto.simSug); if (sg) w.appendChild(U.alert('info', 'Sugestão automática de referência', sg.nome + ' | ' + sg.dec.numero + ': mesma classe e componentes em comum. Os critérios abaixo foram pré-marcados pela comparação das FDS. Decida se vale a via simplificada.')); }
         if (p.sim.ativa) {
           const hom = S.produtos().filter((x) => x.id !== p.id && ['homologado', 'condicionado'].includes(x.status));
           if (!hom.length) w.appendChild(U.alert('warn', 'Nenhum produto homologado cadastrado', 'Sem produto de referência, a via simplificada não está disponível. Responda "Não".'));
@@ -450,6 +475,9 @@
         w.appendChild(U.alert(st[1], 'Resultado da análise: ' + st[0], av.reprovacoes.concat(av.pendencias, av.condicionantes).length ? av.reprovacoes.concat(av.pendencias, av.condicionantes) : 'Nenhum impedimento registrado.'));
         av.alertas.forEach((a) => w.appendChild(U.alert('warn', 'Alerta', a)));
         if (p.sim.encerrada) w.appendChild(U.alert('warn', 'Via simplificada encerrada', p.sim.divergencia));
+        const autoIds = visiveis(p).filter((x) => p.autoConf[x] && p.confirmadas[x]);
+        if (autoIds.length) w.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Revise o que a análise da FDS preencheu'), h('p', { class: 'small' }, 'A decisão confirma estas respostas. Abra qualquer etapa para corrigir.'),
+          h('table', { class: 't' }, h('tbody', {}, autoIds.map((x) => h('tr', {}, h('td', {}, TITLES[x][0].replace(/^\d+ /, '')), h('td', {}, O.Auto.resumo(p, x)), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => api.ir(x) }, 'Revisar'))))))));
         const opts = [{ v: 'sim', label: av.sugestao === 'condicionado' ? 'Sim, com condicionantes' : 'Sim, homologar', hint: 'Gera relatório, cadastro e QR Code' }, { v: 'nao', label: 'Não homologar', hint: 'Informar justificativa técnica ou legal' }, { v: 'pendente', label: 'Manter pendente', hint: 'Aguardar fornecedor ou parecer' }];
         w.appendChild(U.radio(p, 'dec.valor', opts, { onChange: api.rerender }));
         if (p.dec.valor === 'sim' && (av.reprovacoes.length || av.pendencias.length)) w.appendChild(U.alert('crit', 'Homologação bloqueada', 'Há reprovação automática ou pendência. Resolva ou escolha outra opção.'));
@@ -501,52 +529,100 @@
   }
 
   // ---------------------------------------------------------- tela do assistente
+  // confirma uma etapa e calcula a próxima; auto = confirmação feita pela análise automática
+  function confirmar(p, cur, auto) {
+    const def = STEPS[cur];
+    def.depois && def.depois(p);
+    p.confirmadas[cur] = new Date().toISOString();
+    if (auto) p.autoConf[cur] = true; else delete p.autoConf[cur];
+    reavaliarRejeicao(p);
+    let aviso = null;
+    if (['ghs', 'imdg', 'compat'].includes(cur)) aviso = checarSimplificada(p);
+    const v2 = visiveis(p);
+    const prox = v2[v2.indexOf(cur) + 1] || 'saida';
+    p.etapa = (cur === 'decisao' && !v2.includes('plano')) ? 'saida' : prox;
+    const rej = !!(p.rejeicaoAuto && ['ghs', 'imdg'].includes(cur));
+    if (rej) p.etapa = 'decisao';
+    return { aviso, rej };
+  }
+
+  // avança sozinho pelas etapas que a FDS responde por completo; para na primeira que exige o analista
+  function autoAvancar(p) {
+    const avisos = [];
+    let guard = 0;
+    while (p.modoAuto && p.fds.analisada && guard++ < 20) {
+      let cur = p.etapa;
+      if (!visiveis(p).includes(cur)) { const v = visiveis(p); const nx = ORDER.slice(ORDER.indexOf(cur)).find((x) => v.includes(x) && !p.confirmadas[x]); if (!nx) break; p.etapa = cur = nx; }
+      if (p.confirmadas[cur]) break;
+      const pre = O.Auto.PREP[cur]; if (pre) pre(p);
+      const okf = O.Auto.OK[cur];
+      if (!okf || !okf(p) || STEPS[cur].validar(p).length) break;
+      const r = confirmar(p, cur, true);
+      if (r.aviso) avisos.push({ tipo: 'sim', aviso: r.aviso });
+      if (r.rej) { avisos.push({ tipo: 'rej' }); break; }
+    }
+    return avisos;
+  }
+
+  function mostrarAvisos(avisos) {
+    let seq = Promise.resolve();
+    avisos.forEach((a) => {
+      if (a.tipo === 'sim') seq = seq.then(() => U.modal('Via simplificada encerrada', h('div', {}, h('p', {}, 'Foi identificada divergência relevante em relação ao produto de referência. A análise completa passa a ser obrigatória.'), h('ul', {}, a.aviso.map((x) => h('li', {}, x)))), [['Entendi', true, '']]));
+      else seq = seq.then(() => U.modal('Reprovação automática', h('p', {}, 'O produto atinge critério de rejeição. As etapas 8 a 12 foram dispensadas e a análise segue para a decisão e o relatório com a justificativa.'), [['Seguir para a decisão', true, '']]));
+    });
+    return seq;
+  }
+
   function render(root, id) {
     const p = S.produto(id);
     if (!p) { root.appendChild(h('div', { class: 'empty' }, 'Produto não encontrado.')); return; }
     if (p.status === 'pendente' && p.pendencia) { p.status = 'em_analise'; }
+    p.autoConf = p.autoConf || {}; p.auto = p.auto || {};
+    if (p.modoAuto === undefined) p.modoAuto = true;
     const draw = () => {
       root.innerHTML = '';
       reavaliarRejeicao(p);
-      const vis = visiveis(p);
+      let vis = visiveis(p);
       if (!vis.includes(p.etapa)) p.etapa = vis.find((x) => !p.confirmadas[x]) || vis[vis.length - 1];
+      // etapas que a FDS responde são confirmadas aqui, antes de desenhar
+      const avisos = autoAvancar(p);
+      if (avisos.length) U.salvarJa(p);
+      // sugestões de preenchimento nas etapas que ainda exigem o analista
+      if (p.modoAuto && p.fds.analisada && !p.confirmadas[p.etapa] && O.Auto.PREP[p.etapa]) { O.Auto.PREP[p.etapa](p); U.salvar(p); }
+      vis = visiveis(p);
       const cur = p.etapa;
       const done = vis.filter((x) => p.confirmadas[x]).length;
+      const numero = (sid) => { const m = TITLES[sid][0].match(/^(\d+) /); return m ? m[1] : '•'; };
       const side = h('nav', { class: 'steps', 'aria-label': 'Etapas' }, h('div', { class: 'bar', title: done + ' de ' + vis.length }, h('div', { style: 'width:' + Math.round(done / vis.length * 100) + '%' })),
         ORDER.map((sid) => {
           const v = vis.includes(sid);
           const cls = !v ? 'skip' : sid === cur ? 'cur' : p.confirmadas[sid] ? 'done' : '';
-          const b = h('button', { class: 'step ' + cls, disabled: !v || (!p.confirmadas[sid] && sid !== cur), 'aria-current': sid === cur ? 'step' : null, onclick: () => { if (v && (p.confirmadas[sid] || sid === cur)) { p.etapa = sid; draw(); } } },
-            h('i', {}, p.confirmadas[sid] && v ? '✓' : String(ORDER.indexOf(sid) + 1)), h('span', {}, TITLES[sid][0].replace(/^\d+ /, ''), !v ? h('small', {}, p.rejeicaoAuto && sid !== 'plano' ? 'Dispensada: reprovação automática' : 'Não se aplica') : null));
-          return b;
+          return h('button', { class: 'step ' + cls, disabled: !v || (!p.confirmadas[sid] && sid !== cur), 'aria-current': sid === cur ? 'step' : null, onclick: () => { if (v && (p.confirmadas[sid] || sid === cur)) { p.etapa = sid; draw(); } } },
+            h('i', {}, p.confirmadas[sid] && v ? '✓' : numero(sid)), h('span', {}, TITLES[sid][0].replace(/^\d+ /, ''), !v ? h('small', {}, p.rejeicaoAuto && sid !== 'plano' ? 'Dispensada: reprovação automática' : 'Não se aplica') : (p.autoConf[sid] && p.confirmadas[sid] ? h('small', {}, 'Preenchida pela FDS') : null)));
         }));
       const def = STEPS[cur];
-      const api = { rerender: () => { const sy = window.scrollY; draw(); window.scrollTo(0, sy); } };
+      const api = { rerender: () => { const sy = window.scrollY; draw(); window.scrollTo(0, sy); }, ir: (sid) => { p.etapa = sid; draw(); window.scrollTo(0, 0); } };
       const erros = h('div', { id: 'erros' });
-      const body = h('div', { class: 'card' }, h('div', { class: 'row' }, h('h2', {}, TITLES[cur][0]), h('span', { class: 'spacer' }), U.statusBadge(p.status)), h('div', {}, def.render(p, api)), erros);
+      const autoIds = vis.filter((x) => p.autoConf[x] && p.confirmadas[x] && x !== cur);
+      const banner = autoIds.length && cur !== 'decisao' ? U.alert('ok', autoIds.length + ' etapa(s) preenchida(s) pela análise da FDS', autoIds.map((x) => TITLES[x][0].replace(/^\d+ /, '') + ': ' + O.Auto.resumo(p, x)).filter(Boolean)) : null;
+      const body = h('div', { class: 'card' }, h('div', { class: 'row' }, h('h2', {}, TITLES[cur][0]), h('span', { class: 'spacer' }), U.statusBadge(p.status)), banner, h('div', {}, def.render(p, api)), erros);
       const idx = vis.indexOf(cur);
       const nav = h('div', { class: 'row', style: 'margin-top:12px' },
         idx > 0 ? h('button', { class: 'btn ghost', onclick: () => { p.etapa = vis[idx - 1]; draw(); window.scrollTo(0, 0); } }, 'Voltar') : null, h('span', { class: 'spacer' }),
         cur === 'saida' ? h('a', { class: 'btn', href: '#/produto/' + p.id }, 'Concluir e abrir o registro') : h('button', { class: 'btn', onclick: () => {
           const errs = def.validar(p);
           if (errs.length) { erros.innerHTML = ''; erros.appendChild(U.alert('crit', 'Antes de avançar', errs)); erros.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-          def.depois && def.depois(p);
-          p.confirmadas[cur] = new Date().toISOString();
-          reavaliarRejeicao(p);
-          let aviso = null;
-          if (['ghs', 'imdg', 'compat'].includes(cur)) aviso = checarSimplificada(p);
-          const v2 = visiveis(p);
-          const prox = v2[v2.indexOf(cur) + 1] || 'saida';
-          p.etapa = (cur === 'decisao' && !v2.includes('plano')) ? 'saida' : prox;
-          if (p.rejeicaoAuto && ['ghs', 'imdg'].includes(cur)) p.etapa = 'decisao';
+          const r = confirmar(p, cur, false);
+          const todos = [];
+          if (r.aviso) todos.push({ tipo: 'sim', aviso: r.aviso });
+          if (r.rej) todos.push({ tipo: 'rej' });
+          if (!r.rej) autoAvancar(p).forEach((a) => todos.push(a));
           U.salvarJa(p);
-          const go = () => { draw(); window.scrollTo(0, 0); };
-          if (aviso) U.modal('Via simplificada encerrada', h('div', {}, h('p', {}, 'Foi identificada divergência relevante em relação ao produto de referência. A análise completa passa a ser obrigatória.'), h('ul', {}, aviso.map((x) => h('li', {}, x)))), [['Entendi', true, '']]).then(go);
-          else if (p.rejeicaoAuto && ['ghs', 'imdg'].includes(cur)) U.modal('Reprovação automática', h('p', {}, 'O produto atinge critério de rejeição. As etapas 8 a 12 foram dispensadas e a análise segue para a decisão e o relatório com a justificativa.'), [['Seguir para a decisão', true, '']]).then(go);
-          else go();
-        } }, cur === 'decisao' ? 'Confirmar decisão' : 'Confirmar e avançar'));
-      root.appendChild(h('div', { class: 'top' }, h('div', {}, h('h1', {}, p.nome || 'Novo produto'), h('p', {}, 'Assistente de homologação | uma etapa por vez, sem pular a confirmação')), h('a', { class: 'btn ghost', href: '#/produto/' + p.id }, 'Sair e salvar')));
+          mostrarAvisos(todos).then(() => { draw(); window.scrollTo(0, 0); });
+        } }, cur === 'decisao' ? 'Confirmar decisão' : cur === 'fds0' && !p.fds.analisada ? 'Continuar sem FDS' : 'Confirmar e avançar'));
+      root.appendChild(h('div', { class: 'top' }, h('div', {}, h('h1', {}, p.nome || 'Nova homologação'), h('p', {}, 'Assistente de homologação | a FDS responde o que consta nela, você informa o resto')), h('a', { class: 'btn ghost', href: '#/produto/' + p.id }, 'Sair e salvar')));
       root.appendChild(h('div', { class: 'wiz' }, side, h('div', {}, body, nav)));
+      if (avisos.length) mostrarAvisos(avisos);
     };
     draw();
   }

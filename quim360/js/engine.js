@@ -6,9 +6,10 @@
   function novoProduto() {
     return {
       id: O.Store.uid('prd'),
+      modoAuto: true, autoConf: {}, auto: {},
       criadoEm: new Date().toISOString(),
       status: 'em_analise',
-      etapa: 'ctx',
+      etapa: 'fds0',
       confirmadas: {},
       ctx: { area: '', atividade: '', localId: '' },
       nome: '', fornecedor: '', codigoFornecedor: '',
@@ -170,6 +171,34 @@
     return res;
   }
 
+  // ---------- Compatibilidade entre dois produtos (aplicação prática da matriz) ----------
+  function compatPar(a, b) {
+    const ca = classesDoProduto(a), cb = classesDoProduto(b);
+    const r = maiorCodigo(ca, cb);
+    const nomeG = (k) => (T.RG.find((x) => x[0] === k) || [k, k])[1];
+    const motivos = [];
+    const ga = a.comp.grupos || [], gb = b.comp.grupos || [];
+    T.RG_RULES.forEach(([x, y, ef]) => { if ((ga.includes(x) && gb.includes(y)) || (ga.includes(y) && gb.includes(x))) motivos.push(nomeG(x) + ' x ' + nomeG(y) + ': ' + ef); });
+    (a.comp.incompativeis || []).forEach((k) => { if (gb.includes(k) && k !== 'ignicao') motivos.push('FDS de ' + a.nome + ' declara incompatibilidade com ' + nomeG(k)); });
+    (b.comp.incompativeis || []).forEach((k) => { if (ga.includes(k) && k !== 'ignicao') motivos.push('FDS de ' + b.nome + ' declara incompatibilidade com ' + nomeG(k)); });
+    let nivel = 'livre';
+    if (motivos.length) nivel = 'incompativel';
+    else if (['2', '3', '4'].includes(r.codigo)) nivel = 'segregar';
+    else if (r.codigo === '1') nivel = 'longe';
+    else if (r.codigo === 'X' || r.codigo == null) nivel = 'verificar';
+    const metros = r.codigo && T.SEG_LEGEND[r.codigo] ? T.SEG_LEGEND[r.codigo].metros : null;
+    const acao = {
+      incompativel: 'Não armazenar no mesmo local nem na mesma bacia de contenção.',
+      segregar: 'Armazenar separados' + (metros ? ' (mínimo ' + metros + ' m) ' : ' ') + 'e sem remonte.',
+      longe: 'Pode ocupar a mesma área com bacias ou armários distintos.',
+      verificar: 'Sem regra geral na matriz: verificar as Seções 7 e 10 das duas FDS.',
+      livre: 'Pode compartilhar o local. Confirme a reatividade nas FDS.',
+    }[nivel];
+    return { codigo: r.codigo, par: r.par, motivos, nivel, metros, acao };
+  }
+  const NIVEL = { incompativel: 'Incompatível', segregar: 'Segregar', longe: 'Longe de', verificar: 'Verificar', livre: 'Compatível' };
+  function homologados(produtos) { return (produtos || []).filter((x) => ['homologado', 'condicionado'].includes(x.status)); }
+
   // ---------- Sugestões prontas (hierarquia de controles) ----------
   function sugestoes(p) {
     const h = p.ghs.h || [];
@@ -308,5 +337,5 @@
     return r;
   }
 
-  O.Engine = { novoProduto, triagem, nr20, compatibilidade, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { novoProduto, triagem, nr20, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});

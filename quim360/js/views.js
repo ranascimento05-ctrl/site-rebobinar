@@ -86,7 +86,7 @@
     g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Reprovados por critério interno'), rej.length ? h('table', { class: 't' }, h('tbody', {}, rej.slice(0, 8).map((p) => h('tr', {}, h('td', {}, h('a', { href: '#/produto/' + p.id }, p.nome)), h('td', {}, E.triagem(p).criticos.map((c) => c.tipo).filter((x, i, a) => a.indexOf(x) === i).join(', ') || 'outro motivo'))))) : h('p', { class: 'muted' }, 'Nenhum produto reprovado.')));
     g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Locais de armazenamento ', U.disc('PSM')), S.locais().length ? S.locais().map((l) => { const a = E.auditoriaLocal(l, ps); const crit = a.pares.filter((x) => x.motivos.length || ['2', '3', '4'].includes(x.codigo)).length; return h('div', { class: 'row', style: 'margin:6px 0' }, h('a', { href: '#/locais' }, l.nome), h('span', { class: 'muted' }, a.itens.length + ' itens'), crit ? U.badge('warn', crit + ' par(es) a revisar') : U.badge('ok', 'sem pares críticos')); }) : h('p', { class: 'muted' }, 'Cadastre os locais em "Locais".')));
     root.appendChild(g);
-    if (!ps.length) root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Primeiros passos'), h('p', {}, 'Comece por uma análise de FDS ou inicie uma homologação. Para ver o fluxo completo, carregue os dados de demonstração.'), h('button', { class: 'btn ghost', onclick: () => { O.Demo.criar(); location.hash = '#/'; O.route(); } }, 'Carregar dados de demonstração')));
+    if (!ps.length) root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Primeiros passos'), h('p', {}, 'Comece por uma análise de FDS ou inicie uma homologação. Para ver o fluxo completo, carregue os dados de demonstração.'), h('button', { class: 'btn ghost', onclick: () => { O.Demo.criar(); location.hash = '#/painel'; O.route(); } }, 'Carregar dados de demonstração')));
   };
 
   // ------------------------------------------------------------ lista de produtos
@@ -117,7 +117,7 @@
     root.appendChild(head(p.nome || 'Sem nome', [p.fornecedor, p.dec.numero].filter(Boolean).join(' | ') || 'Registro de produto',
       h('a', { class: 'btn', href: '#/homologar/' + p.id }, concluido ? 'Reabrir o assistente' : 'Continuar a análise'),
       h('button', { class: 'btn danger sm', onclick: async () => { if (await U.confirm('Excluir produto', 'O registro e a análise serão removidos deste navegador. Esta ação não pode ser desfeita.', 'Excluir')) { S.removerProduto(p.id); location.hash = '#/produtos'; } } }, 'Excluir')));
-    const tabs = [['resumo', 'Resumo'], ['fds', 'FDS'], ['docs', 'Documentos'], ['registro', 'Registro e QR Code']];
+    const tabs = [['resumo', 'Resumo'], ['fds', 'FDS'], ['compat', 'Compatibilidade'], ['docs', 'Documentos'], ['registro', 'Registro e QR Code']];
     root.appendChild(h('div', { class: 'row', role: 'tablist', style: 'margin-bottom:12px' }, tabs.map((t) => h('a', { class: 'btn ' + (t[0] === tab ? '' : 'ghost'), role: 'tab', 'aria-selected': t[0] === tab, href: '#/produto/' + p.id + '/' + t[0] }, t[1]))));
     if (tab === 'resumo') {
       root.appendChild(U.alert(st[1], 'Status: ' + st[0], p.dec.justificativa || av.reprovacoes.concat(av.pendencias, av.condicionantes).join(' ') || 'Análise em andamento.'));
@@ -133,6 +133,11 @@
       root.appendChild(O.Wizard.fdsPanel(p, () => O.route()));
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Seções da FDS (editáveis)'), h('p', { class: 'small' }, 'O texto das seções 4, 5, 6, 8, 9, 12, 13 e 14 alimenta a ficha de emergência, o envelope e o checklist.'),
         O.FDS.SEC_TITLES.map((t, i) => { const n = i + 1; const ta = h('textarea', { rows: 3 }); ta.value = (p.fds.secoes || {})[n] || ''; ta.addEventListener('input', () => { p.fds.secoes = p.fds.secoes || {}; p.fds.secoes[n] = ta.value; U.salvar(p); }); return h('label', { class: 'f' }, h('span', {}, n + ' ' + t), ta); })));
+    } else if (tab === 'compat') {
+      const outros = E.homologados(S.produtos()).filter((x) => x.id !== p.id);
+      root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática da matriz de segregação ', U.disc('PSM')),
+        h('p', { class: 'small' }, 'Este produto contra cada produto homologado: matriz de segregação por classe (NR-29 e IMDG) mais reatividade pela Seção 10 da FDS. Classes: ' + (E.classesDoProduto(p).join(' e ') || 'não informada') + '.'),
+        V.resumoCompat(p, outros), V.tabelaCompat(p, outros)));
     } else if (tab === 'docs') {
       V.catalogo(p).forEach((d) => root.appendChild(h('div', { class: 'card', style: d.on ? '' : 'opacity:.5' }, h('h3', {}, d.nome), h('p', { class: 'small' }, d.desc + (d.on ? '' : ' Disponível após a homologação.')), d.on ? V.docBotoes(p, d) : null)));
     } else {
@@ -143,6 +148,35 @@
     }
   };
   const kv = (rows) => h('table', { class: 't' }, h('tbody', {}, rows.map((r) => h('tr', {}, h('th', {}, r[0]), h('td', {}, r[1] || '—')))));
+
+  // ------------------------------------------------------------ compatibilidade entre produtos
+  const NIV_CLASS = { incompativel: 'cI', segregar: 'c3', longe: 'c1', verificar: 'cX', livre: 'c-' };
+  V.tabelaCompat = (p, outros) => {
+    if (!outros.length) return h('div', { class: 'empty' }, 'Não há outros produtos homologados para comparar.');
+    const rows = outros.map((q) => ({ q, r: E.compatPar(p, q) }));
+    const ordem = { incompativel: 0, segregar: 1, verificar: 2, longe: 3, livre: 4 };
+    rows.sort((a, b) => ordem[a.r.nivel] - ordem[b.r.nivel]);
+    return h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Produto homologado', 'Classes', 'Matriz', 'Resultado', 'Local', 'Orientação'].map((x) => h('th', {}, x)))),
+      h('tbody', {}, rows.map(({ q, r }) => { const lq = S.local(q.ctx.localId); const lp = S.local(p.ctx.localId); return h('tr', {}, h('td', {}, h('a', { href: '#/produto/' + q.id + '/compat' }, q.nome), h('div', { class: 'small' }, q.dec.numero || '')), h('td', {}, (r.par || ['—']).join(' x ')), h('td', {}, r.codigo || '—'), h('td', {}, h('span', { class: 'pc ' + NIV_CLASS[r.nivel] }, E.NIVEL[r.nivel])), h('td', {}, (lq ? lq.name || lq.nome : '—') + (lq && lp && lq.id === lp.id ? ' (mesmo local)' : '')), h('td', {}, r.acao, r.motivos.length ? h('ul', { class: 'small', style: 'margin:4px 0 0 16px;padding:0' }, r.motivos.map((m) => h('li', {}, m))) : null)); }))));
+  };
+  V.resumoCompat = (p, outros) => {
+    const rs = outros.map((q) => ({ q, r: E.compatPar(p, q) }));
+    const livres = rs.filter((x) => x.r.nivel === 'livre' || x.r.nivel === 'longe').map((x) => x.q.nome);
+    const nao = rs.filter((x) => x.r.nivel === 'incompativel').map((x) => x.q.nome);
+    const seg = rs.filter((x) => x.r.nivel === 'segregar').map((x) => x.q.nome);
+    return h('div', {}, nao.length ? U.alert('crit', 'Não armazenar junto de', nao) : null, seg.length ? U.alert('warn', 'Armazenar segregado de', seg) : null, livres.length ? U.alert('ok', 'Pode compartilhar o local com', livres) : null);
+  };
+  V.gradeCompat = (lista) => {
+    const tb = h('table', { class: 'mx', 'aria-label': 'Compatibilidade entre produtos homologados' });
+    tb.appendChild(h('thead', {}, h('tr', {}, h('th', {}), lista.map((p) => h('th', { class: 'col', title: p.nome, style: 'height:120px;max-width:34px' }, p.nome.length > 22 ? p.nome.slice(0, 21) + '…' : p.nome)))));
+    const body = h('tbody');
+    lista.forEach((a) => body.appendChild(h('tr', {}, h('th', { style: 'text-align:right;white-space:nowrap', title: a.nome }, a.nome.length > 26 ? a.nome.slice(0, 25) + '…' : a.nome), lista.map((b) => {
+      if (a.id === b.id) return h('td', { class: 'c0' }, '—');
+      const r = E.compatPar(a, b);
+      return h('td', { class: 'x' + NIV_CLASS[r.nivel], title: a.nome + ' x ' + b.nome + ': ' + E.NIVEL[r.nivel] + '. ' + r.acao, style: 'cursor:help' }, { incompativel: 'X', segregar: r.codigo || 'S', longe: '1', verificar: '?', livre: 'OK' }[r.nivel]);
+    }))));
+    tb.appendChild(body); return tb;
+  };
 
   // ------------------------------------------------------------ visualização de documento
   V.doc = (root, id, tipo) => {
@@ -220,7 +254,22 @@
     tb.appendChild(body);
     root.appendChild(h('div', { class: 'card scroll' }, tb));
     root.appendChild(info);
-    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Legenda'), Object.keys(T.SEG_LEGEND).map((k) => h('div', { class: 'leg' }, h('b', { class: 'mx' }, h('span', { class: 'mx' }, h('td', { class: 'c' + k, style: 'width:30px;height:26px;display:grid;place-items:center' }, k))), h('div', {}, h('b', {}, T.SEG_LEGEND[k].nome), h('div', { class: 'small' }, T.SEG_LEGEND[k].texto)))), h('p', { class: 'small' }, 'Classes 1 (explosivos), 6.2 (infectantes) e 7 (radioativos) ficam fora da matriz: armazenamento proibido ou restrito em área comum.')));
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Legenda'), Object.keys(T.SEG_LEGEND).map((k) => h('div', { class: 'leg' }, h('span', { class: 'code c' + k }, k), h('div', {}, h('b', {}, T.SEG_LEGEND[k].nome), h('div', { class: 'small' }, T.SEG_LEGEND[k].texto)))), h('p', { class: 'small' }, 'Classes 1 (explosivos), 6.2 (infectantes) e 7 (radioativos) ficam fora da matriz: armazenamento proibido ou restrito em área comum.')));
+    // aplicação prática: produtos homologados
+    const hom = E.homologados(S.produtos());
+    const prat = h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática: produtos homologados ', U.disc('PSM')));
+    if (hom.length < 2) prat.appendChild(h('p', { class: 'muted' }, 'Homologue ao menos 2 produtos para ver a compatibilidade entre eles. Dica: carregue a demonstração em Configurações.'));
+    else {
+      const sel = h('select', { 'aria-label': 'Produto' }, hom.map((p) => h('option', { value: p.id }, p.nome)));
+      const out = h('div');
+      const show = () => { out.innerHTML = ''; const p = S.produto(sel.value); const outros = hom.filter((x) => x.id !== p.id); out.appendChild(V.resumoCompat(p, outros)); out.appendChild(V.tabelaCompat(p, outros)); };
+      sel.addEventListener('change', show);
+      prat.appendChild(h('label', { class: 'f' }, h('span', {}, 'Produto'), sel)); prat.appendChild(out); show();
+      prat.appendChild(h('h4', { style: 'margin-top:14px' }, 'Grade de todos contra todos'));
+      prat.appendChild(h('div', { class: 'scroll' }, V.gradeCompat(hom)));
+      prat.appendChild(h('p', { class: 'small' }, 'X: incompatível (reatividade). Número: código da matriz (2, 3 ou 4 exigem distância). 1: longe de. ?: verificar a FDS. OK: compatível. Passe o mouse para ver a orientação.'));
+    }
+    root.appendChild(prat);
     // verificador
     const sa = h('select', {}, T.CLASSES.map((c) => h('option', { value: c[0] }, c[0] + ' ' + c[1])));
     const sb = h('select', {}, T.CLASSES.map((c) => h('option', { value: c[0] }, c[0] + ' ' + c[1])));
@@ -261,6 +310,41 @@
     const txt = S.config().watchExtra || '';
     ['cancerigeno', 'reprotoxico', 'mutagenico', 'pfas'].forEach((k) => { T.WATCH[k] = T.WATCH[k].filter((x) => !x[2]); });
     txt.split('\n').forEach((l) => { const [cas, nome, tipo] = l.split(';').map((x) => (x || '').trim()); if (/^\d{2,7}-\d{2}-\d$/.test(cas) && T.WATCH[tipo]) T.WATCH[tipo].push([cas, nome || cas, true]); });
+  };
+
+  // ------------------------------------------------------------ capa
+  V.capa = (root) => {
+    const c = S.config();
+    const ps = S.produtos();
+    document.querySelector('.app').classList.add('capa');
+    const L = O.LOGO.lockup;
+    const pilar = (disc, titulo, itens) => h('div', { class: 'pilar ' + disc.toLowerCase() }, h('div', { class: 'row' }, U.disc(disc), h('h3', { style: 'margin:0' }, titulo)), h('ul', {}, itens.map((i) => h('li', {}, i))));
+    root.appendChild(h('div', { class: 'cv' },
+      h('header', { class: 'cv-nav' }, h('span', { html: O.Pic.logo(36) }), h('b', {}, 'QUIM 360'), h('span', { class: 'spacer' }), h('a', { href: '#/painel' }, 'Painel'), h('a', { href: '#/produtos' }, 'Produtos'), h('a', { href: '#/legal' }, 'Base técnico-legal')),
+      h('section', { class: 'cv-hero' },
+        h('div', { class: 'cv-txt' },
+          h('p', { class: 'cv-eyebrow' }, 'Orbit 360 | Gestão de produtos químicos'),
+          h('h1', {}, 'Da FDS à decisão de homologação.'),
+          h('p', { class: 'cv-lead' }, 'Envie a FDS. O app lê as 16 seções, faz a triagem de cancerígenos, mutagênicos, teratogênicos e PFCs, classifica o transporte, verifica a segregação no local de armazenamento e gera o relatório, a ficha de emergência, o rótulo, o envelope e o checklist de treinamento.'),
+          h('div', { class: 'row' }, h('a', { class: 'btn big', href: '#/nova' }, 'Homologar um produto'), h('a', { class: 'btn big sec', href: '#/fds' }, 'Analisar uma FDS'), h('a', { class: 'btn big ghost', href: '#/painel' }, 'Entrar no painel'))),
+        h('div', { class: 'cv-logo' }, h('img', { src: L.src, alt: 'Orbit 360 | Consultoria em SSMA' }))),
+      h('section', { class: 'cv-stats' },
+        [['16', 'seções da FDS lidas e conferidas pela NBR 14725'], ['15', 'etapas de homologação, sem pular confirmação'], ['12', 'classes na matriz de segregação, aplicada produto a produto'], ['5', 'documentos por produto, em Word e PDF']].map((s) => h('div', {}, h('b', {}, s[0]), h('span', {}, s[1])))),
+      h('section', { class: 'cv-sec' },
+        h('h2', {}, 'Como funciona'),
+        h('div', { class: 'cv-steps' }, [['1', 'Envie a FDS', 'Texto, .txt ou .pdf. O app extrai frases H e P, CAS, ONU, classe, incompatibilidades e limites de exposição.'], ['2', 'A triagem roda sozinha', 'Cancerígeno, mutagênico, teratogênico e PFC reprovam de forma automática. O que a FDS responde é preenchido.'], ['3', 'Você informa o que falta', 'Uso, local de armazenamento, cobertura do PGR e pareceres. Conflito de segregação sempre para para você.'], ['4', 'Decisão e documentos', 'Decisão com justificativa, registro com QR Code e os cinco documentos prontos.']].map((s) => h('div', { class: 'cv-step' }, h('i', {}, s[0]), h('h3', {}, s[1]), h('p', {}, s[2]))))),
+      h('section', { class: 'cv-sec' },
+        h('h2', {}, 'Três disciplinas, uma análise'),
+        h('div', { class: 'grid g3' },
+          pilar('PSM', 'Armazenamento e compatibilidade', ['Matriz de segregação NR-29 e IMDG', 'Reatividade pela Seção 10 da FDS', 'NR-20 para inflamáveis e combustíveis', 'Compatibilidade com cada produto homologado']),
+          pilar('SST', 'Saúde e segurança do trabalho', ['Triagem CMR por frase H e CAS', 'Hierarquia de controle por produto', 'Interface com PGR e Higiene Ocupacional', 'Checklist de treinamento']),
+          pilar('GA', 'Gestão ambiental', ['Perigo aquático e poluente marinho', 'Contenção e resposta a derramamento', 'Destinação de resíduos', 'Ficha de emergência e envelope NBR 7503']))),
+      h('section', { class: 'cv-sec' },
+        h('h2', {}, 'Base técnico-legal'),
+        h('div', { class: 'cv-chips' }, T.BASE_LEGAL.map((b) => h('a', { class: 'cv-chip', href: '#/legal', title: b.titulo }, b.sigla)))),
+      h('section', { class: 'cv-cta' }, ps.length ? h('p', {}, ps.length + ' produto(s) cadastrado(s) neste navegador.') : h('p', {}, 'Nenhum produto cadastrado. Comece pela FDS ou carregue a demonstração.'),
+        h('div', { class: 'row', style: 'justify-content:center' }, h('a', { class: 'btn big', href: '#/nova' }, 'Iniciar'), !ps.length ? h('button', { class: 'btn big ghost', onclick: () => { O.Demo.criar(); location.hash = '#/painel'; } }, 'Carregar demonstração') : null)),
+      h('footer', { class: 'cv-foot' }, h('span', {}, 'Orbit 360 | Consultoria em SSMA'), h('span', {}, c.responsavel + (c.registro ? ' | ' + c.registro : '')), h('span', {}, 'Apoio à decisão: a decisão formal é do responsável técnico, com a FDS vigente do fornecedor.'))));
   };
 
   O.Views = V;
