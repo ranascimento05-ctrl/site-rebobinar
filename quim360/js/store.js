@@ -12,6 +12,7 @@
     anosValidadeFDS: 5,
     cat2Reprova: true,
     sharepointBase: '',
+    logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false,
   };
 
   function blank() { return { v: 1, seq: 0, produtos: [], locais: [], config: { ...DEFAULT_CFG } }; }

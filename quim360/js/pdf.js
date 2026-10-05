@@ -15,13 +15,13 @@
   async function conv(b) {
     switch (b.t) {
       case 'cover': {
-        const L = O.LOGO.lockup;
+        const lg = O.Logo.atual(); const tm = O.Logo.tema(); const dim = O.Logo.tam(80, 170);
         const meta = await conv({ t: 'kv', rows: b.meta });
         return [
-          { table: { widths: ['*'], body: [[{ fillColor: '#111420', margin: [10, 10, 10, 10], columns: [
-            { image: L.src, width: 120, height: Math.round(120 * L.h / L.w) },
-            { width: '*', margin: [14, 6, 0, 0], stack: [{ text: b.org || 'QUIM 360', color: '#60a5fa', bold: true, fontSize: 10 }, { text: b.titulo, color: '#ffffff', bold: true, fontSize: 21, margin: [0, 3, 0, 4] }, { text: b.sub, color: '#93c5fd', fontSize: 9 }] },
-          ] }]] }, layout: { hLineWidth: (i, n) => (i === n.table.body.length ? 3 : 0), hLineColor: () => '#60a5fa', vLineWidth: () => 0 }, margin: [0, 0, 0, 8] },
+          { table: { widths: ['*'], body: [[{ fillColor: tm.bg, margin: [10, 10, 10, 10], columns: [
+            { image: lg.src, width: Math.round(dim.w * 0.75 * 1.2), height: Math.round(dim.h * 0.75 * 1.2) },
+            { width: '*', margin: [14, 6, 0, 0], stack: [{ text: b.org || 'QUIM 360', color: tm.org, bold: true, fontSize: 10 }, { text: b.titulo, color: tm.titulo, bold: true, fontSize: 21, margin: [0, 3, 0, 4] }, { text: b.sub, color: tm.sub, fontSize: 9 }] },
+          ] }]] }, layout: { hLineWidth: (i, n) => (i === n.table.body.length ? 3 : (lg.claro ? 0.5 : 0)), hLineColor: (i, n) => (i === n.table.body.length ? '#60a5fa' : '#cbd5e1'), vLineWidth: () => (lg.claro ? 0.5 : 0), vLineColor: () => '#cbd5e1' }, margin: [0, 0, 0, 8] },
           ...meta,
         ];
       }
@@ -72,7 +72,7 @@
       pageSize: 'A4', pageMargins: [40, 40, 40, 50], info: { title: titulo, creator: 'QUIM 360 | Orbit 360' },
       defaultStyle: { font: 'Roboto', fontSize: 10, lineHeight: 1.2 },
       content,
-      footer: (cur, total) => ({ text: 'Orbit 360 | QUIM 360 | ' + titulo + ' | página ' + cur + ' de ' + total, fontSize: 8, color: '#6b7280', margin: [40, 8, 40, 0] }),
+      footer: (cur, total) => ({ text: O.Logo.rodape() + ' | ' + titulo + ' | página ' + cur + ' de ' + total, fontSize: 8, color: '#6b7280', margin: [40, 8, 40, 0] }),
     };
   }
 

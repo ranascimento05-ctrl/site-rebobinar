@@ -324,6 +324,21 @@
     const save = () => S.setConfig(holder.c);
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Responsável técnico e organização'), h('div', { class: 'grid g2' }, U.input(holder, 'c.responsavel', { label: 'Responsável técnico', onInput: save }), U.input(holder, 'c.registro', { label: 'Registro profissional', onInput: save }), U.input(holder, 'c.organizacao', { label: 'Organização (aparece na capa dos documentos)', onInput: save }), U.input(holder, 'c.email', { label: 'E-mail', onInput: save }), U.input(holder, 'c.telEmergencia', { label: 'Telefone de emergência da organização', onInput: save }), U.input(holder, 'c.sharepointBase', { label: 'Endereço base do SharePoint (opcional)', onInput: save }))));
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Critérios'), U.input(holder, 'c.anosValidadeFDS', { type: 'number', label: 'Validade da FDS em anos (alerta acima deste valor)', onInput: save }), h('div', { class: 'opts' }, U.flag(holder, 'c.cat2Reprova', 'Tratar categoria 2 (suspeita) como reprovação automática', 'H341, H351, H361 e H361d. Padrão conservador.', save))));
+    // logo dos documentos
+    const lg = O.Logo.atual();
+    const arq = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/svg+xml,image/webp', style: 'display:none' });
+    arq.addEventListener('change', async () => {
+      if (!arq.files[0]) return;
+      try { const r = await O.Logo.processar(arq.files[0]); const claro = lg.custom ? !!S.config().capaClara : true; S.setConfig({ logoDoc: r.src, logoDocW: r.w, logoDocH: r.h, capaClara: claro }); U.toast('Logo atualizada nos documentos.'); O.route(); }
+      catch (e) { U.toast(e.message); }
+    });
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Logo dos documentos'),
+      h('p', { class: 'small' }, 'A logo aparece na capa do relatório, do plano de ação, da ficha de emergência, da rotulagem, do envelope e do checklist, em Word, PDF e na pré-visualização. Use PNG com fundo transparente, JPG ou SVG. A imagem é reduzida e guardada neste navegador.'),
+      h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => arq.click() }, lg.custom ? 'Trocar logo' : 'Enviar minha logo'), arq,
+        lg.custom ? h('button', { class: 'btn ghost', onclick: () => { S.setConfig({ logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false }); U.toast('Voltou para a logo Orbit 360.'); O.route(); } }, 'Voltar para a logo Orbit 360') : null),
+      lg.custom ? h('div', { class: 'opts', style: 'margin-top:12px' },
+        [[false, 'Faixa escura', 'Para logos claras ou brancas'], [true, 'Faixa clara', 'Para logos escuras ou coloridas']].map((o) => { const inp = h('input', { type: 'radio', name: 'tema', ...(!!S.config().capaClara === o[0] ? { checked: true } : {}) }); const lab = h('label', { class: 'opt' + (!!S.config().capaClara === o[0] ? ' sel' : '') }, inp, h('span', {}, h('b', {}, o[1]), h('small', {}, o[2]))); inp.addEventListener('change', () => { S.setConfig({ capaClara: o[0] }); O.route(); }); return lab; })) : h('p', { class: 'small', style: 'margin-top:8px' }, 'Logo em uso: Orbit 360.'),
+      h('div', { class: 'paper', style: 'margin-top:12px;max-width:640px', html: R.html([{ t: 'cover', titulo: 'Exemplo de documento', sub: 'Pré-visualização da capa', org: S.config().organizacao, meta: [['Produto', 'Produto de exemplo']] }]) })));
     const extra = h('textarea', { rows: 4, placeholder: 'CAS;nome;tipo   (tipo: cancerigeno, reprotoxico, mutagenico ou pfas)' }); extra.value = (c.watchExtra || '');
     extra.addEventListener('change', () => { holder.c.watchExtra = extra.value; save(); V.aplicarWatch(); U.toast('Lista de alerta atualizada.'); });
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Lista de alerta de triagem'), h('p', { class: 'small' }, 'Adicione substâncias de interesse da organização. Já constam ' + Object.values(T.WATCH).reduce((n, a) => n + a.length, 0) + ' registros (benzeno, formaldeído, tricloroetileno, PFOA, PFOS, entre outros).'), extra));

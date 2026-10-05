@@ -13,8 +13,10 @@
     const out = [];
     const r = (b) => {
       switch (b.t) {
-        case 'cover':
-          return `<header class="d-cover"><div class="d-cover-logo">${O.Pic.lockup(112)}</div><div class="d-cover-txt"><div class="d-cover-org">${b.org ? esc(b.org) : 'QUIM 360'}</div><h1>${esc(b.titulo)}</h1><p class="d-cover-sub">${esc(b.sub)}</p></div></header><table class="d-kv d-meta">${b.meta.map((m) => `<tr><th>${esc(m[0])}</th><td>${esc(m[1])}</td></tr>`).join('')}</table>`;
+        case 'cover': {
+          const tm = O.Logo.tema();
+          return `<header class="d-cover${O.Logo.atual().claro ? ' claro' : ''}"><div class="d-cover-logo">${O.Logo.img(112, 240)}</div><div class="d-cover-txt"><div class="d-cover-org">${b.org ? esc(b.org) : 'QUIM 360'}</div><h1>${esc(b.titulo)}</h1><p class="d-cover-sub">${esc(b.sub)}</p></div></header><table class="d-kv d-meta">${b.meta.map((m) => `<tr><th>${esc(m[0])}</th><td>${esc(m[1])}</td></tr>`).join('')}</table>`;
+        }
         case 'h1': return `<h2 class="d-h1">${esc(b.text)}</h2>`;
         case 'h2': return `<h3 class="d-h2">${esc(b.text)}</h3>`;
         case 'p': return `<p class="d-p${b.small ? ' small' : ''}${b.bold ? ' bold' : ''}">${esc(b.text)}</p>`;
@@ -39,6 +41,7 @@
   .doc{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#111827;background:#fff;font-size:11pt;line-height:1.5;text-align:left}
   .doc *{box-sizing:border-box}
   .d-cover{display:flex;gap:20px;align-items:center;background:#111420;color:#fff;padding:18px 22px;border-radius:8px 8px 0 0;border-bottom:4px solid #60a5fa}
+  .d-cover.claro{background:#fff;border:1px solid #cbd5e1;border-bottom:4px solid #60a5fa;border-radius:8px 8px 0 0}.d-cover.claro h1{color:#0f172a}.d-cover.claro .d-cover-sub{color:#475569}.d-cover.claro .d-cover-org{color:#2563eb}
   .d-cover-logo{flex:none}.d-cover-txt{min-width:0}.d-cover h1{margin:2px 0 4px;font-size:22pt;line-height:1.2;color:#fff}
   .d-cover-org{color:#60a5fa;font-weight:700;font-size:10pt}
   .d-cover-sub{margin:0;color:#93c5fd;font-size:10pt}
@@ -123,13 +126,13 @@
     async function conv(b) {
       switch (b.t) {
         case 'cover': {
-          const L = O.LOGO.lockup; const lh = 112; const lw = Math.round(lh * L.w / L.h);
+          const lg = O.Logo.atual(); const tm = O.Logo.tema(); const dim = O.Logo.tam(112, 240);
           const t = new D.Table({ width: { size: W, type: D.WidthType.DXA }, borders: noBorders, rows: [new D.TableRow({ children: [new D.TableCell({
-            shading: { type: D.ShadingType.CLEAR, fill: '111420', color: 'auto' }, margins: { top: 160, bottom: 160, left: 200, right: 200 }, borders: { ...noBorders, bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } },
+            shading: { type: D.ShadingType.CLEAR, fill: tm.fill, color: 'auto' }, margins: { top: 160, bottom: 160, left: 200, right: 200 }, borders: lg.claro ? { top: line('CBD5E1', 4), left: line('CBD5E1', 4), right: line('CBD5E1', 4), bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } } : { ...noBorders, bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } },
             children: [
-              new D.Paragraph({ children: [new D.ImageRun({ type: 'jpg', data: O.Pic.dataBytes('lockup'), transformation: { width: lw, height: lh } })] }),
-              new D.Paragraph({ spacing: { before: 100, after: 60 }, children: [run(b.titulo, { bold: true, color: 'FFFFFF', size: 48 })] }),
-              new D.Paragraph({ children: [run(b.sub, { color: '93C5FD', size: 20 })] }),
+              new D.Paragraph({ children: [new D.ImageRun({ type: lg.tipo, data: O.Logo.bytes(), transformation: { width: dim.w, height: dim.h } })] }),
+              new D.Paragraph({ spacing: { before: 100, after: 60 }, children: [run(b.titulo, { bold: true, color: tm.tituloHex, size: 48 })] }),
+              new D.Paragraph({ children: [run(b.sub, { color: tm.subHex, size: 20 })] }),
             ] })] })] });
           const kv = await conv({ t: 'kv', rows: b.meta });
           return [t, par(''), ...kv];
@@ -180,7 +183,7 @@
       styles: { default: { document: { run: { font: FONT, size: 22 } } } },
       sections: [{
         properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 850, bottom: 850, left: 1134, right: 1134 } } },
-        footers: { default: new D.Footer({ children: [new D.Paragraph({ alignment: D.AlignmentType.LEFT, children: [run('Orbit 360 | QUIM 360 | ' + titulo + ' | página ', { size: 16, color: '6B7280' }), new D.TextRun({ children: [D.PageNumber.CURRENT], font: FONT, size: 16, color: '6B7280' }), run(' de ', { size: 16, color: '6B7280' }), new D.TextRun({ children: [D.PageNumber.TOTAL_PAGES], font: FONT, size: 16, color: '6B7280' })] })] }) },
+        footers: { default: new D.Footer({ children: [new D.Paragraph({ alignment: D.AlignmentType.LEFT, children: [run(O.Logo.rodape() + ' | ' + titulo + ' | página ', { size: 16, color: '6B7280' }), new D.TextRun({ children: [D.PageNumber.CURRENT], font: FONT, size: 16, color: '6B7280' }), run(' de ', { size: 16, color: '6B7280' }), new D.TextRun({ children: [D.PageNumber.TOTAL_PAGES], font: FONT, size: 16, color: '6B7280' })] })] }) },
         children,
       }],
     });

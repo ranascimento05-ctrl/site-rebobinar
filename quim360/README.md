@@ -7,6 +7,7 @@ Abrir `quim360/index.html` por um servidor estático (ex.: `python3 -m http.serv
 ## O que faz
 
 - **Análise automática**: ao enviar a FDS, o app preenche as etapas que a FDS responde por completo (identificação, validação, data e idioma, triagem GHS, impactos, classificação IMDG, incompatibilidades, controles de armazenamento) e para só nas que exigem o analista: uso e local, cobertura do PGR, pareceres, conflito de segregação e decisão. Tudo que foi preenchido é listado para revisão na decisão.
+- **Logo própria nos documentos**: em Configurações, envie sua logo (PNG, JPG ou SVG) e escolha faixa clara ou escura para a capa; vale em Word, PDF e pré-visualização. Dá para voltar à logo Orbit 360 a qualquer momento.
 - **Capa** com apresentação do app e logo oficial da Orbit 360 (recorte da arte original) em todas as telas e documentos.
 - **Compatibilidade entre produtos**: cada produto contra os demais homologados (matriz de segregação mais reatividade), por produto e em grade.
 - **Analisador de FDS**: lê o texto (colado, .txt ou .pdf) e localiza as 16 seções da ABNT NBR 14725, frases H e P, CAS, ponto de fulgor, ONU, classe, grupo de embalagem e incompatibilidades.

@@ -23136,6 +23136,7 @@ var vfs = {
     anosValidadeFDS: 5,
     cat2Reprova: true,
     sharepointBase: '',
+    logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false,
   };
 
   function blank() { return { v: 1, seq: 0, produtos: [], locais: [], config: { ...DEFAULT_CFG } }; }
@@ -24042,6 +24043,62 @@ var vfs = {
 
 </script>
 <script>
+/* Logo dos documentos: Orbit 360 (padrão) ou logo própria enviada pelo usuário (Configurações). */
+(function (O) {
+  const S = O.Store;
+  const TEMA_ESCURO = { bg: '#111420', fill: '111420', org: '#60a5fa', titulo: '#ffffff', sub: '#93c5fd', orgHex: '60A5FA', tituloHex: 'FFFFFF', subHex: '93C5FD' };
+  const TEMA_CLARO = { bg: '#ffffff', fill: 'FFFFFF', org: '#2563eb', titulo: '#0f172a', sub: '#475569', orgHex: '2563EB', tituloHex: '0F172A', subHex: '475569' };
+
+  const Logo = {
+    atual() {
+      const c = S.config();
+      if (c.logoDoc) return { src: c.logoDoc, w: c.logoDocW || 300, h: c.logoDocH || 100, tipo: 'png', custom: true, claro: !!c.capaClara };
+      const L = O.LOGO.lockup;
+      return { src: L.src, w: L.w, h: L.h, tipo: 'jpg', custom: false, claro: false };
+    },
+    tema() { return this.atual().claro ? TEMA_CLARO : TEMA_ESCURO; },
+    // dimensões em px que cabem na caixa maxW x maxH, mantendo a proporção
+    tam(maxH, maxW) {
+      const l = this.atual();
+      let h = maxH; let w = h * l.w / l.h;
+      if (w > maxW) { w = maxW; h = w * l.h / l.w; }
+      return { w: Math.round(w), h: Math.round(h) };
+    },
+    img(maxH, maxW) {
+      const l = this.atual(); const t = this.tam(maxH, maxW || 260);
+      return `<img src="${l.src}" width="${t.w}" height="${t.h}" alt="${l.custom ? 'Logo da organização' : 'Orbit 360 | Consultoria em SSMA'}" style="display:block;object-fit:contain">`;
+    },
+    bytes() {
+      const bin = atob(this.atual().src.split(',')[1]); const u = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u;
+    },
+    // lê o arquivo, reduz para no máximo 700 x 280 px e devolve PNG (preserva transparência)
+    processar(file) {
+      return new Promise((ok, err) => {
+        if (!/^image\//.test(file.type)) { err(new Error('Escolha um arquivo de imagem (PNG, JPG ou SVG).')); return; }
+        if (file.size > 6 * 1024 * 1024) { err(new Error('Imagem acima de 6 MB. Reduza o arquivo.')); return; }
+        const url = URL.createObjectURL(file); const img = new Image();
+        img.onload = () => {
+          let w = img.naturalWidth || 400; let h = img.naturalHeight || 160;
+          if (!img.naturalWidth && file.type === 'image/svg+xml') { w = 400; h = 160; }
+          const esc = Math.min(1, 700 / w, 280 / h); const cw = Math.max(1, Math.round(w * esc)); const ch = Math.max(1, Math.round(h * esc));
+          const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+          cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
+          URL.revokeObjectURL(url);
+          ok({ src: cv.toDataURL('image/png'), w: cw, h: ch });
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); err(new Error('Não foi possível ler a imagem.')); };
+        img.src = url;
+      });
+    },
+    // texto de rodapé dos documentos
+    rodape() { const c = S.config(); if (!this.atual().custom) return 'Orbit 360 | QUIM 360'; return c.organizacao ? c.organizacao + ' | QUIM 360' : 'QUIM 360'; },
+  };
+  O.Logo = Logo;
+})(window.O360 = window.O360 || {});
+
+</script>
+<script>
 /* Construtores de documentos: cada função devolve uma lista de blocos neutros,
    renderizados depois em HTML (pré-visualização e PDF por impressão) e em Word (.docx). */
 (function (O) {
@@ -24446,8 +24503,10 @@ var vfs = {
     const out = [];
     const r = (b) => {
       switch (b.t) {
-        case 'cover':
-          return `<header class="d-cover"><div class="d-cover-logo">${O.Pic.lockup(112)}</div><div class="d-cover-txt"><div class="d-cover-org">${b.org ? esc(b.org) : 'QUIM 360'}</div><h1>${esc(b.titulo)}</h1><p class="d-cover-sub">${esc(b.sub)}</p></div></header><table class="d-kv d-meta">${b.meta.map((m) => `<tr><th>${esc(m[0])}</th><td>${esc(m[1])}</td></tr>`).join('')}</table>`;
+        case 'cover': {
+          const tm = O.Logo.tema();
+          return `<header class="d-cover${O.Logo.atual().claro ? ' claro' : ''}"><div class="d-cover-logo">${O.Logo.img(112, 240)}</div><div class="d-cover-txt"><div class="d-cover-org">${b.org ? esc(b.org) : 'QUIM 360'}</div><h1>${esc(b.titulo)}</h1><p class="d-cover-sub">${esc(b.sub)}</p></div></header><table class="d-kv d-meta">${b.meta.map((m) => `<tr><th>${esc(m[0])}</th><td>${esc(m[1])}</td></tr>`).join('')}</table>`;
+        }
         case 'h1': return `<h2 class="d-h1">${esc(b.text)}</h2>`;
         case 'h2': return `<h3 class="d-h2">${esc(b.text)}</h3>`;
         case 'p': return `<p class="d-p${b.small ? ' small' : ''}${b.bold ? ' bold' : ''}">${esc(b.text)}</p>`;
@@ -24472,6 +24531,7 @@ var vfs = {
   .doc{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#111827;background:#fff;font-size:11pt;line-height:1.5;text-align:left}
   .doc *{box-sizing:border-box}
   .d-cover{display:flex;gap:20px;align-items:center;background:#111420;color:#fff;padding:18px 22px;border-radius:8px 8px 0 0;border-bottom:4px solid #60a5fa}
+  .d-cover.claro{background:#fff;border:1px solid #cbd5e1;border-bottom:4px solid #60a5fa;border-radius:8px 8px 0 0}.d-cover.claro h1{color:#0f172a}.d-cover.claro .d-cover-sub{color:#475569}.d-cover.claro .d-cover-org{color:#2563eb}
   .d-cover-logo{flex:none}.d-cover-txt{min-width:0}.d-cover h1{margin:2px 0 4px;font-size:22pt;line-height:1.2;color:#fff}
   .d-cover-org{color:#60a5fa;font-weight:700;font-size:10pt}
   .d-cover-sub{margin:0;color:#93c5fd;font-size:10pt}
@@ -24556,13 +24616,13 @@ var vfs = {
     async function conv(b) {
       switch (b.t) {
         case 'cover': {
-          const L = O.LOGO.lockup; const lh = 112; const lw = Math.round(lh * L.w / L.h);
+          const lg = O.Logo.atual(); const tm = O.Logo.tema(); const dim = O.Logo.tam(112, 240);
           const t = new D.Table({ width: { size: W, type: D.WidthType.DXA }, borders: noBorders, rows: [new D.TableRow({ children: [new D.TableCell({
-            shading: { type: D.ShadingType.CLEAR, fill: '111420', color: 'auto' }, margins: { top: 160, bottom: 160, left: 200, right: 200 }, borders: { ...noBorders, bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } },
+            shading: { type: D.ShadingType.CLEAR, fill: tm.fill, color: 'auto' }, margins: { top: 160, bottom: 160, left: 200, right: 200 }, borders: lg.claro ? { top: line('CBD5E1', 4), left: line('CBD5E1', 4), right: line('CBD5E1', 4), bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } } : { ...noBorders, bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } },
             children: [
-              new D.Paragraph({ children: [new D.ImageRun({ type: 'jpg', data: O.Pic.dataBytes('lockup'), transformation: { width: lw, height: lh } })] }),
-              new D.Paragraph({ spacing: { before: 100, after: 60 }, children: [run(b.titulo, { bold: true, color: 'FFFFFF', size: 48 })] }),
-              new D.Paragraph({ children: [run(b.sub, { color: '93C5FD', size: 20 })] }),
+              new D.Paragraph({ children: [new D.ImageRun({ type: lg.tipo, data: O.Logo.bytes(), transformation: { width: dim.w, height: dim.h } })] }),
+              new D.Paragraph({ spacing: { before: 100, after: 60 }, children: [run(b.titulo, { bold: true, color: tm.tituloHex, size: 48 })] }),
+              new D.Paragraph({ children: [run(b.sub, { color: tm.subHex, size: 20 })] }),
             ] })] })] });
           const kv = await conv({ t: 'kv', rows: b.meta });
           return [t, par(''), ...kv];
@@ -24613,7 +24673,7 @@ var vfs = {
       styles: { default: { document: { run: { font: FONT, size: 22 } } } },
       sections: [{
         properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 850, bottom: 850, left: 1134, right: 1134 } } },
-        footers: { default: new D.Footer({ children: [new D.Paragraph({ alignment: D.AlignmentType.LEFT, children: [run('Orbit 360 | QUIM 360 | ' + titulo + ' | página ', { size: 16, color: '6B7280' }), new D.TextRun({ children: [D.PageNumber.CURRENT], font: FONT, size: 16, color: '6B7280' }), run(' de ', { size: 16, color: '6B7280' }), new D.TextRun({ children: [D.PageNumber.TOTAL_PAGES], font: FONT, size: 16, color: '6B7280' })] })] }) },
+        footers: { default: new D.Footer({ children: [new D.Paragraph({ alignment: D.AlignmentType.LEFT, children: [run(O.Logo.rodape() + ' | ' + titulo + ' | página ', { size: 16, color: '6B7280' }), new D.TextRun({ children: [D.PageNumber.CURRENT], font: FONT, size: 16, color: '6B7280' }), run(' de ', { size: 16, color: '6B7280' }), new D.TextRun({ children: [D.PageNumber.TOTAL_PAGES], font: FONT, size: 16, color: '6B7280' })] })] }) },
         children,
       }],
     });
@@ -24681,13 +24741,13 @@ var vfs = {
   async function conv(b) {
     switch (b.t) {
       case 'cover': {
-        const L = O.LOGO.lockup;
+        const lg = O.Logo.atual(); const tm = O.Logo.tema(); const dim = O.Logo.tam(80, 170);
         const meta = await conv({ t: 'kv', rows: b.meta });
         return [
-          { table: { widths: ['*'], body: [[{ fillColor: '#111420', margin: [10, 10, 10, 10], columns: [
-            { image: L.src, width: 120, height: Math.round(120 * L.h / L.w) },
-            { width: '*', margin: [14, 6, 0, 0], stack: [{ text: b.org || 'QUIM 360', color: '#60a5fa', bold: true, fontSize: 10 }, { text: b.titulo, color: '#ffffff', bold: true, fontSize: 21, margin: [0, 3, 0, 4] }, { text: b.sub, color: '#93c5fd', fontSize: 9 }] },
-          ] }]] }, layout: { hLineWidth: (i, n) => (i === n.table.body.length ? 3 : 0), hLineColor: () => '#60a5fa', vLineWidth: () => 0 }, margin: [0, 0, 0, 8] },
+          { table: { widths: ['*'], body: [[{ fillColor: tm.bg, margin: [10, 10, 10, 10], columns: [
+            { image: lg.src, width: Math.round(dim.w * 0.75 * 1.2), height: Math.round(dim.h * 0.75 * 1.2) },
+            { width: '*', margin: [14, 6, 0, 0], stack: [{ text: b.org || 'QUIM 360', color: tm.org, bold: true, fontSize: 10 }, { text: b.titulo, color: tm.titulo, bold: true, fontSize: 21, margin: [0, 3, 0, 4] }, { text: b.sub, color: tm.sub, fontSize: 9 }] },
+          ] }]] }, layout: { hLineWidth: (i, n) => (i === n.table.body.length ? 3 : (lg.claro ? 0.5 : 0)), hLineColor: (i, n) => (i === n.table.body.length ? '#60a5fa' : '#cbd5e1'), vLineWidth: () => (lg.claro ? 0.5 : 0), vLineColor: () => '#cbd5e1' }, margin: [0, 0, 0, 8] },
           ...meta,
         ];
       }
@@ -24738,7 +24798,7 @@ var vfs = {
       pageSize: 'A4', pageMargins: [40, 40, 40, 50], info: { title: titulo, creator: 'QUIM 360 | Orbit 360' },
       defaultStyle: { font: 'Roboto', fontSize: 10, lineHeight: 1.2 },
       content,
-      footer: (cur, total) => ({ text: 'Orbit 360 | QUIM 360 | ' + titulo + ' | página ' + cur + ' de ' + total, fontSize: 8, color: '#6b7280', margin: [40, 8, 40, 0] }),
+      footer: (cur, total) => ({ text: O.Logo.rodape() + ' | ' + titulo + ' | página ' + cur + ' de ' + total, fontSize: 8, color: '#6b7280', margin: [40, 8, 40, 0] }),
     };
   }
 
@@ -25862,6 +25922,21 @@ var vfs = {
     const save = () => S.setConfig(holder.c);
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Responsável técnico e organização'), h('div', { class: 'grid g2' }, U.input(holder, 'c.responsavel', { label: 'Responsável técnico', onInput: save }), U.input(holder, 'c.registro', { label: 'Registro profissional', onInput: save }), U.input(holder, 'c.organizacao', { label: 'Organização (aparece na capa dos documentos)', onInput: save }), U.input(holder, 'c.email', { label: 'E-mail', onInput: save }), U.input(holder, 'c.telEmergencia', { label: 'Telefone de emergência da organização', onInput: save }), U.input(holder, 'c.sharepointBase', { label: 'Endereço base do SharePoint (opcional)', onInput: save }))));
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Critérios'), U.input(holder, 'c.anosValidadeFDS', { type: 'number', label: 'Validade da FDS em anos (alerta acima deste valor)', onInput: save }), h('div', { class: 'opts' }, U.flag(holder, 'c.cat2Reprova', 'Tratar categoria 2 (suspeita) como reprovação automática', 'H341, H351, H361 e H361d. Padrão conservador.', save))));
+    // logo dos documentos
+    const lg = O.Logo.atual();
+    const arq = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/svg+xml,image/webp', style: 'display:none' });
+    arq.addEventListener('change', async () => {
+      if (!arq.files[0]) return;
+      try { const r = await O.Logo.processar(arq.files[0]); const claro = lg.custom ? !!S.config().capaClara : true; S.setConfig({ logoDoc: r.src, logoDocW: r.w, logoDocH: r.h, capaClara: claro }); U.toast('Logo atualizada nos documentos.'); O.route(); }
+      catch (e) { U.toast(e.message); }
+    });
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Logo dos documentos'),
+      h('p', { class: 'small' }, 'A logo aparece na capa do relatório, do plano de ação, da ficha de emergência, da rotulagem, do envelope e do checklist, em Word, PDF e na pré-visualização. Use PNG com fundo transparente, JPG ou SVG. A imagem é reduzida e guardada neste navegador.'),
+      h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => arq.click() }, lg.custom ? 'Trocar logo' : 'Enviar minha logo'), arq,
+        lg.custom ? h('button', { class: 'btn ghost', onclick: () => { S.setConfig({ logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false }); U.toast('Voltou para a logo Orbit 360.'); O.route(); } }, 'Voltar para a logo Orbit 360') : null),
+      lg.custom ? h('div', { class: 'opts', style: 'margin-top:12px' },
+        [[false, 'Faixa escura', 'Para logos claras ou brancas'], [true, 'Faixa clara', 'Para logos escuras ou coloridas']].map((o) => { const inp = h('input', { type: 'radio', name: 'tema', ...(!!S.config().capaClara === o[0] ? { checked: true } : {}) }); const lab = h('label', { class: 'opt' + (!!S.config().capaClara === o[0] ? ' sel' : '') }, inp, h('span', {}, h('b', {}, o[1]), h('small', {}, o[2]))); inp.addEventListener('change', () => { S.setConfig({ capaClara: o[0] }); O.route(); }); return lab; })) : h('p', { class: 'small', style: 'margin-top:8px' }, 'Logo em uso: Orbit 360.'),
+      h('div', { class: 'paper', style: 'margin-top:12px;max-width:640px', html: R.html([{ t: 'cover', titulo: 'Exemplo de documento', sub: 'Pré-visualização da capa', org: S.config().organizacao, meta: [['Produto', 'Produto de exemplo']] }]) })));
     const extra = h('textarea', { rows: 4, placeholder: 'CAS;nome;tipo   (tipo: cancerigeno, reprotoxico, mutagenico ou pfas)' }); extra.value = (c.watchExtra || '');
     extra.addEventListener('change', () => { holder.c.watchExtra = extra.value; save(); V.aplicarWatch(); U.toast('Lista de alerta atualizada.'); });
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Lista de alerta de triagem'), h('p', { class: 'small' }, 'Adicione substâncias de interesse da organização. Já constam ' + Object.values(T.WATCH).reduce((n, a) => n + a.length, 0) + ' registros (benzeno, formaldeído, tricloroetileno, PFOA, PFOS, entre outros).'), extra));
