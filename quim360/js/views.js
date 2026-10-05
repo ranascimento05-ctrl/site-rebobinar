@@ -10,7 +10,9 @@
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
     const prods = S.produtos();
+    const decidido = !!p.confirmadas.decisao || p.status !== 'em_analise';
     const c = [{ id: 'relatorio', nome: 'Relatório de homologação', desc: 'Decisão, FDS, triagem GHS, impactos, PGR, IMDG, segregação e rastreabilidade.', fn: () => D.relatorio(p, prods), on: true }];
+    c.push({ id: 'plano', nome: 'Plano de ação', desc: 'Ações, origem, responsável e prazo para colocar o produto em uso (ou encerrar, se reprovado).', fn: () => D.planoAcao(p, prods), on: decidido });
     c.push({ id: 'ficha', nome: 'Ficha de emergência', desc: 'Estrutura NBR 7503 e Manual ABIQUIM: riscos, isolamento, fogo, derramamento, primeiros socorros.', fn: () => D.fichaEmergencia(p), on: ok });
     c.push({ id: 'rotulo', nome: 'Rotulagem', desc: 'Rótulo GHS (NBR 14725), etiqueta de uso (NR-26) e rótulos de risco (NBR 7500).', fn: () => D.rotulagem(p), on: ok });
     c.push({ id: 'envelope', nome: 'Envelope de transporte', desc: 'Painel de segurança, rótulos de risco, conduta do motorista e ficha de emergência.', fn: () => D.envelope(p), on: ok });
@@ -18,14 +20,33 @@
     return c;
   };
 
+  const nomeArq = (d, p) => d.id + '-' + slug(p.nome);
   async function baixarDocx(p, d) {
     U.toast('Gerando o arquivo Word...');
-    try { const blob = await R.docx(d.fn(), d.nome + ' | ' + p.nome); R.baixar(blob, d.id + '-' + slug(p.nome) + '.docx'); }
+    try { R.baixar(await R.docx(d.fn(), d.nome + ' | ' + p.nome), nomeArq(d, p) + '.docx'); }
     catch (e) { console.error(e); U.toast('Falha ao gerar o Word: ' + e.message); }
   }
-  const pdf = (p, d) => R.printPdf(d.fn(), d.nome + ' | ' + p.nome);
+  async function baixarPdf(p, d) {
+    U.toast('Gerando o PDF...');
+    try { R.baixar(await O.Pdf.blob(d.fn(), d.nome + ' | ' + p.nome), nomeArq(d, p) + '.pdf'); }
+    catch (e) { console.error(e); U.toast('Falha ao gerar o PDF: ' + e.message + ' Use "Imprimir" como alternativa.'); }
+  }
+  async function baixarPacote(p) {
+    if (!window.JSZip) { U.toast('Biblioteca de zip indisponível.'); return; }
+    U.toast('Gerando o pacote com Word e PDF...');
+    try {
+      const zip = new window.JSZip();
+      for (const d of V.catalogo(p).filter((x) => x.on)) {
+        const t = d.nome + ' | ' + p.nome;
+        zip.file(nomeArq(d, p) + '.docx', await R.docx(d.fn(), t));
+        zip.file(nomeArq(d, p) + '.pdf', await O.Pdf.blob(d.fn(), t));
+      }
+      R.baixar(await zip.generateAsync({ type: 'blob' }), 'QUIM360-' + slug(p.nome) + '.zip');
+    } catch (e) { console.error(e); U.toast('Falha ao gerar o pacote: ' + e.message); }
+  }
+  V.pacote = (p) => h('div', { class: 'card' }, h('h3', {}, 'Pacote completo'), h('p', { class: 'small' }, 'Um único arquivo .zip com todos os documentos disponíveis, cada um em Word e em PDF.'), h('button', { class: 'btn', onclick: () => baixarPacote(p) }, 'Baixar pacote (.zip)'));
 
-  V.docBotoes = (p, d) => h('div', { class: 'row' }, h('a', { class: 'btn sm sec', href: '#/doc/' + p.id + '/' + d.id }, 'Pré-visualizar'), h('button', { class: 'btn sm', onclick: () => baixarDocx(p, d) }, 'Word (.docx)'), h('button', { class: 'btn sm ghost', onclick: () => pdf(p, d) }, 'PDF'));
+  V.docBotoes = (p, d) => h('div', { class: 'row' }, h('a', { class: 'btn sm sec', href: '#/doc/' + p.id + '/' + d.id }, 'Pré-visualizar'), h('button', { class: 'btn sm', onclick: () => baixarDocx(p, d) }, 'Word (.docx)'), h('button', { class: 'btn sm', onclick: () => baixarPdf(p, d) }, 'PDF'), h('button', { class: 'btn sm ghost', onclick: () => pdf(p, d) }, 'Imprimir'));
 
   // ------------------------------------------------------------ saída (etapa 15)
   V.saida = (p) => {
@@ -46,7 +67,8 @@
         area.appendChild(h('div', { class: 'paper', html: R.html(D.relatorio(p, S.produtos())) }));
       } else {
         cat.forEach((d) => area.appendChild(h('div', { class: 'card', style: d.on ? '' : 'opacity:.5' }, h('h3', {}, d.nome), h('p', { class: 'small' }, d.desc + (d.on ? '' : ' Disponível após a homologação.')), d.on ? V.docBotoes(p, d) : null)));
-        area.appendChild(h('p', { class: 'small' }, 'O PDF abre a janela de impressão do navegador: escolha "Salvar como PDF". O Word é gerado no formato .docx.'));
+        area.appendChild(V.pacote(p));
+        area.appendChild(h('p', { class: 'small' }, 'Word (.docx) e PDF são baixados como arquivo. "Imprimir" abre a impressão do navegador, se preferir.'));
       }
     };
     const opts = [['word', 'Modelo Word e PDF', 'Documentos para baixar'], ['visual', 'Versão visual com layout', 'Relatório formatado na tela'], ['texto', 'Texto formatado', 'Para colar em e-mail ou sistema']];
@@ -80,9 +102,14 @@
     const rej = ps.filter((p) => p.status === 'reprovado');
     const g = h('div', { class: 'grid g2' });
     g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Atenção agora'), alertas.length ? h('div', {}, alertas.slice(0, 8).map(([p, t]) => h('div', { class: 'alert warn' }, h('b', {}, h('a', { href: '#/produto/' + p.id }, p.nome)), t))) : h('p', { class: 'muted' }, 'Nenhum alerta aberto.')));
-    const porClasse = {}; ps.filter((p) => ['homologado', 'condicionado'].includes(p.status)).forEach((p) => { const k = p.imdg.classe || 'Não regulado'; porClasse[k] = (porClasse[k] || 0) + 1; });
+    const porClasse = {}; ps.filter((p) => ['homologado', 'condicionado'].includes(p.status)).forEach((p) => { const k = p.imdg.classe || 'nr'; porClasse[k] = (porClasse[k] || 0) + 1; });
     const mx = Math.max(1, ...Object.values(porClasse));
-    g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Homologados por classe de risco ', U.disc('PSM')), Object.keys(porClasse).length ? Object.keys(porClasse).sort().map((k) => h('div', { class: 'row', style: 'margin:4px 0' }, h('span', { style: 'width:90px' }, k), h('div', { style: 'flex:1;background:#0b1222;border-radius:6px;height:18px' }, h('div', { style: 'height:100%;border-radius:6px;background:var(--sky);width:' + (porClasse[k] / mx * 100) + '%' })), h('b', {}, porClasse[k]))) : h('p', { class: 'muted' }, 'Sem produtos homologados.')));
+    const totalHom = Object.values(porClasse).reduce((a, n) => a + n, 0);
+    g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Produtos homologados por classe de risco ', U.disc('PSM')),
+      h('p', { class: 'small' }, 'Classe de risco ONU/IMDG do transporte (Seção 14 da FDS). Cada barra conta quantos produtos homologados pertencem à classe.'),
+      Object.keys(porClasse).length ? Object.keys(porClasse).sort().map((k) => h('div', { style: 'margin:8px 0' },
+        h('div', { class: 'row', style: 'justify-content:space-between' }, h('span', {}, k === 'nr' ? 'Não regulado para transporte' : 'Classe ' + k + ' | ' + T.classeNome(k)), h('b', {}, porClasse[k] + (porClasse[k] === 1 ? ' produto' : ' produtos'))),
+        h('div', { style: 'background:#0b1222;border-radius:6px;height:12px;margin-top:3px' }, h('div', { style: 'height:100%;border-radius:6px;background:var(--sky);width:' + (porClasse[k] / mx * 100) + '%' })))).concat([h('p', { class: 'small' }, 'Total: ' + totalHom + (totalHom === 1 ? ' produto homologado' : ' produtos homologados') + '.')]) : h('p', { class: 'muted' }, 'Sem produtos homologados.')));
     g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Reprovados por critério interno'), rej.length ? h('table', { class: 't' }, h('tbody', {}, rej.slice(0, 8).map((p) => h('tr', {}, h('td', {}, h('a', { href: '#/produto/' + p.id }, p.nome)), h('td', {}, E.triagem(p).criticos.map((c) => c.tipo).filter((x, i, a) => a.indexOf(x) === i).join(', ') || 'outro motivo'))))) : h('p', { class: 'muted' }, 'Nenhum produto reprovado.')));
     g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Locais de armazenamento ', U.disc('PSM')), S.locais().length ? S.locais().map((l) => { const a = E.auditoriaLocal(l, ps); const crit = a.pares.filter((x) => x.motivos.length || ['2', '3', '4'].includes(x.codigo)).length; return h('div', { class: 'row', style: 'margin:6px 0' }, h('a', { href: '#/locais' }, l.nome), h('span', { class: 'muted' }, a.itens.length + ' itens'), crit ? U.badge('warn', crit + ' par(es) a revisar') : U.badge('ok', 'sem pares críticos')); }) : h('p', { class: 'muted' }, 'Cadastre os locais em "Locais".')));
     root.appendChild(g);
@@ -139,6 +166,7 @@
         h('p', { class: 'small' }, 'Este produto contra cada produto homologado: matriz de segregação por classe (NR-29 e IMDG) mais reatividade pela Seção 10 da FDS. Classes: ' + (E.classesDoProduto(p).join(' e ') || 'não informada') + '.'),
         V.resumoCompat(p, outros), V.tabelaCompat(p, outros)));
     } else if (tab === 'docs') {
+      root.appendChild(V.pacote(p));
       V.catalogo(p).forEach((d) => root.appendChild(h('div', { class: 'card', style: d.on ? '' : 'opacity:.5' }, h('h3', {}, d.nome), h('p', { class: 'small' }, d.desc + (d.on ? '' : ' Disponível após a homologação.')), d.on ? V.docBotoes(p, d) : null)));
     } else {
       const link = D.linkRegistro(p);
@@ -183,7 +211,7 @@
     const p = S.produto(id);
     const d = p && V.catalogo(p).find((x) => x.id === tipo);
     if (!p || !d) { root.appendChild(h('div', { class: 'empty' }, 'Documento não encontrado.')); return; }
-    root.appendChild(head(d.nome, p.nome, h('a', { class: 'btn ghost', href: '#/produto/' + p.id + '/docs' }, 'Voltar'), h('button', { class: 'btn', onclick: () => baixarDocx(p, d) }, 'Word (.docx)'), h('button', { class: 'btn ghost', onclick: () => pdf(p, d) }, 'PDF')));
+    root.appendChild(head(d.nome, p.nome, h('a', { class: 'btn ghost', href: '#/produto/' + p.id + '/docs' }, 'Voltar'), h('button', { class: 'btn', onclick: () => baixarDocx(p, d) }, 'Word (.docx)'), h('button', { class: 'btn', onclick: () => baixarPdf(p, d) }, 'PDF'), h('button', { class: 'btn ghost', onclick: () => pdf(p, d) }, 'Imprimir')));
     root.appendChild(h('div', { class: 'paper', html: R.html(d.fn()) }));
   };
 
@@ -320,7 +348,7 @@
     const L = O.LOGO.lockup;
     const pilar = (disc, titulo, itens) => h('div', { class: 'pilar ' + disc.toLowerCase() }, h('div', { class: 'row' }, U.disc(disc), h('h3', { style: 'margin:0' }, titulo)), h('ul', {}, itens.map((i) => h('li', {}, i))));
     root.appendChild(h('div', { class: 'cv' },
-      h('header', { class: 'cv-nav' }, h('span', { html: O.Pic.logo(36) }), h('b', {}, 'QUIM 360'), h('span', { class: 'spacer' }), h('a', { href: '#/painel' }, 'Painel'), h('a', { href: '#/produtos' }, 'Produtos'), h('a', { href: '#/legal' }, 'Base técnico-legal')),
+      h('header', { class: 'cv-nav' }, h('span', { html: O.Pic.wordmark(46) }), h('b', {}, 'QUIM 360'), h('span', { class: 'spacer' }), h('a', { href: '#/painel' }, 'Painel'), h('a', { href: '#/produtos' }, 'Produtos'), h('a', { href: '#/legal' }, 'Base técnico-legal')),
       h('section', { class: 'cv-hero' },
         h('div', { class: 'cv-txt' },
           h('p', { class: 'cv-eyebrow' }, 'Orbit 360 | Gestão de produtos químicos'),

@@ -14,7 +14,7 @@ Abrir `quim360/index.html` por um servidor estático (ex.: `python3 -m http.serv
 - **Rejeição automática**: cancerígeno, mutagênico, teratogênico e PFC/PFAS, por frases H, CAS da lista de alerta e marcação do analista. Marcar "Nenhum" não anula evidência encontrada.
 - **Via simplificada**: nunca dispensa FDS própria, triagem, IMDG, segregação no local real, pareceres e registro próprio. Divergência relevante a encerra.
 - **Matriz de segregação** (Anexo da NR-29 / IMDG) e grupos de reatividade da Seção 10, aplicados ao local de armazenamento e à auditoria do local.
-- **Documentos em Word (.docx) e PDF**: relatório de homologação, ficha de emergência, rotulagem (GHS e rótulos de risco), envelope de transporte e checklist de treinamento. O envelope segue a estrutura da ABNT NBR 7503 (face do envelope e ficha de emergência), a validar contra o texto licenciado da norma. O PDF usa a impressão do navegador ("Salvar como PDF").
+- **Documentos em Word (.docx) e PDF** (arquivos gerados direto, mais pacote .zip com tudo): relatório de homologação, plano de ação, ficha de emergência, rotulagem (GHS e rótulos de risco), envelope de transporte e checklist de treinamento. O envelope segue a estrutura da ABNT NBR 7503 (face do envelope e ficha de emergência), a validar contra o texto licenciado da norma.
 
 ## Base técnico-legal
 

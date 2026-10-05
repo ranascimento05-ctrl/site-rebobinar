@@ -11,7 +11,7 @@
   function shell() {
     root.innerHTML = '';
     side = h('aside', { class: 'side', id: 'side' },
-      h('a', { class: 'brand', href: '#/', style: 'text-decoration:none' }, h('span', { html: O.Pic.logo(44) }), h('div', {}, h('b', {}, 'QUIM 360'), h('span', {}, 'Orbit 360 | Produtos químicos'))),
+      h('a', { class: 'brand', href: '#/', style: 'text-decoration:none', 'aria-label': 'QUIM 360 | Orbit 360' }, h('span', { html: O.Pic.wordmark(76) }), h('div', {}, h('b', {}, 'QUIM 360'), h('span', {}, 'Produtos químicos'))),
       h('nav', { class: 'nav', 'aria-label': 'Principal' }, NAV.map((n) => (n === '-' ? h('div', { class: 'sep' }) : h('a', { href: n[0], 'data-h': n[0] }, U.icon(n[2]), n[1])))),
       h('p', { class: 'small', style: 'padding:12px 8px' }, 'Os dados ficam neste navegador. Exporte em Configurações para backup.'));
     main = h('main', { class: 'main', id: 'main' });

@@ -211,11 +211,19 @@
     return L.join('\n');
   }
 
+  // download: tenta o clique direto; se o navegador ou o visualizador bloquear, mostra um link manual
   function baixar(blob, nome) {
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = nome;
-    document.body.appendChild(a); a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    a.href = url; a.download = nome; a.rel = 'noopener';
+    document.body.appendChild(a);
+    try { a.click(); } catch (e) { /* segue para o link manual */ }
+    a.remove();
+    const aviso = document.createElement('div');
+    aviso.className = 'toast'; aviso.setAttribute('role', 'status');
+    aviso.innerHTML = 'Arquivo gerado: <a href="' + url + '" download="' + nome + '" target="_blank" rel="noopener">' + nome + '</a>. Se o download não iniciou, clique no nome do arquivo.';
+    document.body.appendChild(aviso);
+    setTimeout(() => { aviso.remove(); URL.revokeObjectURL(url); }, 20000);
   }
 
   O.Render = { html, docx, text, printPdf, baixar, DOC_CSS, esc };

@@ -6,7 +6,7 @@
   const DEFAULT_CFG = {
     organizacao: '',
     responsavel: 'Roberto Almeida do Nascimento',
-    registro: 'CREA-PE 1816474835',
+    registro: '',
     email: 'ranascimento05@gmail.com',
     telEmergencia: '',
     anosValidadeFDS: 5,
@@ -23,6 +23,7 @@
       mem = raw ? JSON.parse(raw) : blank();
     } catch (e) { mem = blank(); }
     mem.config = { ...DEFAULT_CFG, ...(mem.config || {}) };
+    if (/CREA-PE\s*1816474835/.test(mem.config.registro || '')) mem.config.registro = '';
     mem.produtos = mem.produtos || []; mem.locais = mem.locais || [];
     return mem;
   }

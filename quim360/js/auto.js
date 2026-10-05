@@ -112,7 +112,6 @@
     impactos: (p) => p.fds.analisada && p.ocup.risco !== null && p.amb.risco !== null,
     imdg: (p) => p.fds.analisada && !['1', '6.2', '7'].includes(p.imdg.classe) && (p.imdg.naoRegulado || (p.imdg.onu && p.imdg.classe)),
     compat: (p) => p.fds.analisada && p.comp.localOk === 'sim' && p.comp._motor !== 'conflito',
-    plano: () => true,
   };
 
   function resumo(p, id) {

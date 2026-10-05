@@ -68,6 +68,7 @@
   // Logo oficial Orbit 360: recortes da arte original (data/logo.js)
   function logo(size) { const L = O.LOGO.mark; const s = size || 40; return `<img src="${L.src}" width="${s}" height="${s}" alt="Orbit 360" style="display:block;border-radius:8px">`; }
   function lockup(h) { const L = O.LOGO.lockup; const hh = h || 90; return `<img src="${L.src}" height="${hh}" width="${Math.round(hh * L.w / L.h)}" alt="Orbit 360 | Consultoria em SSMA" style="display:block">`; }
+  function wordmark(h) { const L = O.LOGO.wordmark; const hh = h || 48; return `<img src="${L.src}" height="${hh}" width="${Math.round(hh * L.w / L.h)}" alt="Orbit 360 | Consultoria em SSMA" style="display:block;border-radius:4px">`; }
   function dataBytes(key) {
     const src = O.LOGO[key].src; const bin = atob(src.split(',')[1]); const u = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u;
@@ -93,5 +94,5 @@
     });
   }
 
-  O.Pic = { ghs, transporte, painel, qr, logo, lockup, dataBytes, svgToPng };
+  O.Pic = { ghs, transporte, painel, qr, logo, lockup, wordmark, dataBytes, svgToPng };
 })(window.O360 = window.O360 || {});

@@ -323,6 +323,58 @@
     return B;
   }
 
+  // ---------------------------------------------------------------- Plano de ação
+  function planoAcao(p, produtos) {
+    const av = E.avaliar(p, produtos);
+    const ok = ['homologado', 'condicionado'].includes(p.status);
+    const lim = cfg().anosValidadeFDS;
+    const linhas = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    const A = [];
+    const add = (acao, origem, resp, prazo, sit) => { if (acao && !A.some((x) => x[1] === acao)) A.push([String(A.length + 1), acao, origem, resp || '', prazo || '', sit || 'A fazer']); };
+    const st = D_STATUS(p);
+    if (p.status === 'reprovado') {
+      av.reprovacoes.forEach((r) => add('Comunicar a reprovação ao solicitante e ao fornecedor. Motivo: ' + r.replace(/^Critério interno \(GHS\): /, ''), 'Etapa 13 | Decisão', 'Responsável técnico', '', 'A fazer'));
+      add('Buscar produto substituto sem cancerígeno, mutagênico, teratogênico ou PFC e iniciar nova homologação', 'Hierarquia de controle: substituição', 'Solicitante', '', 'A fazer');
+      add('Manter o registro de reprovação no cadastro de produtos', 'Rastreabilidade', 'Responsável técnico', '', 'A fazer');
+    }
+    av.pendencias.forEach((x) => add(x, 'Pendência da análise', 'Responsável técnico', '', 'Pendente'));
+    av.condicionantes.forEach((x) => add(x, 'Condicionante de liberação', 'Responsável técnico', '', 'Pendente'));
+    if (p.par.pgrIndicador === 'requer') add('Atualizar o PGR e o Inventário de Riscos com este produto antes da liberação de uso', 'NR-01 | Etapa 12', p.par.pgrResponsavel, p.par.pgrPrazo ? fmtData(p.par.pgrPrazo) : '', 'Pendente');
+    if (p.hig.dosimetria === true) add('Realizar a avaliação quantitativa (dosimetria ou varredura) antes da liberação de uso', 'NR-15 | Etapa 9.3', 'Higiene Ocupacional', '', 'Pendente');
+    if (ok) {
+      linhas(p.ocup.subst).forEach((x) => add('Substituição: ' + x, 'Etapa 8a | SST', 'Solicitante / SST', 'Antes da liberação'));
+      linhas(p.ocup.eng).forEach((x) => add('Controle de engenharia: ' + x, 'Etapa 8a | SST', 'Gestor da área', 'Antes da liberação'));
+      linhas(p.ocup.adm).forEach((x) => add('Controle administrativo: ' + x, 'Etapa 8a | SST', 'Gestor da área / SST', 'Antes da liberação'));
+      linhas(p.ocup.epi).forEach((x) => add('EPI: ' + x, 'Etapa 8a | SST', 'Gestor da área', 'Antes do primeiro uso'));
+      linhas(p.amb.contencao).forEach((x) => add('Contenção: ' + x, 'Etapa 8b | GA', 'Gestor do local', 'Antes do primeiro recebimento'));
+      linhas(p.amb.derramamento).forEach((x) => add('Resposta a derramamento: ' + x, 'Etapa 8b | GA', 'Gestor do local', 'Antes do primeiro recebimento'));
+      linhas(p.amb.residuos).forEach((x) => add('Resíduos: ' + x, 'Etapa 8b | GA', 'Meio ambiente', 'Antes do primeiro uso'));
+      (p.comp.controles || []).filter((x) => x !== 'nenhum').forEach((x) => add('Armazenamento: ' + ctrlNome(x), 'Etapa 11.3 | PSM', 'Gestor do local', 'Antes do primeiro recebimento'));
+      if (p.comp.limite) add('Fixar e controlar o estoque máximo de ' + p.comp.limite, 'Etapa 11.3 | PSM', 'Gestor do local', 'Antes do primeiro recebimento');
+      if (p.comp.tempMax) add('Garantir temperatura de armazenamento até ' + p.comp.tempMax, 'Seção 7 da FDS | PSM', 'Gestor do local', 'Antes do primeiro recebimento');
+      if (p.comp.localOk === 'conflito') add('Implantar a segregação física ou o local alternativo: ' + (p.comp.observacoes || 'conforme matriz'), 'Etapa 11.2 | PSM', 'Gestor do local', 'Antes do primeiro recebimento', 'Pendente');
+      const n20 = E.nr20(p);
+      if (n20.aplica) add('NR-20: verificar a classificação da instalação, as áreas classificadas, o aterramento e o prontuário (' + n20.categoria + ')', 'NR-20 | PSM', 'Segurança de processo', 'Antes do primeiro recebimento');
+      add('Rotular recipientes e frações conforme o GHS (NBR 14725) e a NR-26', 'Rotulagem', 'Gestor do local', 'Antes do primeiro uso');
+      add('Disponibilizar a FDS em português no ponto de uso e no local de armazenamento', 'NR-26', 'Gestor do local', 'Antes do primeiro uso');
+      if (p.trein.gerar !== false) add('Treinar a equipe com o checklist de treinamento e arquivar a lista de presença', 'Etapa 14 | SST', 'SST / Gestor da área', 'Antes do primeiro uso');
+      add('Disponibilizar a ficha de emergência e o kit de derramamento no local de armazenamento', 'ABIQUIM | NBR 7503', 'Gestor do local', 'Antes do primeiro uso');
+      if (p.imdg.classe) add('Usar o envelope e a ficha de emergência em todo transporte do produto', 'NBR 7503 | ANTT 5.947/21', 'Logística', 'Em cada transporte');
+      add('Cadastrar o produto na lista de homologados e fixar o QR Code no local de armazenamento', 'Etapa 13 | Rastreabilidade', 'Responsável técnico', 'Na homologação');
+      if (p.fds.dataRevisao) { const d = new Date(p.fds.dataRevisao); d.setFullYear(d.getFullYear() + lim); add('Solicitar nova versão da FDS ao fornecedor', 'ABNT NBR 14725', 'Compras / SST', fmtData(d.toISOString())); }
+    }
+    if (p.status === 'pendente' || (!A.length && p.status === 'em_analise')) add('Registrar o retorno do fornecedor ou do parecer e retomar a análise na etapa pendente', 'Pendência da análise', 'Responsável técnico', '', 'Pendente');
+    const B = [];
+    B.push(capa('Plano de ação', 'QUIM 360 | Plano de Ação | ' + nz(p.nome), p, [['Situação do produto', st[0]]]));
+    B.push({ t: 'callout', tone: st[1], title: 'Situação: ' + st[0], text: p.status === 'condicionado' ? 'Uso liberado somente após as ações marcadas como pendentes.' : p.status === 'homologado' ? 'Ações para colocar o produto em uso com os controles definidos na análise.' : p.status === 'reprovado' ? 'Produto reprovado: ações de encerramento e substituição.' : 'Análise sem decisão: ações para destravar a homologação.' });
+    B.push({ t: 'h1', text: 'Ações' });
+    B.push({ t: 'table', head: ['Nº', 'Ação', 'Origem', 'Responsável', 'Prazo', 'Situação'], widths: [5, 37, 15, 13, 18, 12], rows: A.length ? A : [['1', 'Sem ações geradas', '', '', '', '']] });
+    B.push({ t: 'p', small: true, text: 'Responsáveis e prazos em branco devem ser definidos pelo responsável técnico. Os prazos marcados como "antes de" valem a partir da liberação do uso.' });
+    B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico'], ['Aprovação da gestão', '']] });
+    return B;
+  }
+  function D_STATUS(p) { return STATUS[p.status] || STATUS.em_analise; }
+
   // ---------------------------------------------------------------- Solicitação ao fornecedor
   function solicitacaoFornecedor(p, motivos) {
     return 'Assunto: Solicitação de FDS corrigida: ' + nz(p.nome) + '\n\n' +
@@ -330,5 +382,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { STATUS, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { STATUS, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

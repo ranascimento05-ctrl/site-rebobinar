@@ -507,7 +507,8 @@
     plano: {
       render(p) {
         const w = h('div');
-        w.appendChild(U.q(14, 'Deseja gerar checklist de treinamento para manuseio, armazenamento e descarte?'));
+        w.appendChild(U.alert('ok', 'O plano de ação será gerado', 'Ele lista as ações para colocar o produto em uso: controles, armazenamento, rotulagem, treinamento, PGR e revisão da FDS, com origem, responsável e prazo.'));
+        w.appendChild(U.q(14, 'Deseja gerar também o checklist de treinamento para manuseio, armazenamento e descarte?'));
         w.appendChild(U.radio(p, 'trein.gerar', SIMNAO));
         w.appendChild(U.alert('', null, 'O checklist usa os controles de manuseio (8a), de armazenamento (11.3), de descarte (8b) e de emergência (Seções 4 a 6 da FDS).'));
         return w;
