@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>DDS - Luvas nitrílicas</title>
+<style>
+html,body{margin:0;background:#000;overflow:hidden}
+#wrap{position:relative;width:1280px;height:720px;font-family:'Liberation Sans','DejaVu Sans',Arial,sans-serif;overflow:hidden}
+canvas{display:block}
+#badge{position:absolute;left:22px;top:18px;background:#0b3d63;color:#fff;padding:8px 16px;border-radius:6px;font-weight:700;font-size:20px;letter-spacing:1px;opacity:.95}
+#cap{position:absolute;left:0;right:0;bottom:0;padding:60px 56px 26px;background:linear-gradient(rgba(5,20,35,0),rgba(5,20,35,.9) 55%);color:#fff;font-size:33px;font-weight:700;line-height:1.22;text-shadow:0 2px 4px #000;opacity:0;transition:none}
+#cap small{display:block;font-size:23px;font-weight:400;color:#cfe4f5;margin-top:6px}
+#cap .n{display:inline-block;background:#f28c1b;color:#111;border-radius:50%;width:44px;height:44px;line-height:44px;text-align:center;margin-right:14px;font-size:28px}
+#title{position:absolute;inset:0;background:rgba(6,28,48,.72);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:0;padding:0 80px}
+#title .k{font-size:26px;letter-spacing:4px;color:#ffb347;font-weight:700}
+#title .h{font-size:60px;font-weight:800;line-height:1.1;margin:18px 0 14px}
+#title .s{font-size:30px;color:#cfe4f5}
+#alert{position:absolute;inset:0;border:14px solid #e02424;box-sizing:border-box;opacity:0;pointer-events:none}
+#alertbox{position:absolute;left:50%;top:70px;transform:translateX(-50%);background:#e02424;color:#fff;font-weight:800;font-size:40px;padding:14px 34px;border-radius:10px;opacity:0;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+#check{position:absolute;inset:0;background:rgba(6,28,48,.80);color:#fff;opacity:0;padding:50px 80px;box-sizing:border-box}
+#check h2{margin:0 0 22px;font-size:46px;color:#ffb347}
+#check li{list-style:none;font-size:31px;font-weight:700;margin:0 0 17px;opacity:0;display:flex;align-items:flex-start}
+#check li b{display:inline-block;flex:none;width:40px;height:40px;border-radius:50%;background:#22a45d;color:#fff;text-align:center;line-height:40px;margin-right:16px;font-size:26px}
+#check ul{padding:0;margin:0}
+#end{position:absolute;inset:0;background:#0b3d63;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:0}
+#end .h{font-size:64px;font-weight:800}
+#end .s{font-size:32px;color:#ffb347;margin-top:16px}
+</style></head>
+<body><div id="wrap">
+<div id="badge">DDS · LUVAS NITRÍLICAS</div>
+<div id="cap"></div>
+<div id="alert"></div><div id="alertbox">⚠ RESPINGOU? TROQUE AS LUVAS!</div>
+<div id="title"><div class="k">DDS · DIÁLOGO DIÁRIO DE SEGURANÇA</div><div class="h">Luvas nitrílicas na coleta de amostras em tanque de combustível</div><div class="s">Proteja suas mãos. Proteja sua saúde.</div></div>
+<div id="check"><h2>Resumo para a equipe</h2><ul>
+<li><b>✓</b><span>Luva nitrílica com CA válido, compatível com o produto (FISPQ)</span></li>
+<li><b>✓</b><span>Inspecione antes e durante o uso: furos, rasgos, ressecamento</span></li>
+<li><b>✓</b><span>Contato com o produto? Troque na hora</span></li>
+<li><b>✓</b><span>Retire pelo avesso e descarte em coletor de resíduo contaminado</span></li>
+<li><b>✓</b><span>Lave as mãos depois. Nunca use combustível ou solvente na pele</span></li>
+<li><b>✓</b><span>A luva não substitui os outros EPIs, a APR e a PT</span></li>
+</ul></div>
+<div id="end"><div class="h">Pense. Proteja-se. Colete com segurança.</div><div class="s">Dúvidas? Fale com a SST antes de iniciar a coleta.</div></div>
+</div>
+<script src="three.min.js"></script>
+<script>
+const W=1280,H=720,V3=THREE.Vector3;
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const sstep=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
+const lerp=(a,b,u)=>a+(b-a)*u;
+
+/* ---------- renderer / scene ---------- */
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+renderer.setSize(W,H);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+document.getElementById('wrap').prepend(renderer.domElement);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0xa9d6ef);scene.fog=new THREE.Fog(0xa9d6ef,45,140);
+const cam=new THREE.PerspectiveCamera(40,W/H,0.05,300);
+scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f7a,1.0));
+const sun=new THREE.DirectionalLight(0xfff1d6,2.4);sun.position.set(12,26,10);sun.target.position.set(0,7,1);
+sun.castShadow=true;sun.shadow.mapSize.set(4096,4096);
+Object.assign(sun.shadow.camera,{left:-16,right:16,top:16,bottom:-16,near:1,far:80});sun.shadow.bias=-0.0004;
+scene.add(sun,sun.target);
+
+const std=(c,r=.7,m=0,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:r,metalness:m},o));
+function mesh(geo,mat,x=0,y=0,z=0,recv=false){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=recv;return m}
+const box=(w,h,d,mat,x,y,z)=>mesh(new THREE.BoxGeometry(w,h,d),mat,x,y,z);
+const cyl=(rt,rb,h,mat,x,y,z,seg=24,open=false)=>mesh(new THREE.CylinderGeometry(rt,rb,h,seg,1,open),mat,x,y,z);
+const sph=(r,mat,x,y,z)=>mesh(new THREE.SphereGeometry(r,20,14),mat,x,y,z);
+
+const M={
+ orange:std(0xf26a1b,.8),pants:std(0x1f3a5f,.9),skin:std(0xc98b63,.7),helmet:std(0xffffff,.35),
+ stripe:std(0xe8eef2,.25,.5),boot:std(0x222222,.8),dark:std(0x15181c,.4),
+ glove:std(0x1f66ea,.28),yellow:std(0xf2c200,.6),steel:std(0xcfd6db,.45,.35),
+ amber:std(0xd98a1a,.15,0,{transparent:true,opacity:.92}),
+ glass:std(0xdff3ff,.05,0,{transparent:true,opacity:.28,depthWrite:false})
+};
+const handMats=[std(0xc98b63,.6),std(0xc98b63,.6)];
+const SKIN=new THREE.Color(0xc98b63),BLUE=new THREE.Color(0x1f66ea);
+
+/* ---------- ambiente ---------- */
+const ground=mesh(new THREE.PlaneGeometry(260,260),std(0x9b9c94,.95),0,0,0,true);ground.rotation.x=-Math.PI/2;ground.castShadow=false;scene.add(ground);
+const dike=mesh(new THREE.CylinderGeometry(10,10,.7,64,1,true),std(0xb9b9b2,.9),0,.35,0);dike.material.side=THREE.DoubleSide;scene.add(dike);
+const dikeFloor=mesh(new THREE.CircleGeometry(10,64),std(0x8d8e86,.95),0,.02,0,true);dikeFloor.rotation.x=-Math.PI/2;dikeFloor.castShadow=false;scene.add(dikeFloor);
+
+const TANK_H=6.8,ROOF_Y=7.0;
+const tank=cyl(5,5,TANK_H,std(0xeef1f3,.45,.2),0,TANK_H/2,0,96);tank.receiveShadow=true;scene.add(tank);
+for(const y of[1.7,3.4,5.1]){scene.add(cyl(5.02,5.02,.06,std(0x9aa5ad,.5),0,y,0,96))}
+const roof=cyl(5.12,5.12,.22,std(0xb9c3ca,.6,.2),0,ROOF_Y-.11,0,96);roof.receiveShadow=true;scene.add(roof);
+// letreiro do tanque
+(function(){
+ const c=document.createElement('canvas');c.width=1050;c.height=500;const g=c.getContext('2d');
+ g.fillStyle='#f4f6f7';g.fillRect(0,0,1050,500);
+ g.fillStyle='#c81e1e';g.fillRect(0,0,1050,90);
+ g.fillStyle='#fff';g.font='bold 56px Liberation Sans, Arial';g.textAlign='center';g.fillText('TQ-12 · COMBUSTÍVEL',525,66);
+ g.fillStyle='#111';g.font='bold 76px Liberation Sans, Arial';g.fillText('INFLAMÁVEL',525,230);
+ g.font='bold 40px Liberation Sans, Arial';g.fillText('Proibido fogo e faíscas',525,300);
+ // losango NFPA
+ g.save();g.translate(525,395);g.rotate(Math.PI/4);
+ const q=[['#d62828',-45,-45],['#2a5bd7',-95+50,-45+0],['#f2c200',-45,5],['#f4f6f7',5,5]];
+ g.fillStyle='#d62828';g.fillRect(-48,-48,46,46);g.fillStyle='#2a5bd7';g.fillRect(-48+50,-48,46,46)
+ g.fillStyle='#f2c200';g.fillRect(-48,2,46,46);g.fillStyle='#f4f6f7';g.fillRect(2,2,46,46);g.restore();
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=8;
+ const th=.75,len=Math.PI/3;
+ scene.add(new THREE.Mesh(new THREE.CylinderGeometry(5.025,5.025,2.5,48,1,true,th-len/2,len),new THREE.MeshStandardMaterial({map:tex,roughness:.6})));
+ const lab=scene.children[scene.children.length-1];lab.position.y=3.6;
+})();
+// outros tanques
+for(const [x,z,h,r] of[[-26,-8,9,7],[24,-14,8,6],[-18,-30,8,6],[10,-34,10,7]]){
+ scene.add(cyl(r,r,h,std(0xe6e9ec,.5,.2),x,h/2,z,48));scene.add(cyl(r+.1,r+.1,.25,std(0xb0bac1,.6),x,h+.1,z,48));
+}
+// tubulação
+const pipeM=std(0x4b5560,.5,.4);
+for(let i=0;i<3;i++){const p=cyl(.14,.14,60,pipeM,0,.5+i*.32,-14-i*.4,12);p.rotation.z=Math.PI/2;scene.add(p)}
+
+// escada helicoidal
+const stairM=std(0x6c7a85,.5,.5),railM=M.yellow;
+const NS=36,TH0=-4.2;
+const railIn=[],railOut=[];
+for(let i=0;i<=NS;i++){
+ const th=TH0+(0-TH0)*i/NS,y=.15+(ROOF_Y-.15)*i/NS,R=5.6;
+ if(i<NS){const s=box(.9,.05,.62,stairM,R*Math.sin(th),y,R*Math.cos(th));s.rotation.y=th;scene.add(s)}
+ railOut.push(new V3(6.0*Math.sin(th),y+1.0,6.0*Math.cos(th)));
+ if(i%3===0){scene.add(cyl(.025,.025,1.0,railM,6.0*Math.sin(th),y+.5,6.0*Math.cos(th),8))}
+}
+scene.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(railOut),120,.028,8),railM));
+scene.add(box(1.0,.06,1.2,stairM,0,ROOF_Y-.03,5.5)); // patamar
+// guarda-corpo do teto
+function arcTube(R,y,a0,a1,mat){const pts=[];for(let i=0;i<=40;i++){const a=a0+(a1-a0)*i/40;pts.push(new V3(R*Math.sin(a),y,R*Math.cos(a)))}
+ scene.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),60,.028,8),mat))}
+const gap=.17;
+arcTube(4.9,ROOF_Y+1.05,gap,2*Math.PI-gap,railM);arcTube(4.9,ROOF_Y+.55,gap,2*Math.PI-gap,railM);
+for(let a=gap;a<=2*Math.PI-gap+1e-3;a+=.16){scene.add(cyl(.028,.028,1.05,railM,4.9*Math.sin(a),ROOF_Y+.52,4.9*Math.cos(a),8))}
+// escotilha de amostragem
+const HATCH=new V3(0,ROOF_Y,0),HATCH_H=.9;
+scene.add(cyl(.34,.34,.08,M.steel,0,ROOF_Y+.04,0,32));
+const pipeMat=std(0x8f9aa3,.45,.5);pipeMat.side=THREE.DoubleSide;
+scene.add(cyl(.2,.2,HATCH_H,pipeMat,0,ROOF_Y+HATCH_H/2,0,32,true));
+const holeDisc=mesh(new THREE.CircleGeometry(.19,24),M.dark,0,ROOF_Y+.35,0);holeDisc.rotation.x=-Math.PI/2;holeDisc.castShadow=false;scene.add(holeDisc);
+scene.add(cyl(.235,.235,.05,M.steel,0,ROOF_Y+HATCH_H,0,32));
+const capHinge=new THREE.Group();capHinge.position.set(0,ROOF_Y+HATCH_H+.03,-.26);scene.add(capHinge);
+capHinge.add(cyl(.26,.26,.035,std(0x6e7a84,.4,.6),0,.01,.26,32));
+const handle=mesh(new THREE.TorusGeometry(.045,.012,8,16),M.dark,0,.05,.46);handle.rotation.y=Math.PI/2;capHinge.add(handle);
+// ponto de aterramento
+const post=new THREE.Group();post.position.set(.5,ROOF_Y,2.6);scene.add(post);
+post.add(cyl(.05,.05,1.0,std(0x1c8a3a,.5),0,.5,0,12));
+for(let k=0;k<4;k++)post.add(cyl(.0505,.0505,.12,M.yellow,0,.15+k*.24,0,12));
+post.add(box(.22,.12,.02,M.dark,0,1.12,0));
+post.add(mesh(new THREE.SphereGeometry(.06,12,10),std(0x9aa5ad,.3,.8),0,1.03,0));
+// mesa de amostras
+const table=new THREE.Group();table.position.set(-.6,ROOF_Y,.8);scene.add(table);
+table.add(box(.7,.05,.42,std(0x7a5b36,.7),0,.68,0));
+for(const [dx,dz] of[[-.3,-.17],[.3,-.17],[-.3,.17],[.3,.17]])table.add(box(.04,.66,.04,M.steel,dx,.33,dz));
+table.add(box(.22,.14,.16,std(0xf2c200,.6),-.14,.78,0));table.add(box(.221,.04,.161,M.dark,-.14,.78,0));
+// coletor de resíduo contaminado
+const bin=new THREE.Group();bin.position.set(.58,ROOF_Y,.8);scene.add(bin);
+const binMat=std(0xf2c200,.55);binMat.side=THREE.DoubleSide;
+bin.add(cyl(.2,.17,.55,binMat,0,.275,0,24,true));
+const binIn=mesh(new THREE.CircleGeometry(.19,24),M.dark,0,.34,0);binIn.rotation.x=-Math.PI/2;binIn.castShadow=false;bin.add(binIn);
+bin.add(cyl(.205,.205,.05,std(0xc81e1e,.5),0,.55,0,24,true));
+bin.add(box(.2,.12,.01,std(0xffffff,.5),0,.25,.2));
+
+/* ---------- trabalhador ---------- */
+const arms=[];
+function buildWorker(){
+ const root=new THREE.Group();root.rotation.y=Math.PI;
+ const legs=[];
+ for(const s of[-1,1]){const hip=new THREE.Group();hip.position.set(s*.12,.87,0);
+  hip.add(box(.17,.8,.19,M.pants,0,-.4,0));hip.add(box(.19,.1,.3,M.boot,0,-.82,.05));root.add(hip);legs.push(hip)}
+ const torso=new THREE.Group();torso.position.y=.87;root.add(torso);
+ torso.add(box(.4,.14,.24,M.pants,0,.05,0));
+ torso.add(box(.5,.6,.26,M.orange,0,.34,0));
+ torso.add(box(.51,.05,.27,M.stripe,0,.24,0));torso.add(box(.51,.05,.27,M.stripe,0,.44,0));
+ torso.add(cyl(.05,.05,.08,M.skin,0,.68,0,10));
+ torso.add(sph(.15,M.skin,0,.82,0));
+ const hel=mesh(new THREE.SphereGeometry(.17,24,12,0,Math.PI*2,0,Math.PI/2),M.helmet,0,.86,0);torso.add(hel);
+ torso.add(cyl(.2,.2,.02,M.helmet,0,.865,.02,24));
+ torso.add(box(.27,.05,.04,std(0x0b2036,.2,0,{transparent:true,opacity:.75}),0,.83,.145));
+ for(const s of[-1,1]){
+  const sh=new THREE.Group();sh.position.set(s*.31,.57,0);torso.add(sh);
+  sh.add(cyl(.06,.055,.3,M.orange,0,-.15,0,12));
+  sh.add(sph(.065,M.orange,0,0,0));
+  const el=new THREE.Group();el.position.y=-.3;sh.add(el);
+  el.add(cyl(.055,.05,.28,M.orange,0,-.14,0,12));
+  const cuff=cyl(.058,.058,.1,M.glove,0,-.31,0,16);cuff.scale.y=0.001;el.add(cuff);
+  const hand=new THREE.Group();hand.position.y=-.38;el.add(hand);
+  const hm=handMats[s>0?1:0];
+  const hs=sph(.058,hm,0,0,0);hs.scale.set(1,1.2,.75);hand.add(hs);
+  const th=sph(.028,hm,s*.05,.01,.025);hand.add(th);
+  const stain=sph(.05,std(0xd98a1a,.1,0,{emissive:0x7a4300,emissiveIntensity:.5}),0,-.01,.04);stain.scale.set(1,.55,.5);stain.visible=false;hand.add(stain);
+  arms.push({sh,el,hand,cuff,stain,s,torso,L1:.3,L2:.38});
+ }
+ return {root,legs,torso};
+}
+const worker=buildWorker();scene.add(worker.root);
+const armR=arms.find(a=>a.s<0),armL=arms.find(a=>a.s>0); // R: lado +x do mundo
+const Yd=new V3(0,-1,0),_q=new THREE.Quaternion();
+function solveArm(a,targetW){
+ a.torso.updateWorldMatrix(true,false);
+ const d=a.torso.worldToLocal(targetW.clone()).sub(a.sh.position);
+ const {L1,L2}=a;let D=d.length();D=clamp(D,Math.abs(L1-L2)+.03,L1+L2-.004);
+ const dir=d.normalize();
+ const A=Math.acos(clamp((L1*L1+D*D-L2*L2)/(2*L1*D),-1,1));
+ const pole=new V3(a.s*.6,-1,-.25);pole.addScaledVector(dir,-pole.dot(dir));pole.normalize();
+ const u=dir.clone().multiplyScalar(Math.cos(A)).addScaledVector(pole,Math.sin(A));
+ a.sh.quaternion.setFromUnitVectors(Yd,u);
+ const f=dir.clone().multiplyScalar(D).addScaledVector(u,-L1).normalize();
+ _q.copy(a.sh.quaternion).invert();f.applyQuaternion(_q);
+ a.el.quaternion.setFromUnitVectors(Yd,f);
+}
+
+/* ---------- acessórios ---------- */
+const bailer=new THREE.Group();scene.add(bailer);
+bailer.add(mesh(new THREE.CylinderGeometry(.04,.04,.5,16,1,true),M.glass,0,-.25,0));
+const liquid=mesh(new THREE.CylinderGeometry(.032,.032,.46,16),M.amber,0,-.25,0);bailer.add(liquid);
+bailer.add(cyl(.045,.045,.03,M.dark,0,.0,0,16));bailer.add(cyl(.03,.045,.04,M.dark,0,-.51,0,16));
+bailer.visible=false;
+const ropeGeo=new THREE.BufferGeometry().setFromPoints([new V3(),new V3(0,1,0)]);
+const rope=new THREE.Line(ropeGeo,new THREE.LineBasicMaterial({color:0x111111}));rope.frustumCulled=false;scene.add(rope);rope.visible=false;
+const bottle=new THREE.Group();scene.add(bottle);
+bottle.add(mesh(new THREE.CylinderGeometry(.045,.045,.13,20),M.glass,0,0,0));
+bottle.add(cyl(.02,.03,.04,M.glass,0,.085,0,16));bottle.add(cyl(.024,.024,.03,std(0xffffff,.4),0,.12,0,16));
+const bLiq=mesh(new THREE.CylinderGeometry(.04,.04,.12,20),M.amber,0,0,0);bottle.add(bLiq);
+bottle.add(box(.092,.05,.092,std(0xffffff,.5),0,0,0)).scale.set(1,1,1);
+bottle.visible=false;
+const stream=cyl(.007,.007,1,M.amber,0,0,0,8);stream.visible=false;scene.add(stream);
+const drop=sph(.014,M.amber,0,0,0);drop.visible=false;scene.add(drop);
+const gloveProps=[0,1].map(i=>{const g=sph(.05,i?std(0x2a4ca8,.3):std(0x1f66ea,.3),0,0,0);g.scale.set(1,.55,1);g.visible=false;scene.add(g);return g});
+
+/* ---------- linha do tempo ---------- */
+const T=54;
+function track(keys,t,lin){
+ if(t<=keys[0][0])return keys[0][1];
+ for(let i=1;i<keys.length;i++)if(t<=keys[i][0]){const [t0,v0]=keys[i-1],[t1,v1]=keys[i];const u=(t-t0)/(t1-t0);return v0+(v1-v0)*(lin?u:sstep(u))}
+ return keys[keys.length-1][1];
+}
+function vtrack(keys,t){
+ if(t<=keys[0][0])return keys[0][1]();
+ for(let i=1;i<keys.length;i++)if(t<=keys[i][0]){const [t0,f0]=keys[i-1],[t1,f1]=keys[i];return f0().lerp(f1(),sstep((t-t0)/(t1-t0)))}
+ return keys[keys.length-1][1]();
+}
+const Lc=(x,y,z)=>()=>worker.root.localToWorld(new V3(x,y,z));
+const Wc=(x,y,z)=>()=>new V3(x,y,z);
+const capF=()=>{capHinge.updateWorldMatrix(true,false);return capHinge.localToWorld(new V3(0,.05,.5))};
+const restR=Lc(-.32,.85,.04),restL=Lc(.32,.85,.04);
+const keyR=[[0,restR],[6.8,restR],[7.9,Wc(.5,8.02,2.6)],[9.0,Wc(.5,8.02,2.6)],[10,Lc(-.2,1.15,.38)],[12,Lc(-.2,1.2,.4)],[16.2,Lc(-.2,1.2,.42)],
+ [17,restR],[19.0,restR],[19.9,Lc(-.25,1.05,.3)],[20.6,Wc(.14,8.5,.2)],[28.0,Wc(.14,8.5,.2)],[29.3,Wc(.3,8.55,.36)],[31.6,Wc(.3,8.55,.36)],[32.3,Wc(.3,8.5,.3)],
+ [32.9,capF],[33.9,capF],[34.8,Lc(-.25,1.1,.35)],[36.6,Lc(-.2,1.15,.4)],[38.0,Lc(-.1,1.1,.4)],[38.9,Wc(.58,7.95,.82)],[39.8,Wc(.58,7.95,.82)],[40.6,Lc(-.2,1.15,.4)],[42.5,restR]];
+const keyL=[[0,restL],[10,Lc(.2,1.15,.38)],[12,Lc(.2,1.2,.4)],[16.2,Lc(.2,1.2,.42)],[17,restL],[18.6,restL],
+ [19.3,capF],[20.4,capF],[21.3,Wc(-.12,8.15,.28)],[28.0,Wc(-.12,8.15,.28)],[28.9,Wc(.3,7.82,.4)],[32.0,Wc(.3,7.82,.4)],
+ [33.7,Wc(-.5,7.95,.8)],[34.5,Wc(-.5,7.95,.8)],[35.4,Lc(.22,1.25,.45)],[37.0,Lc(.22,1.25,.45)],[38.0,Lc(.1,1.1,.4)],[39.0,Lc(.25,.9,.2)],[40.6,Lc(.2,1.15,.4)],[42.5,restL]];
+const keyZ=[[0,5.8],[1,5.8],[6.6,2.9],[16.5,2.9],[19.0,0.85]];
+const keyLean=[[0,0],[18.8,0],[19.6,.3],[33.0,.3],[33.8,.55],[34.8,.55],[35.5,0],[37.3,0],[38.1,.25],[39.7,.25],[40.4,0]];
+const keyCap=[[0,0],[19.4,0],[20.5,-1.75],[32.8,-1.75],[33.9,0]];
+const keyGlove=[[0,0],[10.9,0],[11.9,1],[37.9,1],[38.4,0],[40.1,0],[40.9,1]];
+
+const camP=[[0,[15,11.5,17]],[4,[11,11.5,13.5]],[7.2,[4.6,9.0,6.0]],[8.4,[2.4,8.6,3.2]],[9.8,[1.0,8.7,1.4]],[16.4,[.4,8.6,1.15]],
+ [17.6,[3.0,8.6,2.0]],[18.6,[2.6,8.5,1.8]],[33.5,[-1.6,8.9,-1.0]],[35.2,[-.7,8.55,-.5]],[41.6,[-.7,8.55,-.5]],[43.5,[7,10.5,9]],[54,[9,11,13]]];
+const camQ=[[0,[0,5.2,1]],[4,[0,7.5,2]],[7.2,[.2,8.1,2.8]],[8.4,[.3,8.3,2.8]],[9.8,[0,8.3,2.8]],[16.4,[0,8.25,2.65]],
+ [17.6,[0,8.2,1.5]],[18.6,[0,8.2,.9]],[33.5,[0,8.2,.5]],[35.2,[0,8.25,.5]],[41.6,[0,8.25,.5]],[43.5,[0,7.8,.8]],[54,[0,6.5,1]]];
+const ktv=(ks)=>ks.map(([t,v])=>[t,()=>new V3(...v)]);
+const camPK=ktv(camP),camQK=ktv(camQ);
+
+const state={bailerPos:new V3()};
+function setT(t){
+ // raiz
+ const z=track(keyZ,t);worker.root.position.set(0,ROOF_Y,z);
+ const z2=track(keyZ,t+.06),z0=track(keyZ,t-.06);const speed=Math.abs(z2-z0)/.12;
+ const amp=clamp(speed*3,0,1),phase=(5.8-z)*5.5;
+ worker.legs[0].rotation.x=Math.sin(phase)*.5*amp;worker.legs[1].rotation.x=-Math.sin(phase)*.5*amp;
+ worker.torso.rotation.x=track(keyLean,t);
+ worker.root.updateMatrixWorld(true);
+ // tampa
+ capHinge.rotation.x=track(keyCap,t);capHinge.updateMatrixWorld(true);
+ // luvas
+ const ga=track(keyGlove,t);
+ for(const a of arms){a.cuff.scale.y=Math.max(.001,sstep(ga*1.0));a.cuff.visible=ga>.01;
+  handMats[a.s>0?1:0].color.copy(SKIN).lerp(BLUE,sstep(ga));}
+ const stainOn=(t>=32.3&&t<38.2);armL.stain.visible=stainOn;
+ // mãos
+ let tr=vtrack(keyR,t),tl=vtrack(keyL,t);
+ const sw=Math.sin(phase)*.14*amp;tr.z+=0; // balanço
+ tr.add(worker.root.localToWorld(new V3(0,0,sw)).sub(worker.root.position));
+ tl.add(worker.root.localToWorld(new V3(0,0,-sw)).sub(worker.root.position));
+ const wig=sstep((t-12.2)/.5)*(1-sstep((t-16)/.5));
+ tr.add(new V3(Math.sin(t*3.1)*.05,Math.cos(t*2.3)*.04,0).multiplyScalar(wig));
+ tl.add(new V3(-Math.sin(t*2.7)*.05,Math.cos(t*3.3)*.04,0).multiplyScalar(wig));
+ const rope1=sstep((t-21.2)/.2)*(1-sstep((t-28.4)/.2)); // mão-sobre-mão
+ const hh=(sstep((t-21.2)/.5)*(1-sstep((t-24.3)/.5)))+(sstep((t-25)/.5)*(1-sstep((t-28)/.5)));
+ tr.y+=Math.sin(t*7.5)*.07*hh;tl.y+=Math.sin(t*7.5+Math.PI)*.07*hh;
+ solveArm(armR,tr);solveArm(armL,tl);
+ scene.updateMatrixWorld(true);
+ const hR=armR.hand.getWorldPosition(new V3()),hL=armL.hand.getWorldPosition(new V3());
+ // amostrador
+ const ell=track([[20.6,.35],[21.3,.35],[24.3,1.55],[25.0,1.55],[28.2,.38]],t,true);
+ const hangPos=new V3(0,hR.y-ell,0);
+ const carry=sstep((t-28.1)/1.1);
+ const heldPos=hR.clone().add(new V3(0,.02,0));
+ const bp=hangPos.clone().lerp(heldPos,carry);
+ const bOn=t>=20.6&&t<32.3;
+ bailer.visible=bOn;bailer.position.copy(bp);
+ const fill=sstep((t-24.3)/.9)*(1-sstep((t-29.5)/2.0));
+ liquid.scale.y=Math.max(.02,fill);liquid.position.y=-.5+.23*Math.max(.02,fill)+.02;
+ rope.visible=bOn&&carry<.7;
+ { const p=ropeGeo.attributes.position;p.setXYZ(0,hR.x,hR.y,hR.z);p.setXYZ(1,bp.x,bp.y,bp.z);p.needsUpdate=true; }
+ // frasco
+ const bAppear=t>=28.8&&t<35.4;
+ bottle.visible=t>=28.8;
+ const tableSpot=new V3(-.5,ROOF_Y+.7+.065,.8);
+ const toTable=sstep((t-34.2)/.6);
+ bottle.position.copy(hL.clone().add(new V3(0,.09,0)).lerp(tableSpot,toTable));
+ const bfill=sstep((t-29.6)/2.0);bLiq.scale.y=Math.max(.02,bfill);bLiq.position.y=-.06+.06*Math.max(.02,bfill)*1.0;
+ // fio de líquido
+ const pouring=t>=29.6&&t<31.7;
+ stream.visible=pouring;
+ if(pouring){const tip=bailer.localToWorld(new V3(0,-.53,0)),mouth=bottle.position.clone().add(new V3(0,.1,0));
+  const len=Math.max(.01,tip.y-mouth.y);stream.scale.y=len;stream.position.set(tip.x,tip.y-len/2,tip.z);}
+ // gota
+ const dp=(t-31.7)/.5;drop.visible=dp>0&&dp<1;
+ if(drop.visible){const a=bottle.position.clone().add(new V3(.05,.0,.02)),b=hL.clone().add(new V3(0,.06,.03));drop.position.lerpVectors(a,b,dp*dp);}
+ // luvas descartadas
+ const gp=t>=38.35&&t<39.95;
+ gloveProps.forEach((g,i)=>{g.visible=gp;if(gp){const base=hR.clone().add(new V3(i*.04-.02,.03,.04));
+  const fall=sstep((t-39.1)/.6);base.y-=fall*.35;g.position.copy(base);}});
+ // câmera
+ const cp=vtrack(camPK,t),cq=vtrack(camQK,t);
+ const w=sstep((t-18.4)/1.4)*(1-sstep((t-33.2)/1.6));
+ if(w>0){const f=new V3(0,8.2,.35),phi=lerp(112,82,sstep((t-19)/15))*Math.PI/180,r=2.3;
+  const op=new V3(f.x+r*Math.sin(phi),f.y+.5,f.z+r*Math.cos(phi));cp.lerp(op,w);cq.lerp(f,w);}
+ cam.position.copy(cp);cam.lookAt(cq);renderer.render(scene,cam);
+ overlays(t);
+}
+
+/* ---------- textos ---------- */
+const $=id=>document.getElementById(id);
+const fade=(t,a,b,f=.35)=>sstep((t-a)/f)*(1-sstep((t-(b-f))/f));
+const caps=[
+ [4.4,7.4,'Antes de coletar, confirme o EPI completo: capacete, óculos, calçado antiestático, vestimenta e luvas.'],
+ [7.6,10.0,'<span class="n">1</span>Descarregue a estática: toque no ponto de aterramento, ainda sem luvas.'],
+ [10.2,12.4,'<span class="n">2</span>Luva nitrílica, com CA válido e compatível com o produto.<small>Descartável protege de respingos. Contato prolongado exige luva mais espessa: confira a FISPQ.</small>'],
+ [12.5,16.6,'<span class="n">3</span>Inspecione: furos, rasgos, ressecamento e validade.<small>Punho cobrindo o pulso e a manga. Na dúvida, descarte e troque.</small>'],
+ [16.9,19.0,'Aproxime-se da escotilha com firmeza, mãos livres e corpo estável.'],
+ [19.3,21.0,'Abra a escotilha com o rosto afastado: os vapores são inflamáveis e tóxicos.'],
+ [21.3,28.0,'<span class="n">4</span>Desça e recolha o amostrador devagar.<small>A luva é a barreira entre o produto e a sua pele.</small>'],
+ [28.6,32.0,'Transfira para o frasco sem respingar e identifique a amostra.'],
+ [32.4,34.0,'Feche a escotilha e guarde a amostra.'],
+ [37.5,40.0,'<span class="n">5</span>Retire as luvas pelo avesso, sem tocar a parte externa. Descarte no coletor de resíduo contaminado.'],
+ [40.2,42.8,'Calce luvas novas e íntegras. Descartável não se reutiliza.']
+];
+function overlays(t){
+ let c=null;for(const [a,b,h] of caps)if(t>=a&&t<b){c=[a,b,h];break}
+ const cap=$('cap');if(c){if(cap.dataset.h!==c[2]){cap.innerHTML=c[2];cap.dataset.h=c[2]}cap.style.opacity=fade(t,c[0],c[1])}else cap.style.opacity=0;
+ $('title').style.opacity=t<4.4?(t<.3?sstep(t/.3):1-sstep((t-3.7)/.7)):0;
+ const al=fade(t,34.2,37.4,.4);$('alertbox').style.opacity=al;
+ $('alert').style.opacity=al*(.55+.45*Math.sin(t*9));
+ const ck=fade(t,43.2,51.6,.6);$('check').style.opacity=ck;
+ const lis=document.querySelectorAll('#check li');lis.forEach((li,i)=>li.style.opacity=sstep((t-(44.2+i*1.15))/.4));
+ $('end').style.opacity=sstep((t-51.4)/.6);
+ $('badge').style.opacity=t<4?0:(t>43?0:.95);
+}
+window.setT=setT;window.ready=true;setT(0);
+</script></body></html>
