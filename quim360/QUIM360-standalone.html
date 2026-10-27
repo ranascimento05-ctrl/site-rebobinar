@@ -190,6 +190,19 @@ input:focus,select:focus,textarea:focus,.btn:focus-visible,.opt:focus-within{out
 .mx.nm td.r{background:#b91c1c;color:#fff}.mx.nm td.g{background:#4d7c0f;color:#fff}.mx.nm td.y{background:#facc15;color:#1f2937}
 .code.nm-r{background:#b91c1c}.code.nm-g{background:#4d7c0f}.code.nm-y{background:#facc15;color:#1f2937;font-size:11px}
 
+/* quadro visual de compatibilidade */
+.cq{border-collapse:separate;border-spacing:3px;font-size:12px}
+.cq th{color:var(--sky2);font-weight:700;padding:4px 6px;white-space:nowrap}
+.cq th.rl{text-align:left;max-width:240px;overflow:hidden;text-overflow:ellipsis;position:sticky;left:0;background:var(--panel)}
+.cq td{min-width:38px;height:34px;text-align:center;font-weight:700;border-radius:6px;cursor:pointer;padding:0 4px}
+.cq td.cq-r{background:var(--crit);color:#fff}.cq td.cq-y{background:var(--warn);color:#1f1300}.cq td.cq-g{background:var(--ok);color:#052e22}.cq td.cq-n{background:#475569;color:#fff}.cq td.cq-s{background:#0b1222;color:var(--sub);cursor:default}
+.cq td.hl{outline:2px solid #fff}
+.cq-leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin:8px 0;font-size:12px;color:var(--txt2)}
+.cq-leg span{display:inline-flex;gap:6px;align-items:center}
+.cq-leg i{font-style:normal;font-weight:700;min-width:30px;height:22px;display:grid;place-items:center;border-radius:5px;padding:0 5px}
+.cq-leg i.cq-r{background:var(--crit);color:#fff}.cq-leg i.cq-y{background:var(--warn);color:#1f1300}.cq-leg i.cq-g{background:var(--ok);color:#052e22}.cq-leg i.cq-n{background:#475569;color:#fff}
+.cq-grupo{background:#0b1222;border:1px solid var(--line2);border-radius:10px;padding:10px 12px}.cq-grupo ul{margin:6px 0 0 16px;padding:0}
+
 </style>
 <style id="doc-css"></style>
 </head>
@@ -23257,6 +23270,8 @@ var vfs = {
  "solvente": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 12/03/2025\nVersão: 3\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Solvente de limpeza SL-30 (demonstração)\nFabricante: Química Exemplo Ltda.\nTelefone de emergência: 0800 000 0000\nCódigo do produto: DEMO-001\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Líquidos inflamáveis categoria 2; Irritação ocular categoria 2A; Toxicidade para órgãos-alvo categoria 3.\nPalavra de advertência: Perigo\nPictogramas: GHS02, GHS07\nFrases de perigo: H225 Líquido e vapores altamente inflamáveis. H319 Provoca irritação ocular grave. H336 Pode provocar sonolência ou vertigem.\nFrases de precaução: P210 P233 P240 P241 P261 P280 P305+P351+P338 P370+P378 P403+P235 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nMistura.\nAcetato de etila - CAS 141-78-6 - 60 a 80 %\nIsopropanol - CAS 67-63-0 - 10 a 20 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: remova a pessoa para local ventilado e mantenha em repouso.\nContato com a pele: lave com água e sabão em abundância.\nContato com os olhos: enxágue com água por 15 minutos e retire lentes de contato.\nIngestão: não provoque vômito; procure atendimento médico.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nMeios de extinção: espuma resistente a álcool, pó químico e dióxido de carbono. Não usar jato d'água direto.\nPerigos: vapores formam mistura explosiva com o ar e podem se deslocar até fonte de ignição.\nProteção dos bombeiros: aparelho de respiração autônomo e roupa de combate a incêndio.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nEliminar fontes de ignição e isolar a área. Conter com material absorvente inerte (areia, vermiculita). Não descartar em rede pluvial ou corpos d'água. Usar ferramentas antifaiscantes.\n\nSEÇÃO 7 - Manuseio e armazenamento\nManuseio: aterrar recipientes na transferência, evitar o acúmulo de vapores, usar em local ventilado.\nArmazenamento: local fresco, ventilado e ao abrigo do sol, longe de fontes de ignição. Incompatível com oxidantes fortes, ácidos fortes e bases fortes.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nControle de engenharia: exaustão local.\nProteção respiratória: respirador com filtro para vapores orgânicos.\nLuvas: nitrila.\nOlhos: óculos de ampla visão.\nLimites de exposição: acetato de etila TLV-TWA 400 ppm (ACGIH); NR-15: 310 ppm.\n\nSEÇÃO 9 - Propriedades físicas e químicas\nEstado físico: líquido. Cor: incolor. Ponto de fulgor: 8 °C (vaso fechado). pH: não aplicável.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstabilidade: estável nas condições recomendadas.\nMateriais a evitar: agentes oxidantes fortes, ácidos fortes e bases fortes. Evitar calor, faíscas e chamas.\n\nSEÇÃO 11 - Informações toxicológicas\nToxicidade aguda: baixa. Irritante para os olhos. Vapores podem causar narcose.\n\nSEÇÃO 12 - Informações ecológicas\nTóxico para organismos aquáticos em altas concentrações. Não são esperados efeitos persistentes.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nDestinar como resíduo perigoso conforme ABNT NBR 10004 em incinerador licenciado. Embalagens vazias devem ser tríplice lavadas.\n\nSEÇÃO 14 - Informações sobre transporte\nTerrestre (ANTT 5.947/21): Número ONU: 1993\nNome apropriado para embarque: LÍQUIDO INFLAMÁVEL, N.E. (acetato de etila, isopropanol)\nClasse de risco: 3\nGrupo de embalagem: II\nNúmero de risco: 33\nMarítimo (IMDG): Classe 3, Grupo de embalagem II, EmS F-E, S-D. Não é poluente marinho.\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n",
  "benzeno": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 05/06/2019\nVersão: 3\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Desengraxante DX-BZ (demonstração)\nFabricante: Química Exemplo Ltda.\nTelefone de emergência: 0800 000 0000\nCódigo do produto: DEMO-001\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Líquidos inflamáveis categoria 2; Carcinogenicidade categoria 1A; Mutagenicidade categoria 1B; Toxicidade para órgãos-alvo - exposição repetida categoria 1.\nPalavra de advertência: Perigo\nPictogramas: GHS02, GHS08\nFrases de perigo: H225 H304 H315 H319 H340 H350 H372\nFrases de precaução: P201 P210 P280 P308+P313 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nMistura.\nBenzeno - CAS 71-43-2 - 1 a 5 %\nNafta solvente - CAS 64742-48-9 - 90 a 99 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: ar fresco. Pele: lavar com água e sabão. Olhos: enxaguar por 15 minutos. Ingestão: não provocar vômito.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nEspuma, pó químico, CO2. Evitar jato d'água direto.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nIsolar a área, eliminar ignição, absorver com material inerte.\n\nSEÇÃO 7 - Manuseio e armazenamento\nArmazenar em local ventilado, longe de ignição. Incompatível com oxidantes fortes.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nExaustão local. Respirador com filtro para vapores orgânicos. Luvas de nitrila.\n\nSEÇÃO 9 - Propriedades físicas e químicas\nLíquido incolor. Ponto de fulgor: 12 °C.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstável. Materiais a evitar: agentes oxidantes fortes.\n\nSEÇÃO 11 - Informações toxicológicas\nContém benzeno, carcinogênico para humanos.\n\nSEÇÃO 12 - Informações ecológicas\nTóxico para organismos aquáticos.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nResíduo perigoso, incineração licenciada.\n\nSEÇÃO 14 - Informações sobre transporte\nNúmero ONU: 1993\nNome apropriado para embarque: LÍQUIDO INFLAMÁVEL, N.E. (nafta, benzeno)\nClasse de risco: 3\nGrupo de embalagem: II\nNúmero de risco: 33\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n",
  "gasolina": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 10/02/2025\nVersão: 2\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Gasolina automotiva (demonstração)\nFabricante: Distribuidora Exemplo S.A.\nTelefone de emergência: 0800 000 0000\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Líquidos inflamáveis categoria 1; Mutagenicidade categoria 1B; Carcinogenicidade categoria 1B; Toxicidade à reprodução categoria 2; Perigo por aspiração categoria 1; Corrosão/irritação à pele categoria 2; Toxicidade para órgãos-alvo exposição única categoria 3; Perigoso ao ambiente aquático crônico categoria 2.\nPalavra de advertência: Perigo\nPictogramas: GHS02, GHS07, GHS08, GHS09\nFrases de perigo: H224 Líquido e vapores extremamente inflamáveis. H304 Pode ser fatal se ingerido e penetrar nas vias respiratórias. H315 Provoca irritação à pele. H336 Pode provocar sonolência ou vertigem. H340 Pode provocar defeitos genéticos. H350 Pode provocar câncer. H361d Suspeito de prejudicar o feto. H411 Tóxico para os organismos aquáticos, com efeitos prolongados.\nFrases de precaução: P201 P210 P233 P240 P243 P273 P280 P301+P310 P331 P308+P313 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nMistura de hidrocarbonetos.\nGasolina (nafta de petróleo) - CAS 86290-81-5 - 70 a 100 %\nBenzeno - CAS 71-43-2 - até 1 %\nTolueno - CAS 108-88-3 - 5 a 25 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: remova a pessoa para local ventilado, mantenha em repouso e procure atendimento médico.\nContato com a pele: retire a roupa contaminada e lave com água e sabão em abundância.\nContato com os olhos: enxágue com água por 15 minutos.\nIngestão: não provoque vômito; risco de aspiração; procure atendimento médico imediato.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nMeios de extinção: espuma resistente a álcool, pó químico e dióxido de carbono. Não usar jato d'água direto.\nPerigos: vapores mais pesados que o ar podem se deslocar até fonte de ignição e retornar. Risco de explosão de recipientes.\nProteção dos bombeiros: aparelho de respiração autônomo e roupa de combate a incêndio.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nEliminar fontes de ignição e isolar a área. Conter com diques e absorver com material inerte. Evitar chegada a drenagem pluvial, solo e corpos d'água. Usar ferramentas antifaiscantes e equipamento aterrado.\n\nSEÇÃO 7 - Manuseio e armazenamento\nManuseio: aterrar equipamentos na transferência, evitar acúmulo de vapores, usar sistema fechado quando possível.\nArmazenamento: tanques adequados à NBR 17505, em local ventilado, longe de fontes de ignição. Incompatível com oxidantes fortes. Temperatura de armazenamento até 40 °C.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nControle de engenharia: sistema fechado de transferência e exaustão local.\nProteção respiratória: respirador com filtro para vapores orgânicos.\nLuvas: nitrila ou fluorelastômero.\nOlhos: óculos de ampla visão.\nLimites de exposição: benzeno VRT-MPT 1 ppm (NR-15 Anexo 13-A); tolueno TLV-TWA 20 ppm (ACGIH).\n\nSEÇÃO 9 - Propriedades físicas e químicas\nEstado físico: líquido. Cor: incolor a amarelada. Ponto de fulgor: -43 °C (vaso fechado). pH: não aplicável.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstável nas condições recomendadas. Materiais a evitar: agentes oxidantes fortes. Evitar calor, faíscas e chamas.\n\nSEÇÃO 11 - Informações toxicológicas\nContém benzeno, carcinogênico e mutagênico para humanos. A inalação de vapores pode causar sonolência. Aspiração pode causar pneumonite química.\n\nSEÇÃO 12 - Informações ecológicas\nTóxico para organismos aquáticos, com efeitos prolongados. Não deve atingir corpos d'água.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nDestinar como resíduo perigoso conforme ABNT NBR 10004 em unidade licenciada.\n\nSEÇÃO 14 - Informações sobre transporte\nTerrestre (ANTT 5.947/21): Número ONU: 1203\nNome apropriado para embarque: GASOLINA\nClasse de risco: 3\nGrupo de embalagem: II\nNúmero de risco: 33\nMarítimo (IMDG): Classe 3, Grupo de embalagem II, EmS F-E, S-E. Poluente marinho: Não.\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725, NR-20 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n",
+ "hipoclorito": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 14/05/2025\nVersão: 2\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Hipoclorito de sódio 12 % (demonstração)\nFabricante: Química Exemplo Ltda.\nTelefone de emergência: 0800 000 0000\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Corrosivo para os metais categoria 1; Corrosão cutânea categoria 1B; Perigoso ao ambiente aquático agudo categoria 1.\nPalavra de advertência: Perigo\nPictogramas: GHS05, GHS09\nFrases de perigo: H290 Pode ser corrosivo para os metais. H314 Provoca queimaduras graves na pele e lesões oculares graves. H400 Muito tóxico para os organismos aquáticos.\nFrases de precaução: P260 P273 P280 P303+P361+P353 P305+P351+P338 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nSolução aquosa.\nHipoclorito de sódio - CAS 7681-52-9 - 10 a 15 %\nHidróxido de sódio - CAS 1310-73-2 - menos de 2 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: ar fresco. Pele: lavar com água abundante por 15 minutos. Olhos: enxaguar por 15 minutos e procurar médico. Ingestão: enxaguar a boca, não provocar vômito.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nProduto não combustível. Usar meios de extinção adequados ao fogo circundante. Em contato com ácidos libera cloro.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nConter e absorver com material inerte. Não misturar com ácidos. Evitar chegada a drenagem pluvial e corpos d'água.\n\nSEÇÃO 7 - Manuseio e armazenamento\nArmazenar em recipiente original, fechado, ao abrigo da luz e do calor. Incompatível com ácidos, amônia e aminas, metais e materiais orgânicos combustíveis. Temperatura de armazenamento até 30 °C.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nLuvas de PVC ou neoprene, óculos de ampla visão, protetor facial e avental.\n\nSEÇÃO 9 - Propriedades físicas e químicas\nLíquido amarelo esverdeado. Ponto de fulgor: não aplicável. pH: 12.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstável nas condições recomendadas. Materiais a evitar: ácidos, amônia e aminas, metais, agentes redutores e materiais orgânicos combustíveis. Libera cloro em contato com ácidos.\n\nSEÇÃO 11 - Informações toxicológicas\nCorrosivo para pele e olhos.\n\nSEÇÃO 12 - Informações ecológicas\nMuito tóxico para organismos aquáticos.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nNeutralizar e destinar conforme legislação aplicável.\n\nSEÇÃO 14 - Informações sobre transporte\nNúmero ONU: 1791\nNome apropriado para embarque: HIPOCLORITO EM SOLUÇÃO\nClasse de risco: 8\nGrupo de embalagem: III\nNúmero de risco: 80\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n",
+ "acido": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 02/11/2024\nVersão: 2\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Ácido clorídrico 33 % (demonstração)\nFabricante: Química Exemplo Ltda.\nTelefone de emergência: 0800 000 0000\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Corrosivo para os metais categoria 1; Corrosão cutânea categoria 1B; Toxicidade para órgãos-alvo exposição única categoria 3.\nPalavra de advertência: Perigo\nPictogramas: GHS05, GHS07\nFrases de perigo: H290 Pode ser corrosivo para os metais. H314 Provoca queimaduras graves na pele e lesões oculares graves. H335 Pode provocar irritação das vias respiratórias.\nFrases de precaução: P260 P264 P280 P303+P361+P353 P304+P340 P305+P351+P338 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nSolução aquosa.\nCloreto de hidrogênio - CAS 7647-01-0 - 30 a 35 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: ar fresco e repouso. Pele: lavar com água abundante por 15 minutos. Olhos: enxaguar por 15 minutos e procurar médico. Ingestão: enxaguar a boca, não provocar vômito.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nProduto não combustível. Em contato com metais libera hidrogênio inflamável.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nConter com diques e neutralizar resíduos com cautela. Evitar chegada a drenagem pluvial e corpos d'água.\n\nSEÇÃO 7 - Manuseio e armazenamento\nArmazenar em recipiente resistente à corrosão, fechado, em local ventilado. Incompatível com bases, hipocloritos, cianetos e sulfetos, metais e agentes oxidantes. Temperatura de armazenamento até 35 °C.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nLuvas de PVC ou neoprene, óculos de ampla visão, protetor facial, avental e respirador para gases ácidos.\n\nSEÇÃO 9 - Propriedades físicas e químicas\nLíquido incolor a amarelado. Ponto de fulgor: não aplicável. pH: menor que 1.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstável. Materiais a evitar: bases, hipocloritos, cianetos, sulfetos, metais e agentes oxidantes. Libera hidrogênio com metais.\n\nSEÇÃO 11 - Informações toxicológicas\nCorrosivo para pele, olhos e vias respiratórias.\n\nSEÇÃO 12 - Informações ecológicas\nNocivo para organismos aquáticos por alteração do pH.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nNeutralizar e destinar conforme legislação aplicável.\n\nSEÇÃO 14 - Informações sobre transporte\nNúmero ONU: 1789\nNome apropriado para embarque: ÁCIDO CLORÍDRICO\nClasse de risco: 8\nGrupo de embalagem: II\nNúmero de risco: 80\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n",
  "alcalino": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 20/08/2024\nVersão: 3\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Limpador alcalino LA-12 (demonstração)\nFabricante: Química Exemplo Ltda.\nTelefone de emergência: 0800 000 0000\nCódigo do produto: DEMO-001\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Corrosivo para os metais categoria 1; Corrosão cutânea categoria 1B; Lesões oculares graves categoria 1.\nPalavra de advertência: Perigo\nPictogramas: GHS05\nFrases de perigo: H290 Pode ser corrosivo para os metais. H314 Provoca queimaduras graves na pele e lesões oculares graves.\nFrases de precaução: P260 P264 P280 P301+P330+P331 P303+P361+P353 P305+P351+P338 P310 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nSolução aquosa.\nHidróxido de potássio - CAS 1310-58-3 - 20 a 30 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: ar fresco. Pele: retirar roupa contaminada e lavar com água abundante por 15 minutos. Olhos: enxaguar por 15 minutos e procurar médico. Ingestão: enxaguar a boca, não provocar vômito.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nMeios de extinção adequados ao fogo circundante. Em contato com metais pode liberar hidrogênio.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nConter com diques e absorver com material inerte. Neutralizar resíduos com cautela. Evitar chegada a drenagem pluvial.\n\nSEÇÃO 7 - Manuseio e armazenamento\nArmazenar em recipiente original, fechado, em local fresco e seco. Incompatível com ácidos, metais leves (alumínio, zinco) e agentes oxidantes.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nLuvas de PVC ou neoprene, óculos de ampla visão, protetor facial, avental. Lava-olhos e chuveiro de emergência no local.\n\nSEÇÃO 9 - Propriedades físicas e químicas\nLíquido incolor. Ponto de fulgor: não aplicável. pH: 14.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstável. Materiais a evitar: ácidos fortes, alumínio, zinco, agentes oxidantes. Reage violentamente com ácidos.\n\nSEÇÃO 11 - Informações toxicológicas\nCorrosivo para pele, olhos e vias respiratórias.\n\nSEÇÃO 12 - Informações ecológicas\nNocivo para organismos aquáticos por alteração do pH.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nNeutralizar e destinar conforme legislação aplicável.\n\nSEÇÃO 14 - Informações sobre transporte\nNúmero ONU: 1814\nNome apropriado para embarque: HIDRÓXIDO DE POTÁSSIO EM SOLUÇÃO\nClasse de risco: 8\nGrupo de embalagem: II\nNúmero de risco: 80\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n"
 }; })(window.O360 = window.O360 || {});
 
@@ -23604,6 +23619,18 @@ var vfs = {
     return { codigo: r.codigo, par: r.par, motivos: r.motivos, nivel: r.nivel, metros: r.metros, acao };
   }
   const NIVEL = { incompativel: 'Proibido', restricao: 'Com restrição', verificar: 'Verificar', livre: 'Permitido' };
+  // Agrupa produtos que podem dividir o mesmo setor de armazém (todos os pares permitidos, sem restrição)
+  function gruposCompativeis(lista) {
+    const base = lista.filter((x) => x.armazenamento !== 'granel');
+    const conflitos = (a) => base.filter((b) => b.id !== a.id && compatPar(a, b).nivel !== 'livre').length;
+    const ordenados = base.slice().sort((a, b) => conflitos(b) - conflitos(a));
+    const grupos = [];
+    ordenados.forEach((p) => {
+      const g = grupos.find((gr) => gr.every((q) => compatPar(p, q).nivel === 'livre'));
+      if (g) g.push(p); else grupos.push([p]);
+    });
+    return grupos;
+  }
   function homologados(produtos) { return (produtos || []).filter((x) => ['homologado', 'condicionado'].includes(x.status)); }
 
   // ---------- Sugestões prontas (hierarquia de controles) ----------
@@ -23750,7 +23777,7 @@ var vfs = {
     return r;
   }
 
-  O.Engine = { novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});
 
 </script>
@@ -24707,6 +24734,118 @@ var vfs = {
   }
   function D_STATUS(p) { return STATUS[p.status] || STATUS.em_analise; }
 
+  // ---------------------------------------------------------------- Relatório da análise da FDS
+  function analiseFds(p, produtos) {
+    const av = E.avaliar(p, produtos);
+    const st = STATUS[av.sugestao] || STATUS.em_analise;
+    const idade = E.idadeFds(p);
+    const B = [];
+    B.push(capa('Relatório da análise da FDS', 'QUIM 360 | Análise da FDS | ' + fmtData(new Date().toISOString()) + ' | ' + nz(p.nome), p, [['Natureza', p.natureza === 'carga' ? 'Produto armazenado pelo terminal (carga)' : p.natureza === 'insumo' ? 'Insumo' : 'Não informada']]));
+    const bloqueios = av.reprovacoes.concat(av.pendencias, av.condicionantes);
+    B.push({ t: 'callout', tone: av.sugestao === 'reprovado' ? 'crit' : av.sugestao === 'homologado' ? 'ok' : 'warn', title: 'Resultado preliminar da análise: ' + st[0], text: bloqueios.length ? bloqueios.join(' ') : 'Nenhum impedimento identificado nos dados informados. A decisão formal é do responsável técnico.' });
+    av.alertas.forEach((a) => B.push({ t: 'callout', tone: 'warn', title: 'Alerta', text: a }));
+
+    B.push({ t: 'h1', text: '1 Identificação e validade da FDS' });
+    const sec = p.fds.secoesOk || {};
+    const faltam = Object.keys(sec).filter((k) => !sec[k]);
+    B.push({ t: 'kv', rows: [
+      ['Produto', nz(p.nome)], ['Fornecedor / fabricante', nz(p.fornecedor)], ['Data da revisão', fmtData(p.fds.dataRevisao)], ['Versão', nz(p.fds.versao)],
+      ['Idade da FDS', idade == null ? '—' : idade.toFixed(1).replace('.', ',') + ' anos (limite configurado: ' + cfg().anosValidadeFDS + ')'],
+      ['Idioma', p.fds.portugues === true ? 'Português' : p.fds.portugues === false ? 'Não identificado como português' : '—'],
+      ['Seções localizadas', Object.keys(sec).length ? (Object.keys(sec).length - faltam.length) + ' de 16' : 'FDS não analisada'],
+    ] });
+    if (Object.keys(sec).length) B.push({ t: 'table', head: ['Seção', 'Título (ABNT NBR 14725)', 'Situação'], widths: [10, 66, 24], rows: O.FDS.SEC_TITLES.map((t, i) => [String(i + 1), t, sec[i + 1] ? 'Localizada' : 'Ausente']) });
+
+    B.push({ t: 'h1', text: '2 Classificação GHS' });
+    const dv = G.derive(p.ghs.h || []);
+    const pict = (p.ghs.pictos && p.ghs.pictos.length) ? p.ghs.pictos : dv.pictos;
+    if (pict.length) B.push({ t: 'imgs', items: pict.map((x) => ({ svg: O.Pic.ghs(x, 72), w: 72, h: 72, cap: G.PICTO[x] })) });
+    B.push({ t: 'kv', rows: [['Palavra de advertência', nz(p.ghs.palavra || dv.palavra)]] });
+    if ((p.ghs.h || []).length) B.push({ t: 'table', head: ['Frase H', 'Texto'], widths: [14, 86], rows: p.ghs.h.map((h) => [h, G.hText(h) || 'Frase não reconhecida']) });
+    else B.push({ t: 'p', text: 'Nenhuma frase H informada ou lida na FDS.' });
+    const gp = agrupaP(p);
+    const linhasP = Object.keys(gp).filter((k) => gp[k].length).map((k) => [k, gp[k].join('\n')]);
+    if (linhasP.length) B.push({ t: 'table', head: ['Precaução', 'Frases P'], widths: [18, 82], rows: linhasP });
+
+    B.push({ t: 'h1', text: '3 Composição e triagem de cancerígeno, mutagênico, teratogênico e PFC' });
+    const cas = p.fds.cas || [];
+    const marca = (c) => { const m = []; [['cancerigeno', 'cancerígeno'], ['reprotoxico', 'tóxico à reprodução'], ['mutagenico', 'mutagênico'], ['pfas', 'PFAS']].forEach(([k, n]) => { const w = T.WATCH[k].find((x) => x[0] === c); if (w) m.push(n + ' (' + w[1] + ')'); }); return m.join('; '); };
+    if (cas.length) B.push({ t: 'table', head: ['CAS', 'Lista de alerta'], widths: [26, 74], rows: cas.map((c) => [c, marca(c) || 'Sem registro na lista de alerta']) });
+    const tri = av.tri;
+    B.push({ t: 'table', head: ['Critério', 'Resultado'], widths: [34, 66], rows: [
+      ['Cancerígeno', tri.criticos.some((c) => c.tipo === 'cancerigeno') ? 'Identificado' : 'Não identificado'],
+      ['Mutagênico', tri.criticos.some((c) => c.tipo === 'mutagenico') ? 'Identificado' : 'Não identificado'],
+      ['Teratogênico / tóxico à reprodução', tri.criticos.some((c) => c.tipo === 'teratogenico' || c.tipo === 'reprodutivo') ? 'Identificado' : 'Não identificado'],
+      ['Contém PFCs / PFAS', tri.criticos.some((c) => c.tipo === 'pfc') ? 'Identificado' : 'Não identificado'],
+    ] });
+    if (tri.criticos.length) B.push({ t: 'list', items: tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']') });
+    B.push({ t: 'p', small: true, text: E.ehCarga(p) ? 'Produto armazenado pelo terminal: sem reprovação automática. A homologação exige justificativa, controles de exposição e parecer de Higiene Ocupacional.' : 'Insumo: cancerígeno, mutagênico, teratogênico e PFC reprovam de forma automática pelo critério interno.' });
+
+    B.push({ t: 'h1', text: '4 Transporte e armazenamento' });
+    const n20 = E.nr20(p); const ca = E.classeArm(p); const cb = E.combustivel(p);
+    B.push({ t: 'kv', rows: [
+      ['Número ONU', nz(p.imdg.onu)], ['Nome apropriado para embarque', nz(p.imdg.nome)], ['Classe / subclasse', nz(p.imdg.classe) + (p.imdg.subrisco ? ' / ' + p.imdg.subrisco : '')],
+      ['Grupo de embalagem', nz(p.imdg.pg)], ['Número de risco', nz(p.imdg.numeroRisco)], ['Ponto de fulgor', p.imdg.pontoFulgor === '' ? '—' : p.imdg.pontoFulgor + ' °C'],
+      ['NR-20', n20.aplica ? n20.categoria : 'Não aplicável pelo ponto de fulgor e frases H'],
+      ['Classe de armazenamento (NBR 17160)', p.armazenamento === 'granel' ? 'Não se aplica: tanque está fora do escopo da NBR 17160 (NBR 17505 e NR-20)' : ca.id + ' | ' + O.NBR17160.nome(ca.id) + ' | ' + ca.motivo],
+      ['Combustível', (cb.valor ? 'Sim' : 'Não') + ' | ' + cb.origem],
+      ['Incompatível com (Seções 7 e 10)', (p.comp.incompativeis || []).length ? p.comp.incompativeis.map(nomeG).join(', ') : 'Nenhuma identificada'],
+      ['Grupos de reatividade do produto', (p.comp.grupos || []).length ? p.comp.grupos.map(nomeG).join(', ') : '—'],
+    ] });
+    const lims = O.NBR17160.LIMITES.filter((l) => (p.ghs.h || []).some((c) => l.re.test(c)));
+    if (lims.length && p.armazenamento !== 'granel') B.push({ t: 'table', head: ['Perigo', 'Limite fora de armazém', 'Acima do limite'], widths: [38, 24, 38], rows: lims.map((l) => [l.rotulo, l.limite, l.acima]) });
+
+    B.push({ t: 'h1', text: '5 Controles sugeridos pela análise' });
+    const sg = E.sugestoes(p);
+    const linhasS = [['Substituição', sg.ocup.subst], ['Engenharia', sg.ocup.eng], ['Administrativos', sg.ocup.adm], ['EPI', sg.ocup.epi], ['Contenção ambiental', sg.amb.contencao], ['Resposta a derramamento', sg.amb.derramamento], ['Resíduos', sg.amb.residuos]].filter((x) => x[1].length).map((x) => [x[0], x[1].join('\n')]);
+    if (linhasS.length) B.push({ t: 'table', head: ['Tipo', 'Sugestão'], widths: [24, 76], rows: linhasS });
+    else B.push({ t: 'p', text: 'Nenhum controle adicional sugerido pelas frases H.' });
+    if (sg.controlesArm.length) B.push({ t: 'p', text: 'Controles de armazenamento sugeridos: ' + sg.controlesArm.map(ctrlNome).join('; ') + '.' });
+
+    B.push({ t: 'h1', text: '6 Dados que a FDS não traz e dependem de você' });
+    B.push({ t: 'list', items: O.Auto.faltam(p) });
+    B.push({ t: 'h2', text: 'Base técnico-legal' });
+    B.push({ t: 'list', items: T.BASE_LEGAL.map((b) => b.sigla + ': ' + b.titulo) });
+    B.push({ t: 'p', small: true, text: 'Análise automática da FDS: apoio à decisão. Valores lidos do texto devem ser conferidos contra a FDS vigente do fornecedor.' });
+    B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico']] });
+    return B;
+  }
+
+  // ---------------------------------------------------------------- Quadro de compatibilidade
+  function quadroCompat(destaque, produtos, tituloLocal, incluir) {
+    const lista = E.homologados(produtos).filter((x) => x.armazenamento !== 'granel');
+    (incluir || []).forEach((x) => { if (x.armazenamento !== 'granel' && !lista.some((y) => y.id === x.id)) lista.push(x); });
+    if (destaque && !lista.some((x) => x.id === destaque.id) && destaque.armazenamento !== 'granel') lista.push(destaque);
+    const L = lista.slice().sort((a, b) => ((localDe(a) || {}).nome || '').localeCompare((localDe(b) || {}).nome || '') || a.nome.localeCompare(b.nome));
+    const pseudo = { nome: destaque ? destaque.nome : (tituloLocal || 'Produtos homologados'), dec: { numero: '' } };
+    const B = [capa('Quadro de compatibilidade', 'QUIM 360 | Compatibilidade entre produtos | ABNT NBR 17160:2024', pseudo, [['Produtos comparados', String(L.length)], ['Critério', 'Matriz de incompatibilidade da NBR 17160 e reatividade pela Seção 10 da FDS']])];
+    if (L.length < 2) { B.push({ t: 'callout', tone: 'info', title: 'Quadro indisponível', text: 'São necessários ao menos 2 produtos (homologados, ou o produto em análise mais 1 homologado) em armazenamento embalado.' }); return B; }
+    const tom = { incompativel: ['crit', 'X'], restricao: ['warn', null], livre: ['ok', 'OK'], verificar: ['info', '?'] };
+    let nProib = 0, nRest = 0, nLivre = 0, nVer = 0; const pares = [];
+    const rows = L.map((a, i) => L.map((b, j) => {
+      if (i === j) return { txt: '—', tone: 'self' };
+      const r = E.compatPar(a, b); const t = tom[r.nivel];
+      if (i < j) { if (r.nivel === 'incompativel') nProib++; else if (r.nivel === 'restricao') nRest++; else if (r.nivel === 'livre') nLivre++; else nVer++; if (r.nivel !== 'livre') pares.push([i + 1, j + 1, a, b, r]); }
+      return { txt: t[1] || r.codigo || 'R', tone: t[0] };
+    }));
+    B.push({ t: 'callout', tone: nProib ? 'crit' : nRest ? 'warn' : 'ok', title: nProib + ' par(es) proibido(s), ' + nRest + ' com restrição, ' + nLivre + ' permitido(s)' + (nVer ? ', ' + nVer + ' a verificar' : ''), text: 'Entre ' + L.length + ' produtos, ' + (L.length * (L.length - 1) / 2) + ' pares avaliados.' });
+    B.push({ t: 'h1', text: '1 Produtos comparados' });
+    B.push({ t: 'table', head: ['Nº', 'Produto', 'Classe de armazenamento', 'Local', 'Registro'], widths: [6, 38, 20, 22, 14], rows: L.map((p, i) => [String(i + 1), p.nome + (destaque && p.id === destaque.id ? ' (em análise)' : ''), E.classeArm(p).id + ' | ' + O.NBR17160.nome(E.classeArm(p).id), (localDe(p) || {}).nome || '—', nz(p.dec.numero)]) });
+    B.push({ t: 'h1', text: '2 Quadro comparativo' });
+    B.push({ t: 'matrix', labels: L.map((_, i) => String(i + 1)), rows });
+    B.push({ t: 'p', small: true, text: 'Legenda: X proibido | número restrição da NBR 17160 (ver observação) | OK permitido | ? classe não definida | — mesmo produto.' });
+    B.push({ t: 'h1', text: '3 Pares que exigem atenção' });
+    if (!pares.length) B.push({ t: 'callout', tone: 'ok', title: 'Nenhuma restrição', text: 'Todos os pares são permitidos pela matriz e sem reatividade declarada.' });
+    else B.push({ t: 'table', head: ['Par', 'Classes', 'Resultado', 'Orientação'], widths: [24, 12, 14, 50], rows: pares.map(([i, j, a, b, r]) => [i + ' x ' + j + '\n' + a.nome + '\n' + b.nome, r.par.join(' x '), (r.nivel === 'incompativel' ? (r.codigo === 'R' ? 'Proibido (matriz)' : 'Proibido (reatividade da FDS)') : E.NIVEL[r.nivel] + (r.codigo && !['R', 'G'].includes(r.codigo) ? ' ' + r.codigo : '')), r.acao + (r.motivos.length ? '\n' + r.motivos.join('\n') : '')]) });
+    B.push({ t: 'h1', text: '4 Grupos que podem dividir o mesmo setor de armazém' });
+    const grupos = E.gruposCompativeis(L);
+    B.push({ t: 'p', text: 'Cada grupo reúne produtos com todos os pares permitidos e sem restrição. Produtos de grupos diferentes devem ficar em setores, contêineres ou armários distintos, ou cumprir as restrições da seção 3.' });
+    B.push({ t: 'table', head: ['Grupo', 'Produtos'], widths: [14, 86], rows: grupos.map((g, i) => ['Grupo ' + String.fromCharCode(65 + i), g.map((p) => (L.indexOf(p) + 1) + ' ' + p.nome).join('\n')]) });
+    B.push({ t: 'p', small: true, text: 'Produtos a granel em tanque ficam fora do quadro (fora do escopo da NBR 17160). A matriz considera a classe de armazenamento; a incompatibilidade também depende de combustão, gases, corrosivos e substâncias instáveis formadas (item 9.1.1 da norma). Confirme nas Seções 7 e 10 da FDS.' });
+    B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico']] });
+    return B;
+  }
+
   // ---------------------------------------------------------------- Solicitação ao fornecedor
   function solicitacaoFornecedor(p, motivos) {
     return 'Assunto: Solicitação de FDS corrigida: ' + nz(p.nome) + '\n\n' +
@@ -24714,7 +24853,7 @@ var vfs = {
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { STATUS, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});
 
 </script>
@@ -24750,6 +24889,10 @@ var vfs = {
         case 'box': return `<div class="d-box" style="border-color:${b.border || '#dc2626'};${b.bg ? 'background:' + b.bg : ''}">${b.children.map(r).join('')}</div>`;
         case 'qr': return `<figure class="d-qr">${O.Pic.qr(b.text, 120)}<figcaption>${esc(b.cap)}<br><span class="mono">${esc(b.text.length > 80 ? b.text.slice(0, 80) + '…' : b.text)}</span></figcaption></figure>`;
         case 'sign': return `<div class="d-sign">${b.rows.map((s) => `<div><div class="line"></div><div>${esc(s[0])}</div><div class="small">${esc(s[1])}</div></div>`).join('')}</div>`;
+        case 'matrix': {
+          const cor = { crit: '#dc2626;color:#fff', warn: '#facc15;color:#1f2937', ok: '#86efac;color:#14532d', info: '#cbd5e1;color:#334155', self: '#e5e7eb;color:#6b7280' };
+          return `<table class="d-mx"><thead><tr><th></th>${b.labels.map((l) => `<th>${esc(l)}</th>`).join('')}</tr></thead><tbody>${b.rows.map((row, i) => `<tr><th>${esc(b.labels[i])}</th>${row.map((c) => `<td style="background:${cor[c.tone] || cor.info}">${esc(c.txt)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+        }
         case 'pagebreak': return '<div class="d-break"></div>';
         default: return '';
       }
@@ -24789,6 +24932,7 @@ var vfs = {
   .d-box .d-h2{margin-top:0}
   .d-sign{display:flex;gap:40px;margin-top:36px}.d-sign>div{flex:1}.d-sign .line{border-top:1px solid #111;margin-bottom:4px}
   .mono{font-family:Consolas,'Courier New',monospace;font-size:7.5pt;word-break:break-all}
+  .d-mx{border-collapse:collapse;margin:8px 0;font-size:8.5pt;table-layout:fixed;width:100%}.d-mx th{background:#0f172a;color:#fff;padding:3px 2px;border:1px solid #fff;text-align:center;font-weight:700}.d-mx td{text-align:center;border:1px solid #fff;padding:4px 2px;font-weight:700}
   .d-break{break-after:page;height:0}
   .d-box .d-table td,.d-box .d-kv td{background:#fff!important}.d-box .d-table tr:nth-child(even) td{background:#fff!important}
   `;
@@ -24892,6 +25036,14 @@ var vfs = {
           const cells = b.rows.map((s) => new D.TableCell({ width: { size: Math.round(W / b.rows.length), type: D.WidthType.DXA }, borders: { ...noBorders, top: { style: D.BorderStyle.SINGLE, size: 6, color: '111111' } }, margins: { top: 60 }, children: [par(s[0], { run: { size: 20 } }), par(s[1], { run: { size: 18, color: '4B5563' } })] }));
           return [par(''), par(''), new D.Table({ width: { size: W, type: D.WidthType.DXA }, borders: noBorders, rows: [new D.TableRow({ children: cells })] })];
         }
+        case 'matrix': {
+          const cor = { crit: ['DC2626', 'FFFFFF'], warn: ['FACC15', '1F2937'], ok: ['86EFAC', '14532D'], info: ['CBD5E1', '334155'], self: ['E5E7EB', '6B7280'] };
+          const n = b.labels.length; const w0 = 6; const wc = (100 - w0) / n;
+          const mk = (txt, fill, color, bold) => new D.TableCell({ width: { size: tw(fill === '0F172A' ? w0 : wc), type: D.WidthType.DXA }, borders: allB('FFFFFF', 4), shading: { type: D.ShadingType.CLEAR, fill, color: 'auto' }, margins: { top: 40, bottom: 40, left: 20, right: 20 }, children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [run(txt, { size: 16, bold: true, color })] })] });
+          const head = new D.TableRow({ tableHeader: true, children: [mk('', '0F172A', 'FFFFFF')].concat(b.labels.map((l) => new D.TableCell({ width: { size: tw(wc), type: D.WidthType.DXA }, borders: allB('FFFFFF', 4), shading: { type: D.ShadingType.CLEAR, fill: '0F172A', color: 'auto' }, margins: { top: 40, bottom: 40, left: 20, right: 20 }, children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [run(l, { size: 16, bold: true, color: 'FFFFFF' })] })] }))) });
+          const rows = b.rows.map((row, i) => new D.TableRow({ cantSplit: true, children: [new D.TableCell({ width: { size: tw(w0), type: D.WidthType.DXA }, borders: allB('FFFFFF', 4), shading: { type: D.ShadingType.CLEAR, fill: '0F172A', color: 'auto' }, margins: { top: 40, bottom: 40, left: 20, right: 20 }, children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [run(b.labels[i], { size: 16, bold: true, color: 'FFFFFF' })] })] })].concat(row.map((c) => { const k = cor[c.tone] || cor.info; return new D.TableCell({ width: { size: tw(wc), type: D.WidthType.DXA }, borders: allB('FFFFFF', 4), shading: { type: D.ShadingType.CLEAR, fill: k[0], color: 'auto' }, margins: { top: 40, bottom: 40, left: 20, right: 20 }, children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [run(c.txt, { size: 16, bold: true, color: k[1] })] })] }); })) }));
+          return [new D.Table({ width: { size: W, type: D.WidthType.DXA }, rows: [head, ...rows] }), par('')];
+        }
         case 'pagebreak': return [new D.Paragraph({ children: [new D.PageBreak()] })];
         default: return [];
       }
@@ -24927,6 +25079,7 @@ var vfs = {
         case 'box': b.children.forEach(r); break;
         case 'imgs': { const caps = b.items.map((i) => i.cap).filter(Boolean); if (caps.length) L.push('Símbolos: ' + caps.join('; ')); break; }
         case 'qr': L.push(b.cap + ': ' + b.text); break;
+        case 'matrix': L.push('Matriz de compatibilidade: ' + b.labels.length + ' produtos (ver pares na tabela)'); break;
         case 'sign': b.rows.forEach((s) => L.push('Assinatura: ' + s[0] + (s[1] ? ' | ' + s[1] : ''))); break;
         default: break;
       }
@@ -25017,6 +25170,12 @@ var vfs = {
         return [{ image: data, width: 84, margin: [0, 6, 0, 2] }, { text: b.cap, fontSize: 8, color: '#374151' }, { text: b.text, fontSize: 6.5, color: '#6b7280', margin: [0, 0, 0, 6] }];
       }
       case 'sign': return [{ columns: b.rows.map((s) => ({ stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 0.8 }] }, { text: txt(s[0]), fontSize: 9.5, margin: [0, 3, 0, 0] }, { text: txt(s[1]), fontSize: 8.5, color: '#4b5563' }] })), columnGap: 30, margin: [0, 40, 0, 0] }];
+      case 'matrix': {
+        const cor = { crit: ['#dc2626', '#ffffff'], warn: ['#facc15', '#1f2937'], ok: ['#86efac', '#14532d'], info: ['#cbd5e1', '#334155'], self: ['#e5e7eb', '#6b7280'] };
+        const hd = (t) => ({ text: txt(t), bold: true, color: '#ffffff', fillColor: '#0f172a', alignment: 'center', fontSize: 8 });
+        const body = [[hd('')].concat(b.labels.map(hd))].concat(b.rows.map((row, i) => [hd(b.labels[i])].concat(row.map((c) => { const k = cor[c.tone] || cor.info; return { text: txt(c.txt), bold: true, fontSize: 8, alignment: 'center', color: k[1], fillColor: k[0] }; }))));
+        return [{ table: { headerRows: 1, widths: [22].concat(b.labels.map(() => '*')), body }, layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#ffffff', vLineColor: () => '#ffffff', paddingLeft: () => 1, paddingRight: () => 1, paddingTop: () => 3, paddingBottom: () => 3 }, margin: [0, 6, 0, 8] }];
+      }
       case 'pagebreak': return [{ text: '', pageBreak: 'after' }];
       default: return [];
     }
@@ -25338,6 +25497,8 @@ var vfs = {
           w.appendChild(h('div', { class: 'grid g2' },
             h('div', { class: 'card' }, h('h3', {}, 'Lido da FDS'), h('ul', { style: 'margin:0 0 0 18px;padding:0' }, L.map((x) => h('li', {}, x)))),
             h('div', { class: 'card' }, h('h3', {}, 'Falta informar'), h('ul', { style: 'margin:0 0 0 18px;padding:0' }, F.map((x) => h('li', {}, x))))));
+          const dAn = O.Views.catalogo(p).find((x) => x.id === 'analise');
+          if (dAn) w.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Relatório da análise da FDS'), h('p', { class: 'small' }, 'Leitura completa da FDS, sem decisão: validade, GHS, composição, triagem, transporte, classe de armazenamento e controles sugeridos.'), O.Views.docBotoes(p, dAn)));
           const tri = E.triagem(p);
           if (tri.criticos.length) w.appendChild(U.alert('warn', 'Perigo CMR ou PFC identificado na FDS', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']').concat(['Insumo: reprovação automática. Produto armazenado pelo terminal (carga): homologação com controles de exposição. Informe a natureza do produto na etapa seguinte.'])));
           w.appendChild(h('div', { class: 'opts' }, U.flag(p, 'modoAuto', 'Confirmar automaticamente as etapas que a FDS responde por completo', 'Você revisa tudo na decisão. Etapas com conflito ou dado faltante sempre param para você.', api.rerender)));
@@ -25911,6 +26072,8 @@ var vfs = {
     const prods = S.produtos();
     const decidido = !!p.confirmadas.decisao || p.status !== 'em_analise';
     const c = [{ id: 'relatorio', nome: 'Relatório de homologação', desc: 'Decisão, FDS, triagem GHS, impactos, PGR, IMDG, segregação e rastreabilidade.', fn: () => D.relatorio(p, prods), on: true }];
+    c.splice(1, 0, { id: 'analise', nome: 'Relatório da análise da FDS', desc: 'Leitura da FDS: validade, GHS, composição, triagem CMR e PFC, transporte, classe de armazenamento e controles sugeridos. Disponível a qualquer momento.', fn: () => D.analiseFds(p, prods), on: !!(p.fds.analisada || p.nome) });
+    c.push({ id: 'quadro', nome: 'Quadro de compatibilidade', desc: 'Este produto e os homologados comparados dois a dois, com grupos que podem dividir o setor de armazém.', fn: () => D.quadroCompat(p, prods), on: E.homologados(prods).filter((x) => x.id !== p.id && x.armazenamento !== 'granel').length >= 1 && p.armazenamento !== 'granel' });
     c.push({ id: 'plano', nome: 'Plano de ação', desc: 'Ações, origem, responsável e prazo para colocar o produto em uso (ou encerrar, se reprovado).', fn: () => D.planoAcao(p, prods), on: decidido });
     c.push({ id: 'ficha', nome: 'Ficha de emergência', desc: 'Estrutura NBR 7503 e Manual ABIQUIM: riscos, isolamento, fogo, derramamento, primeiros socorros.', fn: () => D.fichaEmergencia(p), on: ok });
     c.push({ id: 'rotulo', nome: 'Rotulagem', desc: 'Rótulo GHS (NBR 14725), etiqueta de uso (NR-26) e rótulos de risco (NBR 7500).', fn: () => D.rotulagem(p), on: ok });
@@ -25945,7 +26108,7 @@ var vfs = {
   }
   V.pacote = (p) => h('div', { class: 'card' }, h('h3', {}, 'Pacote completo'), h('p', { class: 'small' }, 'Um único arquivo .zip com todos os documentos disponíveis, cada um em Word e em PDF.'), h('button', { class: 'btn', onclick: () => baixarPacote(p) }, 'Baixar pacote (.zip)'));
 
-  V.docBotoes = (p, d) => h('div', { class: 'row' }, h('a', { class: 'btn sm sec', href: '#/doc/' + p.id + '/' + d.id }, 'Pré-visualizar'), h('button', { class: 'btn sm', onclick: () => baixarDocx(p, d) }, 'Word (.docx)'), h('button', { class: 'btn sm', onclick: () => baixarPdf(p, d) }, 'PDF'), h('button', { class: 'btn sm ghost', onclick: () => pdf(p, d) }, 'Imprimir'));
+  V.docBotoes = (p, d, semPrev) => h('div', { class: 'row' }, semPrev ? null : h('a', { class: 'btn sm sec', href: '#/doc/' + p.id + '/' + d.id }, 'Pré-visualizar'), h('button', { class: 'btn sm', onclick: () => baixarDocx(p, d) }, 'Word (.docx)'), h('button', { class: 'btn sm', onclick: () => baixarPdf(p, d) }, 'PDF'), h('button', { class: 'btn sm ghost', onclick: () => pdf(p, d) }, 'Imprimir'));
 
   // ------------------------------------------------------------ saída (etapa 15)
   V.saida = (p) => {
@@ -26011,6 +26174,7 @@ var vfs = {
         h('div', { style: 'background:#0b1222;border-radius:6px;height:12px;margin-top:3px' }, h('div', { style: 'height:100%;border-radius:6px;background:var(--sky);width:' + (porClasse[k] / mx * 100) + '%' })))).concat([h('p', { class: 'small' }, 'Total: ' + totalHom + (totalHom === 1 ? ' produto homologado' : ' produtos homologados') + '.')]) : h('p', { class: 'muted' }, 'Sem produtos homologados.')));
     g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Reprovados por critério interno'), rej.length ? h('table', { class: 't' }, h('tbody', {}, rej.slice(0, 8).map((p) => h('tr', {}, h('td', {}, h('a', { href: '#/produto/' + p.id }, p.nome)), h('td', {}, E.triagem(p).criticos.map((c) => c.tipo).filter((x, i, a) => a.indexOf(x) === i).join(', ') || 'outro motivo'))))) : h('p', { class: 'muted' }, 'Nenhum produto reprovado.')));
     g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Locais de armazenamento ', U.disc('PSM')), S.locais().length ? S.locais().map((l) => { const a = E.auditoriaLocal(l, ps); const crit = a.pares.filter((x) => x.nivel === 'incompativel' || x.nivel === 'restricao').length; return h('div', { class: 'row', style: 'margin:6px 0' }, h('a', { href: '#/locais' }, l.nome), h('span', { class: 'muted' }, a.itens.length + ' itens'), crit ? U.badge('warn', crit + ' par(es) a revisar') : U.badge('ok', 'sem restrições')); }) : h('p', { class: 'muted' }, 'Cadastre os locais em "Locais".')));
+    g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Quadro de compatibilidade ', U.disc('PSM')), h('p', { class: 'small' }, 'Compare os produtos dois a dois pela NBR 17160 e veja quais podem dividir o setor de armazém.'), h('a', { class: 'btn', href: '#/compat' }, 'Abrir o quadro')));
     root.appendChild(g);
     if (!ps.length) root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Primeiros passos'), h('p', {}, 'Comece por uma análise de FDS ou inicie uma homologação. Para ver o fluxo completo, carregue os dados de demonstração.'), h('button', { class: 'btn ghost', onclick: () => { O.Demo.criar(); location.hash = '#/painel'; O.route(); } }, 'Carregar dados de demonstração')));
   };
@@ -26063,7 +26227,8 @@ var vfs = {
       const outros = E.homologados(S.produtos()).filter((x) => x.id !== p.id);
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática da matriz de segregação ', U.disc('PSM')),
         h('p', { class: 'small' }, 'Este produto contra cada produto homologado: matriz de incompatibilidade da ABNT NBR 17160:2024 mais reatividade pela Seção 10 da FDS. Classe de armazenamento deste produto: ' + E.classeArm(p).id + ' (' + E.classeArm(p).motivo + ').'),
-        V.resumoCompat(p, outros), V.tabelaCompat(p, outros)));
+        V.resumoCompat(p, outros), outros.length ? V.quadroDoProduto(p, outros) : null, V.tabelaCompat(p, outros)));
+      if (outros.length) { const dq = V.catalogo(p).find((x) => x.id === 'quadro'); if (dq && dq.on) root.appendChild(h('div', { class: 'card' }, h('h3', {}, dq.nome), h('p', { class: 'small' }, dq.desc), V.docBotoes(p, dq))); root.appendChild(V.gruposCard([p].concat(outros))); }
     } else if (tab === 'docs') {
       root.appendChild(V.pacote(p));
       V.catalogo(p).forEach((d) => root.appendChild(h('div', { class: 'card', style: d.on ? '' : 'opacity:.5' }, h('h3', {}, d.nome), h('p', { class: 'small' }, d.desc + (d.on ? '' : ' Disponível após a homologação.')), d.on ? V.docBotoes(p, d) : null)));
@@ -26105,6 +26270,68 @@ var vfs = {
     tb.appendChild(body); return tb;
   };
 
+  // ------------------------------------------------------------ quadro visual de compatibilidade
+  const CQ = { incompativel: ['cq-r', 'X'], restricao: ['cq-y', null], livre: ['cq-g', 'OK'], verificar: ['cq-n', '?'] };
+  V.heat = (lista, onPick) => {
+    const tb = h('table', { class: 'cq', 'aria-label': 'Quadro de compatibilidade entre produtos' });
+    tb.appendChild(h('thead', {}, h('tr', {}, h('th', {}), lista.map((p, i) => h('th', { title: p.nome }, String(i + 1))))));
+    const body = h('tbody');
+    lista.forEach((a, i) => body.appendChild(h('tr', {}, h('th', { class: 'rl', title: a.nome }, h('b', {}, String(i + 1)), ' ' + (a.nome.length > 28 ? a.nome.slice(0, 27) + '…' : a.nome)), lista.map((b, j) => {
+      if (i === j) return h('td', { class: 'cq-s' }, '—');
+      const r = E.compatPar(a, b); const k = CQ[r.nivel];
+      const td = h('td', { class: k[0], tabindex: 0, title: a.nome + ' x ' + b.nome + ': ' + E.NIVEL[r.nivel], 'aria-label': (i + 1) + ' com ' + (j + 1) + ': ' + E.NIVEL[r.nivel] }, k[1] || r.codigo || 'R');
+      const pick = () => { tb.querySelectorAll('.hl').forEach((x) => x.classList.remove('hl')); td.classList.add('hl'); onPick && onPick(a, b, r, i + 1, j + 1); };
+      td.addEventListener('click', pick); td.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+      return td;
+    }))));
+    tb.appendChild(body);
+    return tb;
+  };
+  V.legendaQuadro = () => h('div', { class: 'cq-leg' }, [['cq-r', 'X', 'Proibido'], ['cq-y', '1 a 8', 'Permitido com restrição (NBR 17160)'], ['cq-g', 'OK', 'Permitido'], ['cq-n', '?', 'Classe não definida']].map((l) => h('span', {}, h('i', { class: l[0] }, l[1]), l[2])));
+  V.detalhePar = (a, b, r, i, j) => {
+    const nomeG = (k) => (T.RG.find((x) => x[0] === k) || [k, k])[1];
+    return h('div', { class: 'alert ' + ({ incompativel: 'crit', restricao: 'warn', livre: 'ok', verificar: '' }[r.nivel]) }, h('b', {}, i + ' ' + a.nome + '  x  ' + j + ' ' + b.nome), h('div', { class: 'small' }, 'Classes de armazenamento: ' + r.par.join(' x ') + ' | ' + (r.nivel === 'incompativel' && r.codigo !== 'R' ? 'Proibido por reatividade (a matriz permite' + (r.codigo && r.codigo !== 'G' ? ' com restrição ' + r.codigo : '') + ')' : E.NIVEL[r.nivel] + (r.codigo && !['R', 'G'].includes(r.codigo) ? ' (restrição ' + r.codigo + ')' : ''))), h('div', {}, r.acao), r.motivos.length ? h('ul', {}, r.motivos.map((m) => h('li', {}, m))) : null);
+  };
+  V.quadroDoProduto = (p, outros) => {
+    const lista = [p].concat(outros);
+    let det = h('div', { class: 'alert' }, h('b', {}, 'Toque em uma célula'), 'Mostra o resultado e a orientação para o par.');
+    const wrap = h('div', {}, V.legendaQuadro(), h('div', { class: 'scroll' }, V.heat(lista, (a, b, r, i, j) => { const n = V.detalhePar(a, b, r, i, j); det.replaceWith(n); det = n; })), det);
+    return wrap;
+  };
+  V.gruposCard = (lista) => {
+    const gr = E.gruposCompativeis(lista);
+    return h('div', { class: 'card' }, h('h3', {}, 'Grupos que podem dividir o setor de armazém ', U.disc('PSM')), h('p', { class: 'small' }, 'Todos os pares dentro do grupo são permitidos e sem restrição. Entre grupos, use setores, contêineres ou armários distintos, ou cumpra as restrições.'),
+      h('div', { class: 'grid g3' }, gr.map((g, i) => h('div', { class: 'cq-grupo' }, h('b', {}, 'Grupo ' + String.fromCharCode(65 + i)), h('ul', {}, g.map((p) => h('li', {}, (lista.indexOf(p) + 1) + ' ' + p.nome)))))));
+  };
+  V.quadro = (root) => {
+    root.appendChild(head('Quadro de compatibilidade', 'Produtos comparados dois a dois pela ABNT NBR 17160:2024 e pela reatividade da FDS'));
+    const st = { local: '', analise: false };
+    const area = h('div');
+    const locais = S.locais().filter((l) => S.produtos().some((p) => p.ctx.localId === l.id));
+    const sel = h('select', { 'aria-label': 'Filtrar por local', style: 'max-width:300px' }, h('option', { value: '' }, 'Todos os locais'), locais.map((l) => h('option', { value: l.id }, l.nome)));
+    const ck = h('input', { type: 'checkbox', id: 'cq-an' });
+    root.appendChild(h('div', { class: 'row', style: 'margin-bottom:12px' }, sel, h('label', { for: 'cq-an', class: 'row small' }, ck, 'Incluir produtos ainda em análise')));
+    root.appendChild(area);
+    const draw = () => {
+      area.innerHTML = '';
+      const todos = S.produtos().filter((p) => (!st.local || p.ctx.localId === st.local));
+      const incluir = st.analise ? todos.filter((p) => !['homologado', 'condicionado', 'reprovado', 'na_lista'].includes(p.status) && p.fds.analisada) : [];
+      const lista = E.homologados(todos).concat(incluir).filter((p) => p.armazenamento !== 'granel');
+      if (lista.length < 2) { area.appendChild(h('div', { class: 'empty' }, 'São necessários ao menos 2 produtos em armazenamento embalado para comparar. Homologue produtos ou carregue a demonstração em Configurações.')); return; }
+      let nR = 0, nY = 0, nG = 0, nN = 0;
+      lista.forEach((a, i) => lista.forEach((b, j) => { if (i < j) { const n = E.compatPar(a, b).nivel; if (n === 'incompativel') nR++; else if (n === 'restricao') nY++; else if (n === 'livre') nG++; else nN++; } }));
+      area.appendChild(h('div', { class: 'grid g4', style: 'margin-bottom:12px' }, h('div', { class: 'kpi crit' }, h('b', {}, nR), h('span', {}, 'Pares proibidos')), h('div', { class: 'kpi warn' }, h('b', {}, nY), h('span', {}, 'Com restrição')), h('div', { class: 'kpi ok' }, h('b', {}, nG), h('span', {}, 'Permitidos')), h('div', { class: 'kpi' }, h('b', {}, lista.length), h('span', {}, 'Produtos comparados'))));
+      let det = h('div', { class: 'alert' }, h('b', {}, 'Toque em uma célula'), 'Mostra o resultado, a restrição da norma e a orientação para o par.');
+      area.appendChild(h('div', { class: 'card' }, h('div', { class: 'row' }, h('h3', {}, 'Quadro comparativo'), h('span', { class: 'spacer' }), V.docBotoes({ nome: st.local ? (S.local(st.local) || {}).nome : 'Produtos homologados', id: 'x' }, { id: 'quadro', nome: 'Quadro de compatibilidade', fn: () => D.quadroCompat(null, todos, st.local ? (S.local(st.local) || {}).nome : '', incluir) }, true)),
+        V.legendaQuadro(), h('div', { class: 'scroll' }, V.heat(lista, (a, b, r, i, j) => { det.replaceWith(det2 = V.detalhePar(a, b, r, i, j)); det = det2; })), det));
+      area.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Produtos do quadro'), h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Nº', 'Produto', 'Classe de armazenamento', 'Local', 'Status'].map((x) => h('th', {}, x)))), h('tbody', {}, lista.map((p, i) => h('tr', {}, h('td', {}, String(i + 1)), h('td', {}, h('a', { href: '#/produto/' + p.id + '/compat' }, p.nome)), h('td', {}, E.classeArm(p).id + ' | ' + O.NBR17160.nome(E.classeArm(p).id)), h('td', {}, (S.local(p.ctx.localId) || {}).nome || '—'), h('td', {}, U.statusBadge(p.status)))))))));
+      area.appendChild(V.gruposCard(lista));
+    };
+    let det2;
+    sel.addEventListener('change', () => { st.local = sel.value; draw(); }); ck.addEventListener('change', () => { st.analise = ck.checked; draw(); });
+    draw();
+  };
+
   // ------------------------------------------------------------ visualização de documento
   V.doc = (root, id, tipo) => {
     const p = S.produto(id);
@@ -26129,7 +26356,8 @@ var vfs = {
         av.tri.suspeitos.map((x) => U.alert('warn', 'Alerta', x.detalhe)), n20.aplica ? h('div', { class: 'alert warn' }, h('b', {}, 'NR-20: ' + n20.categoria), n20.texto) : null,
         h('div', { class: 'pictos' }, (p.ghs.pictos || []).map((c) => h('span', { html: O.Pic.ghs(c, 60), title: G.PICTO[c] })), h('b', {}, p.ghs.palavra)),
         h('div', {}, (p.ghs.h || []).map((x) => h('div', {}, h('span', { class: 'chip' }, x), G.hText(x)))),
-        h('div', { class: 'row', style: 'margin-top:10px' }, h('button', { class: 'btn', onclick: () => { p.ctx.area = ''; U.salvarJa(p); location.hash = '#/homologar/' + p.id; } }, 'Iniciar a homologação com estes dados'))));
+        h('div', { class: 'row', style: 'margin-top:10px' }, h('button', { class: 'btn', onclick: () => { p.ctx.area = ''; U.salvarJa(p); location.hash = '#/homologar/' + p.id; } }, 'Iniciar a homologação com estes dados')),
+        h('h4', { style: 'margin-top:14px' }, 'Relatório da análise da FDS'), V.docBotoes(p, V.catalogo(p).find((x) => x.id === 'analise'))));
     };
     root.appendChild(O.Wizard.fdsPanel(p, rerender)); root.appendChild(out);
   };
@@ -26393,6 +26621,25 @@ var vfs = {
       ['ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano'].forEach((k) => { c.confirmadas[k] = new Date().toISOString(); });
       c.etapa = 'saida';
       S.salvarProduto(c);
+
+      const mk = (chave, localId, justif) => {
+        const q = produtoBase(chave, localId);
+        q.ghs.nenhum = true; q.ghs.confirmado = true;
+        q.ocup = { risco: true, subst: '', eng: 'Lava-olhos e chuveiro de emergência próximos.', adm: 'Treinamento prévio e sinalização GHS.', epi: 'Luvas de PVC ou neoprene, óculos de ampla visão, protetor facial e avental.' };
+        q.amb = { risco: chave === 'hipoclorito', contencao: chave === 'hipoclorito' ? 'Bacia de contenção.' : '', residuos: chave === 'hipoclorito' ? 'Neutralizar e destinar conforme a legislação.' : '', derramamento: chave === 'hipoclorito' ? 'Kit de absorção; impedir chegada à drenagem.' : '' };
+        q.hig = { tlv: false, parecerExigidoOk: false, pgr: 'coberto', dosimetria: false, justificativa: 'Sem agente com limite NR-15 ou TLV.', tlvAgentes: '' };
+        q.comp.incompDeclaradas = true; q.comp.localOk = 'sim'; q.comp.controles = ['bacia', 'sinalizacao']; q.comp.limite = '100 L';
+        q.par = { tem: false, descricao: '', pgrIndicador: 'nao_requer', pgrPrazo: '', pgrResponsavel: '' };
+        q.dec = { valor: 'sim', justificativa: justif, data: new Date().toISOString(), numero: S.proximoNumero(), sharepoint: '' };
+        q.trein.gerar = true; q.status = 'homologado';
+        ['fds0', 'ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano'].forEach((k) => { q.confirmadas[k] = new Date().toISOString(); });
+        q.etapa = 'saida'; q.natureza = 'insumo'; q.armazenamento = 'embalado';
+        S.salvarProduto(q);
+      };
+      const cl = S.novoLocal('Almoxarifado de cloro (demonstração)', 'Almoxarifado'); cl.espacoM = 6; S.salvarLocal(cl);
+      const ac = S.novoLocal('Contêiner de ácidos (demonstração)', 'Contêiner de PQ'); ac.espacoM = 0; S.salvarLocal(ac);
+      mk('hipoclorito', cl.id, 'Atende aos critérios internos. Armazenar longe de ácidos.');
+      mk('acido', ac.id, 'Atende aos critérios internos. Armazenar longe de hipocloritos e bases.');
     },
   };
 })(window.O360 = window.O360 || {});
@@ -26405,7 +26652,7 @@ var vfs = {
   const U = O.UI, h = U.h;
   const NAV = [
     ['#/', 'Início', 'home'], ['#/painel', 'Painel', 'grid'], ['#/produtos', 'Produtos', 'flask'], ['#/nova', 'Nova homologação', 'plus'], ['#/fds', 'Analisador de FDS', 'file'], '-',
-    ['#/locais', 'Locais de armazenamento', 'pin'], ['#/matriz', 'Matriz de segregação', 'grid'], ['#/legal', 'Base técnico-legal', 'scale'], ['#/config', 'Configurações', 'gear'],
+    ['#/locais', 'Locais de armazenamento', 'pin'], ['#/compat', 'Quadro de compatibilidade', 'grid'], ['#/matriz', 'Matriz de segregação', 'grid'], ['#/legal', 'Base técnico-legal', 'scale'], ['#/config', 'Configurações', 'gear'],
   ];
   const root = document.getElementById('app');
   let main, side;
@@ -26441,6 +26688,7 @@ var vfs = {
         case 'homologar': O.Wizard.render(main, parts[1]); break;
         case 'fds': V.fds(main); break;
         case 'locais': V.locais(main); break;
+        case 'compat': V.quadro(main); break;
         case 'matriz': V.matriz(main); break;
         case 'legal': V.legal(main); break;
         case 'config': V.config(main); break;

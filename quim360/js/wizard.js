@@ -144,6 +144,8 @@
           w.appendChild(h('div', { class: 'grid g2' },
             h('div', { class: 'card' }, h('h3', {}, 'Lido da FDS'), h('ul', { style: 'margin:0 0 0 18px;padding:0' }, L.map((x) => h('li', {}, x)))),
             h('div', { class: 'card' }, h('h3', {}, 'Falta informar'), h('ul', { style: 'margin:0 0 0 18px;padding:0' }, F.map((x) => h('li', {}, x))))));
+          const dAn = O.Views.catalogo(p).find((x) => x.id === 'analise');
+          if (dAn) w.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Relatório da análise da FDS'), h('p', { class: 'small' }, 'Leitura completa da FDS, sem decisão: validade, GHS, composição, triagem, transporte, classe de armazenamento e controles sugeridos.'), O.Views.docBotoes(p, dAn)));
           const tri = E.triagem(p);
           if (tri.criticos.length) w.appendChild(U.alert('warn', 'Perigo CMR ou PFC identificado na FDS', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']').concat(['Insumo: reprovação automática. Produto armazenado pelo terminal (carga): homologação com controles de exposição. Informe a natureza do produto na etapa seguinte.'])));
           w.appendChild(h('div', { class: 'opts' }, U.flag(p, 'modoAuto', 'Confirmar automaticamente as etapas que a FDS responde por completo', 'Você revisa tudo na decisão. Etapas com conflito ou dado faltante sempre param para você.', api.rerender)));

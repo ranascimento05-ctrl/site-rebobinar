@@ -245,6 +245,18 @@
     return { codigo: r.codigo, par: r.par, motivos: r.motivos, nivel: r.nivel, metros: r.metros, acao };
   }
   const NIVEL = { incompativel: 'Proibido', restricao: 'Com restrição', verificar: 'Verificar', livre: 'Permitido' };
+  // Agrupa produtos que podem dividir o mesmo setor de armazém (todos os pares permitidos, sem restrição)
+  function gruposCompativeis(lista) {
+    const base = lista.filter((x) => x.armazenamento !== 'granel');
+    const conflitos = (a) => base.filter((b) => b.id !== a.id && compatPar(a, b).nivel !== 'livre').length;
+    const ordenados = base.slice().sort((a, b) => conflitos(b) - conflitos(a));
+    const grupos = [];
+    ordenados.forEach((p) => {
+      const g = grupos.find((gr) => gr.every((q) => compatPar(p, q).nivel === 'livre'));
+      if (g) g.push(p); else grupos.push([p]);
+    });
+    return grupos;
+  }
   function homologados(produtos) { return (produtos || []).filter((x) => ['homologado', 'condicionado'].includes(x.status)); }
 
   // ---------- Sugestões prontas (hierarquia de controles) ----------
@@ -391,5 +403,5 @@
     return r;
   }
 
-  O.Engine = { novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});

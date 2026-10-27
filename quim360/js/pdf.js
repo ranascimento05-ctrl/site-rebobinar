@@ -60,6 +60,12 @@
         return [{ image: data, width: 84, margin: [0, 6, 0, 2] }, { text: b.cap, fontSize: 8, color: '#374151' }, { text: b.text, fontSize: 6.5, color: '#6b7280', margin: [0, 0, 0, 6] }];
       }
       case 'sign': return [{ columns: b.rows.map((s) => ({ stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 0.8 }] }, { text: txt(s[0]), fontSize: 9.5, margin: [0, 3, 0, 0] }, { text: txt(s[1]), fontSize: 8.5, color: '#4b5563' }] })), columnGap: 30, margin: [0, 40, 0, 0] }];
+      case 'matrix': {
+        const cor = { crit: ['#dc2626', '#ffffff'], warn: ['#facc15', '#1f2937'], ok: ['#86efac', '#14532d'], info: ['#cbd5e1', '#334155'], self: ['#e5e7eb', '#6b7280'] };
+        const hd = (t) => ({ text: txt(t), bold: true, color: '#ffffff', fillColor: '#0f172a', alignment: 'center', fontSize: 8 });
+        const body = [[hd('')].concat(b.labels.map(hd))].concat(b.rows.map((row, i) => [hd(b.labels[i])].concat(row.map((c) => { const k = cor[c.tone] || cor.info; return { text: txt(c.txt), bold: true, fontSize: 8, alignment: 'center', color: k[1], fillColor: k[0] }; }))));
+        return [{ table: { headerRows: 1, widths: [22].concat(b.labels.map(() => '*')), body }, layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#ffffff', vLineColor: () => '#ffffff', paddingLeft: () => 1, paddingRight: () => 1, paddingTop: () => 3, paddingBottom: () => 3 }, margin: [0, 6, 0, 8] }];
+      }
       case 'pagebreak': return [{ text: '', pageBreak: 'after' }];
       default: return [];
     }

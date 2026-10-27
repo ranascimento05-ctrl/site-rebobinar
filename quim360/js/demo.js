@@ -61,6 +61,25 @@
       ['ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano'].forEach((k) => { c.confirmadas[k] = new Date().toISOString(); });
       c.etapa = 'saida';
       S.salvarProduto(c);
+
+      const mk = (chave, localId, justif) => {
+        const q = produtoBase(chave, localId);
+        q.ghs.nenhum = true; q.ghs.confirmado = true;
+        q.ocup = { risco: true, subst: '', eng: 'Lava-olhos e chuveiro de emergência próximos.', adm: 'Treinamento prévio e sinalização GHS.', epi: 'Luvas de PVC ou neoprene, óculos de ampla visão, protetor facial e avental.' };
+        q.amb = { risco: chave === 'hipoclorito', contencao: chave === 'hipoclorito' ? 'Bacia de contenção.' : '', residuos: chave === 'hipoclorito' ? 'Neutralizar e destinar conforme a legislação.' : '', derramamento: chave === 'hipoclorito' ? 'Kit de absorção; impedir chegada à drenagem.' : '' };
+        q.hig = { tlv: false, parecerExigidoOk: false, pgr: 'coberto', dosimetria: false, justificativa: 'Sem agente com limite NR-15 ou TLV.', tlvAgentes: '' };
+        q.comp.incompDeclaradas = true; q.comp.localOk = 'sim'; q.comp.controles = ['bacia', 'sinalizacao']; q.comp.limite = '100 L';
+        q.par = { tem: false, descricao: '', pgrIndicador: 'nao_requer', pgrPrazo: '', pgrResponsavel: '' };
+        q.dec = { valor: 'sim', justificativa: justif, data: new Date().toISOString(), numero: S.proximoNumero(), sharepoint: '' };
+        q.trein.gerar = true; q.status = 'homologado';
+        ['fds0', 'ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano'].forEach((k) => { q.confirmadas[k] = new Date().toISOString(); });
+        q.etapa = 'saida'; q.natureza = 'insumo'; q.armazenamento = 'embalado';
+        S.salvarProduto(q);
+      };
+      const cl = S.novoLocal('Almoxarifado de cloro (demonstração)', 'Almoxarifado'); cl.espacoM = 6; S.salvarLocal(cl);
+      const ac = S.novoLocal('Contêiner de ácidos (demonstração)', 'Contêiner de PQ'); ac.espacoM = 0; S.salvarLocal(ac);
+      mk('hipoclorito', cl.id, 'Atende aos critérios internos. Armazenar longe de ácidos.');
+      mk('acido', ac.id, 'Atende aos critérios internos. Armazenar longe de hipocloritos e bases.');
     },
   };
 })(window.O360 = window.O360 || {});

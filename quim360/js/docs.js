@@ -398,6 +398,118 @@
   }
   function D_STATUS(p) { return STATUS[p.status] || STATUS.em_analise; }
 
+  // ---------------------------------------------------------------- Relatório da análise da FDS
+  function analiseFds(p, produtos) {
+    const av = E.avaliar(p, produtos);
+    const st = STATUS[av.sugestao] || STATUS.em_analise;
+    const idade = E.idadeFds(p);
+    const B = [];
+    B.push(capa('Relatório da análise da FDS', 'QUIM 360 | Análise da FDS | ' + fmtData(new Date().toISOString()) + ' | ' + nz(p.nome), p, [['Natureza', p.natureza === 'carga' ? 'Produto armazenado pelo terminal (carga)' : p.natureza === 'insumo' ? 'Insumo' : 'Não informada']]));
+    const bloqueios = av.reprovacoes.concat(av.pendencias, av.condicionantes);
+    B.push({ t: 'callout', tone: av.sugestao === 'reprovado' ? 'crit' : av.sugestao === 'homologado' ? 'ok' : 'warn', title: 'Resultado preliminar da análise: ' + st[0], text: bloqueios.length ? bloqueios.join(' ') : 'Nenhum impedimento identificado nos dados informados. A decisão formal é do responsável técnico.' });
+    av.alertas.forEach((a) => B.push({ t: 'callout', tone: 'warn', title: 'Alerta', text: a }));
+
+    B.push({ t: 'h1', text: '1 Identificação e validade da FDS' });
+    const sec = p.fds.secoesOk || {};
+    const faltam = Object.keys(sec).filter((k) => !sec[k]);
+    B.push({ t: 'kv', rows: [
+      ['Produto', nz(p.nome)], ['Fornecedor / fabricante', nz(p.fornecedor)], ['Data da revisão', fmtData(p.fds.dataRevisao)], ['Versão', nz(p.fds.versao)],
+      ['Idade da FDS', idade == null ? '—' : idade.toFixed(1).replace('.', ',') + ' anos (limite configurado: ' + cfg().anosValidadeFDS + ')'],
+      ['Idioma', p.fds.portugues === true ? 'Português' : p.fds.portugues === false ? 'Não identificado como português' : '—'],
+      ['Seções localizadas', Object.keys(sec).length ? (Object.keys(sec).length - faltam.length) + ' de 16' : 'FDS não analisada'],
+    ] });
+    if (Object.keys(sec).length) B.push({ t: 'table', head: ['Seção', 'Título (ABNT NBR 14725)', 'Situação'], widths: [10, 66, 24], rows: O.FDS.SEC_TITLES.map((t, i) => [String(i + 1), t, sec[i + 1] ? 'Localizada' : 'Ausente']) });
+
+    B.push({ t: 'h1', text: '2 Classificação GHS' });
+    const dv = G.derive(p.ghs.h || []);
+    const pict = (p.ghs.pictos && p.ghs.pictos.length) ? p.ghs.pictos : dv.pictos;
+    if (pict.length) B.push({ t: 'imgs', items: pict.map((x) => ({ svg: O.Pic.ghs(x, 72), w: 72, h: 72, cap: G.PICTO[x] })) });
+    B.push({ t: 'kv', rows: [['Palavra de advertência', nz(p.ghs.palavra || dv.palavra)]] });
+    if ((p.ghs.h || []).length) B.push({ t: 'table', head: ['Frase H', 'Texto'], widths: [14, 86], rows: p.ghs.h.map((h) => [h, G.hText(h) || 'Frase não reconhecida']) });
+    else B.push({ t: 'p', text: 'Nenhuma frase H informada ou lida na FDS.' });
+    const gp = agrupaP(p);
+    const linhasP = Object.keys(gp).filter((k) => gp[k].length).map((k) => [k, gp[k].join('\n')]);
+    if (linhasP.length) B.push({ t: 'table', head: ['Precaução', 'Frases P'], widths: [18, 82], rows: linhasP });
+
+    B.push({ t: 'h1', text: '3 Composição e triagem de cancerígeno, mutagênico, teratogênico e PFC' });
+    const cas = p.fds.cas || [];
+    const marca = (c) => { const m = []; [['cancerigeno', 'cancerígeno'], ['reprotoxico', 'tóxico à reprodução'], ['mutagenico', 'mutagênico'], ['pfas', 'PFAS']].forEach(([k, n]) => { const w = T.WATCH[k].find((x) => x[0] === c); if (w) m.push(n + ' (' + w[1] + ')'); }); return m.join('; '); };
+    if (cas.length) B.push({ t: 'table', head: ['CAS', 'Lista de alerta'], widths: [26, 74], rows: cas.map((c) => [c, marca(c) || 'Sem registro na lista de alerta']) });
+    const tri = av.tri;
+    B.push({ t: 'table', head: ['Critério', 'Resultado'], widths: [34, 66], rows: [
+      ['Cancerígeno', tri.criticos.some((c) => c.tipo === 'cancerigeno') ? 'Identificado' : 'Não identificado'],
+      ['Mutagênico', tri.criticos.some((c) => c.tipo === 'mutagenico') ? 'Identificado' : 'Não identificado'],
+      ['Teratogênico / tóxico à reprodução', tri.criticos.some((c) => c.tipo === 'teratogenico' || c.tipo === 'reprodutivo') ? 'Identificado' : 'Não identificado'],
+      ['Contém PFCs / PFAS', tri.criticos.some((c) => c.tipo === 'pfc') ? 'Identificado' : 'Não identificado'],
+    ] });
+    if (tri.criticos.length) B.push({ t: 'list', items: tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']') });
+    B.push({ t: 'p', small: true, text: E.ehCarga(p) ? 'Produto armazenado pelo terminal: sem reprovação automática. A homologação exige justificativa, controles de exposição e parecer de Higiene Ocupacional.' : 'Insumo: cancerígeno, mutagênico, teratogênico e PFC reprovam de forma automática pelo critério interno.' });
+
+    B.push({ t: 'h1', text: '4 Transporte e armazenamento' });
+    const n20 = E.nr20(p); const ca = E.classeArm(p); const cb = E.combustivel(p);
+    B.push({ t: 'kv', rows: [
+      ['Número ONU', nz(p.imdg.onu)], ['Nome apropriado para embarque', nz(p.imdg.nome)], ['Classe / subclasse', nz(p.imdg.classe) + (p.imdg.subrisco ? ' / ' + p.imdg.subrisco : '')],
+      ['Grupo de embalagem', nz(p.imdg.pg)], ['Número de risco', nz(p.imdg.numeroRisco)], ['Ponto de fulgor', p.imdg.pontoFulgor === '' ? '—' : p.imdg.pontoFulgor + ' °C'],
+      ['NR-20', n20.aplica ? n20.categoria : 'Não aplicável pelo ponto de fulgor e frases H'],
+      ['Classe de armazenamento (NBR 17160)', p.armazenamento === 'granel' ? 'Não se aplica: tanque está fora do escopo da NBR 17160 (NBR 17505 e NR-20)' : ca.id + ' | ' + O.NBR17160.nome(ca.id) + ' | ' + ca.motivo],
+      ['Combustível', (cb.valor ? 'Sim' : 'Não') + ' | ' + cb.origem],
+      ['Incompatível com (Seções 7 e 10)', (p.comp.incompativeis || []).length ? p.comp.incompativeis.map(nomeG).join(', ') : 'Nenhuma identificada'],
+      ['Grupos de reatividade do produto', (p.comp.grupos || []).length ? p.comp.grupos.map(nomeG).join(', ') : '—'],
+    ] });
+    const lims = O.NBR17160.LIMITES.filter((l) => (p.ghs.h || []).some((c) => l.re.test(c)));
+    if (lims.length && p.armazenamento !== 'granel') B.push({ t: 'table', head: ['Perigo', 'Limite fora de armazém', 'Acima do limite'], widths: [38, 24, 38], rows: lims.map((l) => [l.rotulo, l.limite, l.acima]) });
+
+    B.push({ t: 'h1', text: '5 Controles sugeridos pela análise' });
+    const sg = E.sugestoes(p);
+    const linhasS = [['Substituição', sg.ocup.subst], ['Engenharia', sg.ocup.eng], ['Administrativos', sg.ocup.adm], ['EPI', sg.ocup.epi], ['Contenção ambiental', sg.amb.contencao], ['Resposta a derramamento', sg.amb.derramamento], ['Resíduos', sg.amb.residuos]].filter((x) => x[1].length).map((x) => [x[0], x[1].join('\n')]);
+    if (linhasS.length) B.push({ t: 'table', head: ['Tipo', 'Sugestão'], widths: [24, 76], rows: linhasS });
+    else B.push({ t: 'p', text: 'Nenhum controle adicional sugerido pelas frases H.' });
+    if (sg.controlesArm.length) B.push({ t: 'p', text: 'Controles de armazenamento sugeridos: ' + sg.controlesArm.map(ctrlNome).join('; ') + '.' });
+
+    B.push({ t: 'h1', text: '6 Dados que a FDS não traz e dependem de você' });
+    B.push({ t: 'list', items: O.Auto.faltam(p) });
+    B.push({ t: 'h2', text: 'Base técnico-legal' });
+    B.push({ t: 'list', items: T.BASE_LEGAL.map((b) => b.sigla + ': ' + b.titulo) });
+    B.push({ t: 'p', small: true, text: 'Análise automática da FDS: apoio à decisão. Valores lidos do texto devem ser conferidos contra a FDS vigente do fornecedor.' });
+    B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico']] });
+    return B;
+  }
+
+  // ---------------------------------------------------------------- Quadro de compatibilidade
+  function quadroCompat(destaque, produtos, tituloLocal, incluir) {
+    const lista = E.homologados(produtos).filter((x) => x.armazenamento !== 'granel');
+    (incluir || []).forEach((x) => { if (x.armazenamento !== 'granel' && !lista.some((y) => y.id === x.id)) lista.push(x); });
+    if (destaque && !lista.some((x) => x.id === destaque.id) && destaque.armazenamento !== 'granel') lista.push(destaque);
+    const L = lista.slice().sort((a, b) => ((localDe(a) || {}).nome || '').localeCompare((localDe(b) || {}).nome || '') || a.nome.localeCompare(b.nome));
+    const pseudo = { nome: destaque ? destaque.nome : (tituloLocal || 'Produtos homologados'), dec: { numero: '' } };
+    const B = [capa('Quadro de compatibilidade', 'QUIM 360 | Compatibilidade entre produtos | ABNT NBR 17160:2024', pseudo, [['Produtos comparados', String(L.length)], ['Critério', 'Matriz de incompatibilidade da NBR 17160 e reatividade pela Seção 10 da FDS']])];
+    if (L.length < 2) { B.push({ t: 'callout', tone: 'info', title: 'Quadro indisponível', text: 'São necessários ao menos 2 produtos (homologados, ou o produto em análise mais 1 homologado) em armazenamento embalado.' }); return B; }
+    const tom = { incompativel: ['crit', 'X'], restricao: ['warn', null], livre: ['ok', 'OK'], verificar: ['info', '?'] };
+    let nProib = 0, nRest = 0, nLivre = 0, nVer = 0; const pares = [];
+    const rows = L.map((a, i) => L.map((b, j) => {
+      if (i === j) return { txt: '—', tone: 'self' };
+      const r = E.compatPar(a, b); const t = tom[r.nivel];
+      if (i < j) { if (r.nivel === 'incompativel') nProib++; else if (r.nivel === 'restricao') nRest++; else if (r.nivel === 'livre') nLivre++; else nVer++; if (r.nivel !== 'livre') pares.push([i + 1, j + 1, a, b, r]); }
+      return { txt: t[1] || r.codigo || 'R', tone: t[0] };
+    }));
+    B.push({ t: 'callout', tone: nProib ? 'crit' : nRest ? 'warn' : 'ok', title: nProib + ' par(es) proibido(s), ' + nRest + ' com restrição, ' + nLivre + ' permitido(s)' + (nVer ? ', ' + nVer + ' a verificar' : ''), text: 'Entre ' + L.length + ' produtos, ' + (L.length * (L.length - 1) / 2) + ' pares avaliados.' });
+    B.push({ t: 'h1', text: '1 Produtos comparados' });
+    B.push({ t: 'table', head: ['Nº', 'Produto', 'Classe de armazenamento', 'Local', 'Registro'], widths: [6, 38, 20, 22, 14], rows: L.map((p, i) => [String(i + 1), p.nome + (destaque && p.id === destaque.id ? ' (em análise)' : ''), E.classeArm(p).id + ' | ' + O.NBR17160.nome(E.classeArm(p).id), (localDe(p) || {}).nome || '—', nz(p.dec.numero)]) });
+    B.push({ t: 'h1', text: '2 Quadro comparativo' });
+    B.push({ t: 'matrix', labels: L.map((_, i) => String(i + 1)), rows });
+    B.push({ t: 'p', small: true, text: 'Legenda: X proibido | número restrição da NBR 17160 (ver observação) | OK permitido | ? classe não definida | — mesmo produto.' });
+    B.push({ t: 'h1', text: '3 Pares que exigem atenção' });
+    if (!pares.length) B.push({ t: 'callout', tone: 'ok', title: 'Nenhuma restrição', text: 'Todos os pares são permitidos pela matriz e sem reatividade declarada.' });
+    else B.push({ t: 'table', head: ['Par', 'Classes', 'Resultado', 'Orientação'], widths: [24, 12, 14, 50], rows: pares.map(([i, j, a, b, r]) => [i + ' x ' + j + '\n' + a.nome + '\n' + b.nome, r.par.join(' x '), (r.nivel === 'incompativel' ? (r.codigo === 'R' ? 'Proibido (matriz)' : 'Proibido (reatividade da FDS)') : E.NIVEL[r.nivel] + (r.codigo && !['R', 'G'].includes(r.codigo) ? ' ' + r.codigo : '')), r.acao + (r.motivos.length ? '\n' + r.motivos.join('\n') : '')]) });
+    B.push({ t: 'h1', text: '4 Grupos que podem dividir o mesmo setor de armazém' });
+    const grupos = E.gruposCompativeis(L);
+    B.push({ t: 'p', text: 'Cada grupo reúne produtos com todos os pares permitidos e sem restrição. Produtos de grupos diferentes devem ficar em setores, contêineres ou armários distintos, ou cumprir as restrições da seção 3.' });
+    B.push({ t: 'table', head: ['Grupo', 'Produtos'], widths: [14, 86], rows: grupos.map((g, i) => ['Grupo ' + String.fromCharCode(65 + i), g.map((p) => (L.indexOf(p) + 1) + ' ' + p.nome).join('\n')]) });
+    B.push({ t: 'p', small: true, text: 'Produtos a granel em tanque ficam fora do quadro (fora do escopo da NBR 17160). A matriz considera a classe de armazenamento; a incompatibilidade também depende de combustão, gases, corrosivos e substâncias instáveis formadas (item 9.1.1 da norma). Confirme nas Seções 7 e 10 da FDS.' });
+    B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico']] });
+    return B;
+  }
+
   // ---------------------------------------------------------------- Solicitação ao fornecedor
   function solicitacaoFornecedor(p, motivos) {
     return 'Assunto: Solicitação de FDS corrigida: ' + nz(p.nome) + '\n\n' +
@@ -405,5 +517,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { STATUS, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

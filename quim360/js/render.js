@@ -29,6 +29,10 @@
         case 'box': return `<div class="d-box" style="border-color:${b.border || '#dc2626'};${b.bg ? 'background:' + b.bg : ''}">${b.children.map(r).join('')}</div>`;
         case 'qr': return `<figure class="d-qr">${O.Pic.qr(b.text, 120)}<figcaption>${esc(b.cap)}<br><span class="mono">${esc(b.text.length > 80 ? b.text.slice(0, 80) + '…' : b.text)}</span></figcaption></figure>`;
         case 'sign': return `<div class="d-sign">${b.rows.map((s) => `<div><div class="line"></div><div>${esc(s[0])}</div><div class="small">${esc(s[1])}</div></div>`).join('')}</div>`;
+        case 'matrix': {
+          const cor = { crit: '#dc2626;color:#fff', warn: '#facc15;color:#1f2937', ok: '#86efac;color:#14532d', info: '#cbd5e1;color:#334155', self: '#e5e7eb;color:#6b7280' };
+          return `<table class="d-mx"><thead><tr><th></th>${b.labels.map((l) => `<th>${esc(l)}</th>`).join('')}</tr></thead><tbody>${b.rows.map((row, i) => `<tr><th>${esc(b.labels[i])}</th>${row.map((c) => `<td style="background:${cor[c.tone] || cor.info}">${esc(c.txt)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+        }
         case 'pagebreak': return '<div class="d-break"></div>';
         default: return '';
       }
@@ -68,6 +72,7 @@
   .d-box .d-h2{margin-top:0}
   .d-sign{display:flex;gap:40px;margin-top:36px}.d-sign>div{flex:1}.d-sign .line{border-top:1px solid #111;margin-bottom:4px}
   .mono{font-family:Consolas,'Courier New',monospace;font-size:7.5pt;word-break:break-all}
+  .d-mx{border-collapse:collapse;margin:8px 0;font-size:8.5pt;table-layout:fixed;width:100%}.d-mx th{background:#0f172a;color:#fff;padding:3px 2px;border:1px solid #fff;text-align:center;font-weight:700}.d-mx td{text-align:center;border:1px solid #fff;padding:4px 2px;font-weight:700}
   .d-break{break-after:page;height:0}
   .d-box .d-table td,.d-box .d-kv td{background:#fff!important}.d-box .d-table tr:nth-child(even) td{background:#fff!important}
   `;
@@ -171,6 +176,14 @@
           const cells = b.rows.map((s) => new D.TableCell({ width: { size: Math.round(W / b.rows.length), type: D.WidthType.DXA }, borders: { ...noBorders, top: { style: D.BorderStyle.SINGLE, size: 6, color: '111111' } }, margins: { top: 60 }, children: [par(s[0], { run: { size: 20 } }), par(s[1], { run: { size: 18, color: '4B5563' } })] }));
           return [par(''), par(''), new D.Table({ width: { size: W, type: D.WidthType.DXA }, borders: noBorders, rows: [new D.TableRow({ children: cells })] })];
         }
+        case 'matrix': {
+          const cor = { crit: ['DC2626', 'FFFFFF'], warn: ['FACC15', '1F2937'], ok: ['86EFAC', '14532D'], info: ['CBD5E1', '334155'], self: ['E5E7EB', '6B7280'] };
+          const n = b.labels.length; const w0 = 6; const wc = (100 - w0) / n;
+          const mk = (txt, fill, color, bold) => new D.TableCell({ width: { size: tw(fill === '0F172A' ? w0 : wc), type: D.WidthType.DXA }, borders: allB('FFFFFF', 4), shading: { type: D.ShadingType.CLEAR, fill, color: 'auto' }, margins: { top: 40, bottom: 40, left: 20, right: 20 }, children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [run(txt, { size: 16, bold: true, color })] })] });
+          const head = new D.TableRow({ tableHeader: true, children: [mk('', '0F172A', 'FFFFFF')].concat(b.labels.map((l) => new D.TableCell({ width: { size: tw(wc), type: D.WidthType.DXA }, borders: allB('FFFFFF', 4), shading: { type: D.ShadingType.CLEAR, fill: '0F172A', color: 'auto' }, margins: { top: 40, bottom: 40, left: 20, right: 20 }, children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [run(l, { size: 16, bold: true, color: 'FFFFFF' })] })] }))) });
+          const rows = b.rows.map((row, i) => new D.TableRow({ cantSplit: true, children: [new D.TableCell({ width: { size: tw(w0), type: D.WidthType.DXA }, borders: allB('FFFFFF', 4), shading: { type: D.ShadingType.CLEAR, fill: '0F172A', color: 'auto' }, margins: { top: 40, bottom: 40, left: 20, right: 20 }, children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [run(b.labels[i], { size: 16, bold: true, color: 'FFFFFF' })] })] })].concat(row.map((c) => { const k = cor[c.tone] || cor.info; return new D.TableCell({ width: { size: tw(wc), type: D.WidthType.DXA }, borders: allB('FFFFFF', 4), shading: { type: D.ShadingType.CLEAR, fill: k[0], color: 'auto' }, margins: { top: 40, bottom: 40, left: 20, right: 20 }, children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [run(c.txt, { size: 16, bold: true, color: k[1] })] })] }); })) }));
+          return [new D.Table({ width: { size: W, type: D.WidthType.DXA }, rows: [head, ...rows] }), par('')];
+        }
         case 'pagebreak': return [new D.Paragraph({ children: [new D.PageBreak()] })];
         default: return [];
       }
@@ -206,6 +219,7 @@
         case 'box': b.children.forEach(r); break;
         case 'imgs': { const caps = b.items.map((i) => i.cap).filter(Boolean); if (caps.length) L.push('Símbolos: ' + caps.join('; ')); break; }
         case 'qr': L.push(b.cap + ': ' + b.text); break;
+        case 'matrix': L.push('Matriz de compatibilidade: ' + b.labels.length + ' produtos (ver pares na tabela)'); break;
         case 'sign': b.rows.forEach((s) => L.push('Assinatura: ' + s[0] + (s[1] ? ' | ' + s[1] : ''))); break;
         default: break;
       }
