@@ -23066,7 +23066,7 @@ var vfs = {
   const PFAS_TERMS = /(pfas|pfc\b|pfcs\b|perfluor|polifluor|per-?\s?e\s?polifluor|fluorotel[oô]mer|fluoropol[ií]mer|fluorosurfactante|pfoa|pfos|ptfe|c6\s*fluor)/i;
 
   // Tipos de local de armazenamento
-  const LOCAIS_TIPO = ['Contêiner de PQ', 'Oficina', 'Almoxarifado', 'Área operacional', 'Obra / campo', 'Outro'];
+  const LOCAIS_TIPO = ['Tanques', 'Contêiner de PQ', 'Oficina', 'Almoxarifado', 'Área operacional', 'Obra / campo', 'Outro'];
   const FINALIDADES = ['Operação', 'Manutenção', 'Limpeza', 'Conservação', 'Obra'];
 
   const CONTROLES_ARM = [
@@ -23090,6 +23090,18 @@ var vfs = {
     { sigla: 'NBR 7503', titulo: 'ABNT NBR 7503', uso: 'Ficha de emergência e envelope para o transporte terrestre de produtos perigosos.', onde: 'Ficha de emergência e envelope' },
     { sigla: 'NR-26', titulo: 'NR-26 Sinalização de Segurança', uso: 'Rotulagem preventiva e FDS no local de trabalho conforme GHS.', onde: 'Controles de armazenamento' },
     { sigla: 'NR-01 / NR-15', titulo: 'NR-01 (GRO/PGR) e NR-15 (Atividades e operações insalubres)', uso: 'Interface com o Inventário de Riscos e limites de tolerância.', onde: 'Etapas 9 e 12' },
+  ];
+
+  // controles de exposição a agentes CMR e PFC para produto armazenado pelo terminal
+  O.CMR_CONTROLES = [
+    ['exposicao', 'Programa de controle de exposição: avaliação quantitativa de agentes CMR no PGR'],
+    ['saude', 'Vigilância da saúde dos expostos (PCMSO)'],
+    ['fechado', 'Transferência em sistema fechado, com controle ou recuperação de vapores'],
+    ['acesso', 'Acesso restrito e sinalização das áreas de exposição'],
+    ['epi', 'EPI respiratório e de pele adequados, com programa de proteção respiratória'],
+    ['treino', 'Treinamento específico sobre os agentes CMR e PFC'],
+    ['emerg', 'Plano de resposta a emergência e primeiros socorros para o agente'],
+    ['legal', 'Requisitos legais específicos verificados (por exemplo, NR-15 Anexo 13-A para benzeno)'],
   ];
 
   O.TRANSPORT = {
@@ -23244,6 +23256,7 @@ var vfs = {
 (function (O) { O.SAMPLES = {
  "solvente": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 12/03/2025\nVersão: 3\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Solvente de limpeza SL-30 (demonstração)\nFabricante: Química Exemplo Ltda.\nTelefone de emergência: 0800 000 0000\nCódigo do produto: DEMO-001\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Líquidos inflamáveis categoria 2; Irritação ocular categoria 2A; Toxicidade para órgãos-alvo categoria 3.\nPalavra de advertência: Perigo\nPictogramas: GHS02, GHS07\nFrases de perigo: H225 Líquido e vapores altamente inflamáveis. H319 Provoca irritação ocular grave. H336 Pode provocar sonolência ou vertigem.\nFrases de precaução: P210 P233 P240 P241 P261 P280 P305+P351+P338 P370+P378 P403+P235 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nMistura.\nAcetato de etila - CAS 141-78-6 - 60 a 80 %\nIsopropanol - CAS 67-63-0 - 10 a 20 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: remova a pessoa para local ventilado e mantenha em repouso.\nContato com a pele: lave com água e sabão em abundância.\nContato com os olhos: enxágue com água por 15 minutos e retire lentes de contato.\nIngestão: não provoque vômito; procure atendimento médico.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nMeios de extinção: espuma resistente a álcool, pó químico e dióxido de carbono. Não usar jato d'água direto.\nPerigos: vapores formam mistura explosiva com o ar e podem se deslocar até fonte de ignição.\nProteção dos bombeiros: aparelho de respiração autônomo e roupa de combate a incêndio.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nEliminar fontes de ignição e isolar a área. Conter com material absorvente inerte (areia, vermiculita). Não descartar em rede pluvial ou corpos d'água. Usar ferramentas antifaiscantes.\n\nSEÇÃO 7 - Manuseio e armazenamento\nManuseio: aterrar recipientes na transferência, evitar o acúmulo de vapores, usar em local ventilado.\nArmazenamento: local fresco, ventilado e ao abrigo do sol, longe de fontes de ignição. Incompatível com oxidantes fortes, ácidos fortes e bases fortes.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nControle de engenharia: exaustão local.\nProteção respiratória: respirador com filtro para vapores orgânicos.\nLuvas: nitrila.\nOlhos: óculos de ampla visão.\nLimites de exposição: acetato de etila TLV-TWA 400 ppm (ACGIH); NR-15: 310 ppm.\n\nSEÇÃO 9 - Propriedades físicas e químicas\nEstado físico: líquido. Cor: incolor. Ponto de fulgor: 8 °C (vaso fechado). pH: não aplicável.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstabilidade: estável nas condições recomendadas.\nMateriais a evitar: agentes oxidantes fortes, ácidos fortes e bases fortes. Evitar calor, faíscas e chamas.\n\nSEÇÃO 11 - Informações toxicológicas\nToxicidade aguda: baixa. Irritante para os olhos. Vapores podem causar narcose.\n\nSEÇÃO 12 - Informações ecológicas\nTóxico para organismos aquáticos em altas concentrações. Não são esperados efeitos persistentes.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nDestinar como resíduo perigoso conforme ABNT NBR 10004 em incinerador licenciado. Embalagens vazias devem ser tríplice lavadas.\n\nSEÇÃO 14 - Informações sobre transporte\nTerrestre (ANTT 5.947/21): Número ONU: 1993\nNome apropriado para embarque: LÍQUIDO INFLAMÁVEL, N.E. (acetato de etila, isopropanol)\nClasse de risco: 3\nGrupo de embalagem: II\nNúmero de risco: 33\nMarítimo (IMDG): Classe 3, Grupo de embalagem II, EmS F-E, S-D. Não é poluente marinho.\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n",
  "benzeno": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 05/06/2019\nVersão: 3\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Desengraxante DX-BZ (demonstração)\nFabricante: Química Exemplo Ltda.\nTelefone de emergência: 0800 000 0000\nCódigo do produto: DEMO-001\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Líquidos inflamáveis categoria 2; Carcinogenicidade categoria 1A; Mutagenicidade categoria 1B; Toxicidade para órgãos-alvo - exposição repetida categoria 1.\nPalavra de advertência: Perigo\nPictogramas: GHS02, GHS08\nFrases de perigo: H225 H304 H315 H319 H340 H350 H372\nFrases de precaução: P201 P210 P280 P308+P313 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nMistura.\nBenzeno - CAS 71-43-2 - 1 a 5 %\nNafta solvente - CAS 64742-48-9 - 90 a 99 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: ar fresco. Pele: lavar com água e sabão. Olhos: enxaguar por 15 minutos. Ingestão: não provocar vômito.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nEspuma, pó químico, CO2. Evitar jato d'água direto.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nIsolar a área, eliminar ignição, absorver com material inerte.\n\nSEÇÃO 7 - Manuseio e armazenamento\nArmazenar em local ventilado, longe de ignição. Incompatível com oxidantes fortes.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nExaustão local. Respirador com filtro para vapores orgânicos. Luvas de nitrila.\n\nSEÇÃO 9 - Propriedades físicas e químicas\nLíquido incolor. Ponto de fulgor: 12 °C.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstável. Materiais a evitar: agentes oxidantes fortes.\n\nSEÇÃO 11 - Informações toxicológicas\nContém benzeno, carcinogênico para humanos.\n\nSEÇÃO 12 - Informações ecológicas\nTóxico para organismos aquáticos.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nResíduo perigoso, incineração licenciada.\n\nSEÇÃO 14 - Informações sobre transporte\nNúmero ONU: 1993\nNome apropriado para embarque: LÍQUIDO INFLAMÁVEL, N.E. (nafta, benzeno)\nClasse de risco: 3\nGrupo de embalagem: II\nNúmero de risco: 33\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n",
+ "gasolina": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 10/02/2025\nVersão: 2\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Gasolina automotiva (demonstração)\nFabricante: Distribuidora Exemplo S.A.\nTelefone de emergência: 0800 000 0000\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Líquidos inflamáveis categoria 1; Mutagenicidade categoria 1B; Carcinogenicidade categoria 1B; Toxicidade à reprodução categoria 2; Perigo por aspiração categoria 1; Corrosão/irritação à pele categoria 2; Toxicidade para órgãos-alvo exposição única categoria 3; Perigoso ao ambiente aquático crônico categoria 2.\nPalavra de advertência: Perigo\nPictogramas: GHS02, GHS07, GHS08, GHS09\nFrases de perigo: H224 Líquido e vapores extremamente inflamáveis. H304 Pode ser fatal se ingerido e penetrar nas vias respiratórias. H315 Provoca irritação à pele. H336 Pode provocar sonolência ou vertigem. H340 Pode provocar defeitos genéticos. H350 Pode provocar câncer. H361d Suspeito de prejudicar o feto. H411 Tóxico para os organismos aquáticos, com efeitos prolongados.\nFrases de precaução: P201 P210 P233 P240 P243 P273 P280 P301+P310 P331 P308+P313 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nMistura de hidrocarbonetos.\nGasolina (nafta de petróleo) - CAS 86290-81-5 - 70 a 100 %\nBenzeno - CAS 71-43-2 - até 1 %\nTolueno - CAS 108-88-3 - 5 a 25 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: remova a pessoa para local ventilado, mantenha em repouso e procure atendimento médico.\nContato com a pele: retire a roupa contaminada e lave com água e sabão em abundância.\nContato com os olhos: enxágue com água por 15 minutos.\nIngestão: não provoque vômito; risco de aspiração; procure atendimento médico imediato.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nMeios de extinção: espuma resistente a álcool, pó químico e dióxido de carbono. Não usar jato d'água direto.\nPerigos: vapores mais pesados que o ar podem se deslocar até fonte de ignição e retornar. Risco de explosão de recipientes.\nProteção dos bombeiros: aparelho de respiração autônomo e roupa de combate a incêndio.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nEliminar fontes de ignição e isolar a área. Conter com diques e absorver com material inerte. Evitar chegada a drenagem pluvial, solo e corpos d'água. Usar ferramentas antifaiscantes e equipamento aterrado.\n\nSEÇÃO 7 - Manuseio e armazenamento\nManuseio: aterrar equipamentos na transferência, evitar acúmulo de vapores, usar sistema fechado quando possível.\nArmazenamento: tanques adequados à NBR 17505, em local ventilado, longe de fontes de ignição. Incompatível com oxidantes fortes. Temperatura de armazenamento até 40 °C.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nControle de engenharia: sistema fechado de transferência e exaustão local.\nProteção respiratória: respirador com filtro para vapores orgânicos.\nLuvas: nitrila ou fluorelastômero.\nOlhos: óculos de ampla visão.\nLimites de exposição: benzeno VRT-MPT 1 ppm (NR-15 Anexo 13-A); tolueno TLV-TWA 20 ppm (ACGIH).\n\nSEÇÃO 9 - Propriedades físicas e químicas\nEstado físico: líquido. Cor: incolor a amarelada. Ponto de fulgor: -43 °C (vaso fechado). pH: não aplicável.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstável nas condições recomendadas. Materiais a evitar: agentes oxidantes fortes. Evitar calor, faíscas e chamas.\n\nSEÇÃO 11 - Informações toxicológicas\nContém benzeno, carcinogênico e mutagênico para humanos. A inalação de vapores pode causar sonolência. Aspiração pode causar pneumonite química.\n\nSEÇÃO 12 - Informações ecológicas\nTóxico para organismos aquáticos, com efeitos prolongados. Não deve atingir corpos d'água.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nDestinar como resíduo perigoso conforme ABNT NBR 10004 em unidade licenciada.\n\nSEÇÃO 14 - Informações sobre transporte\nTerrestre (ANTT 5.947/21): Número ONU: 1203\nNome apropriado para embarque: GASOLINA\nClasse de risco: 3\nGrupo de embalagem: II\nNúmero de risco: 33\nMarítimo (IMDG): Classe 3, Grupo de embalagem II, EmS F-E, S-E. Poluente marinho: Não.\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725, NR-20 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n",
  "alcalino": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 20/08/2024\nVersão: 3\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Limpador alcalino LA-12 (demonstração)\nFabricante: Química Exemplo Ltda.\nTelefone de emergência: 0800 000 0000\nCódigo do produto: DEMO-001\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Corrosivo para os metais categoria 1; Corrosão cutânea categoria 1B; Lesões oculares graves categoria 1.\nPalavra de advertência: Perigo\nPictogramas: GHS05\nFrases de perigo: H290 Pode ser corrosivo para os metais. H314 Provoca queimaduras graves na pele e lesões oculares graves.\nFrases de precaução: P260 P264 P280 P301+P330+P331 P303+P361+P353 P305+P351+P338 P310 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nSolução aquosa.\nHidróxido de potássio - CAS 1310-58-3 - 20 a 30 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: ar fresco. Pele: retirar roupa contaminada e lavar com água abundante por 15 minutos. Olhos: enxaguar por 15 minutos e procurar médico. Ingestão: enxaguar a boca, não provocar vômito.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nMeios de extinção adequados ao fogo circundante. Em contato com metais pode liberar hidrogênio.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nConter com diques e absorver com material inerte. Neutralizar resíduos com cautela. Evitar chegada a drenagem pluvial.\n\nSEÇÃO 7 - Manuseio e armazenamento\nArmazenar em recipiente original, fechado, em local fresco e seco. Incompatível com ácidos, metais leves (alumínio, zinco) e agentes oxidantes.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nLuvas de PVC ou neoprene, óculos de ampla visão, protetor facial, avental. Lava-olhos e chuveiro de emergência no local.\n\nSEÇÃO 9 - Propriedades físicas e químicas\nLíquido incolor. Ponto de fulgor: não aplicável. pH: 14.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstável. Materiais a evitar: ácidos fortes, alumínio, zinco, agentes oxidantes. Reage violentamente com ácidos.\n\nSEÇÃO 11 - Informações toxicológicas\nCorrosivo para pele, olhos e vias respiratórias.\n\nSEÇÃO 12 - Informações ecológicas\nNocivo para organismos aquáticos por alteração do pH.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nNeutralizar e destinar conforme legislação aplicável.\n\nSEÇÃO 14 - Informações sobre transporte\nNúmero ONU: 1814\nNome apropriado para embarque: HIDRÓXIDO DE POTÁSSIO EM SOLUÇÃO\nClasse de risco: 8\nGrupo de embalagem: II\nNúmero de risco: 80\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n"
 }; })(window.O360 = window.O360 || {});
 
@@ -23359,6 +23372,7 @@ var vfs = {
       confirmadas: {},
       ctx: { area: '', atividade: '', localId: '' },
       nome: '', fornecedor: '', codigoFornecedor: '',
+      natureza: '', armazenamento: '', cmr: { justificativa: '', controles: [], controlesOk: false },
       finalidade: '', aplicacao: '',
       lista: { naLista: null, numero: '' },
       sim: { ativa: null, refId: '', familia: false, forma: false, componentes: false, parecerCitaFamilia: false, divergencia: '', encerrada: false },
@@ -23375,7 +23389,7 @@ var vfs = {
       amb: { risco: null, contencao: '', residuos: '', derramamento: '' },
       hig: { tlv: null, parecerExigidoOk: false, pgr: '', dosimetria: null, justificativa: '', tlvAgentes: '' },
       imdg: { onu: '', nome: '', classe: '', subrisco: '', pg: '', numeroRisco: '', ems: '', poluente: false, pontoFulgor: '', incompativelOperacao: false, naoRegulado: false },
-      comp: { classeArm: '', combustivel: null, estado: '', incompDeclaradas: null, grupos: [], incompativeis: [], incompTexto: '', localOk: '', solucao: '', controles: [], limite: '', tempMax: '', observacoes: '' },
+      comp: { granel: [], classeArm: '', combustivel: null, estado: '', incompDeclaradas: null, grupos: [], incompativeis: [], incompTexto: '', localOk: '', solucao: '', controles: [], limite: '', tempMax: '', observacoes: '' },
       par: { tem: null, descricao: '', pgrIndicador: '', pgrPrazo: '', pgrResponsavel: '' },
       dec: { valor: '', justificativa: '', data: '', numero: '', sharepoint: '' },
       trein: { gerar: null },
@@ -23432,6 +23446,11 @@ var vfs = {
     out.reprovado = out.criticos.length > 0;
     return out;
   }
+
+  // Produto armazenado ou movimentado pelo terminal (carga): a reprovação automática de CMR e PFC vale só para insumos
+  const ehCarga = (p) => p.natureza === 'carga';
+  const rejeitaAuto = (p) => triagem(p).reprovado && !ehCarga(p);
+  const cmrCarga = (p) => ehCarga(p) && triagem(p).reprovado;
 
   // ---------- NR-20 ----------
   function nr20(p) {
@@ -23513,7 +23532,7 @@ var vfs = {
     const itens = (local.itens || []).map((i) => ({ nome: i.nome, arm: armDoItem(i), aprox: !i.classeArm, grupos: i.grupos || [], incompativeis: i.incompativeis || [], origem: 'manual' }));
     (produtos || []).forEach((q) => {
       if (q.id === excluirId) return;
-      if (q.ctx && q.ctx.localId === local.id && ['homologado', 'condicionado'].includes(q.status)) {
+      if (q.ctx && q.ctx.localId === local.id && ['homologado', 'condicionado'].includes(q.status) && q.armazenamento !== 'granel') {
         itens.push({ nome: q.nome, arm: classeArm(q).id, grupos: q.comp.grupos || [], incompativeis: q.comp.incompativeis || [], origem: 'homologado', pid: q.id });
       }
     });
@@ -23549,6 +23568,7 @@ var vfs = {
     const res = { local: local ? local.nome : '', pares: [], grupos: [], itens: 0, status: 'sem_local', exigeM: 0, mensagens: [], classe: null };
     if (!local) return res;
     const ca = classeArm(p); res.classe = ca;
+    if (p.armazenamento === 'granel') { res.status = 'compativel'; res.granel = true; res.mensagens.push('Armazenamento a granel em tanque: fora do escopo da NBR 17160. Aplicam-se a NBR 17505 e a NR-20.'); return res; }
     const mine = { nome: p.nome, arm: ca.id, grupos: p.comp.grupos || [], incompativeis: p.comp.incompativeis || [] };
     const itens = itensDoLocal(local, produtos, p.id);
     res.itens = itens.length;
@@ -23592,7 +23612,7 @@ var vfs = {
     const has = (re) => h.some((c) => re.test(c));
     const s = { ocup: { subst: [], eng: [], adm: [], epi: [] }, amb: { contencao: [], residuos: [], derramamento: [] }, controlesArm: [], risco: { ocup: false, amb: false } };
     const grave = has(/^H(300|310|330|340|350|360|370|372|304|314|334)/);
-    if (grave) { s.ocup.subst.push('Avaliar produto equivalente de menor perigo antes de aprovar (substituição).'); s.risco.ocup = true; }
+    if (grave) { s.ocup.subst.push(ehCarga(p) ? 'Substituição não se aplica: o produto é a carga do terminal. Priorizar controles de engenharia e administrativos.' : 'Avaliar produto equivalente de menor perigo antes de aprovar (substituição).'); s.risco.ocup = true; }
     if (has(/^H(33\d|335|336|334)$/) || has(/^H22[0-6]$/)) { s.ocup.eng.push('Ventilação geral diluidora ou exaustão local no ponto de uso; usar em local ventilado ou ao ar livre.'); s.ocup.epi.push('Proteção respiratória com filtro adequado ao agente (Seção 8 da FDS), se a exposição não ficar sob controle.'); s.risco.ocup = true; }
     if (has(/^H(31\d|314|317)$/)) { s.ocup.epi.push('Luvas de material resistente ao produto (conforme Seção 8 da FDS) e vestimenta de proteção.'); s.ocup.adm.push('Higiene pessoal após o manuseio; trocar de imediato roupa contaminada.'); s.risco.ocup = true; }
     if (has(/^H(314|318|319|320)$/)) { s.ocup.epi.push('Óculos de ampla visão; protetor facial na transferência de volumes.'); s.ocup.eng.push('Lava-olhos e chuveiro de emergência a menos de 10 s do ponto de uso.'); s.risco.ocup = true; }
@@ -23684,7 +23704,18 @@ var vfs = {
       const rot = { cancerigeno: 'Cancerígeno', mutagenico: 'Mutagênico', teratogenico: 'Teratogênico', reprodutivo: 'Tóxico à reprodução', pfc: 'Contém PFCs ou PFAS' };
       const g = {};
       r.tri.criticos.forEach((c) => { (g[c.tipo] = g[c.tipo] || []).push(c.fonte === 'analista' ? 'marcado pelo analista' : c.fonte + (c.detalhe.includes('componente ') ? ' (' + c.detalhe.split('componente ')[1].split(' consta')[0] + ')' : '')); });
-      Object.keys(g).forEach((k) => r.reprovacoes.push('Critério interno (GHS): ' + rot[k] + ' [' + g[k].join('; ') + '].'));
+      const lista = Object.keys(g).map((k) => rot[k] + ' [' + g[k].join('; ') + ']');
+      if (!ehCarga(p)) Object.keys(g).forEach((k) => r.reprovacoes.push('Critério interno (GHS): ' + rot[k] + ' [' + g[k].join('; ') + '].'));
+      else {
+        // produto armazenado pelo terminal: sem reprovação automática, mas com controles de exposição obrigatórios
+        r.cmr = lista;
+        r.alertas.push('Produto armazenado pelo terminal com perigo CMR ou PFC: ' + lista.join('; ') + '. Sem reprovação automática; exige justificativa de não substituição, controles de exposição e parecer de Higiene Ocupacional.');
+        const c = p.cmr || {};
+        if (!String(c.justificativa || '').trim()) r.pendencias.push('Justificativa de não substituição do agente CMR ou PFC não registrada (produto é a carga do terminal), etapa 7.');
+        if (!(c.controles || []).length) r.pendencias.push('Controles de exposição a agentes CMR ou PFC não selecionados, etapa 7.');
+        if (!p.hig.parecerExigidoOk) r.pendencias.push('Parecer formal de Higiene Ocupacional exigido antes da decisão (agente CMR ou PFC).');
+        if ((c.controles || []).length && !c.controlesOk) r.condicionantes.push('Implantar e verificar os controles de exposição a agentes CMR ou PFC: ' + c.controles.map((k) => ((O.CMR_CONTROLES || []).find((x) => x[0] === k) || [k, k])[1]).join('; ') + '.');
+      }
     }
     r.tri.suspeitos.forEach((c) => r.alertas.push(c.detalhe));
 
@@ -23719,7 +23750,7 @@ var vfs = {
     return r;
   }
 
-  O.Engine = { novoProduto, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});
 
 </script>
@@ -23988,7 +24019,7 @@ var vfs = {
 
   // preenchimento sugerido por etapa (só em etapa ainda não confirmada)
   const PREP = {
-    finalidade(p) { if (!p.finalidade && ['Operação', 'Manutenção', 'Limpeza'].includes(p.ctx.area)) { p.finalidade = p.ctx.area; p.auto.finalidade = 'copiada do local de uso'; } },
+    finalidade(p) { if (!p.finalidade && p.natureza === 'carga') { p.finalidade = 'Armazenamento de carga'; p.auto.finalidade = 'produto armazenado pelo terminal'; return; } if (!p.finalidade && ['Operação', 'Manutenção', 'Limpeza'].includes(p.ctx.area)) { p.finalidade = p.ctx.area; p.auto.finalidade = 'copiada do local de uso'; } },
     lista(p) { if (p.lista.naLista === null) { const m = similar(p); if (m) p.auto.listaSug = m.id; else { p.lista.naLista = false; p.auto.lista = 'nenhum produto homologado com este nome'; } } },
     sim(p) {
       if (p.sim.ativa !== null) return;
@@ -24045,14 +24076,15 @@ var vfs = {
     pgr(p) {
       if (!p.fds.analisada || p.hig.tlv !== null) return;
       const s8 = secao(p, 8);
-      p.hig.tlv = /tlv|acgih|nr-?\s?15|limite de toler|twa|stel/i.test(s8);
-      p.auto.pgr = p.hig.tlv ? 'Seção 8 cita limites de exposição' : 'Seção 8 não cita limites de exposição';
+      p.hig.tlv = /tlv|acgih|nr-?\s?15|limite de toler|twa|stel/i.test(s8) || E.cmrCarga(p);
+      p.auto.pgr = E.cmrCarga(p) ? 'agente CMR ou PFC: parecer de Higiene Ocupacional obrigatório' : (p.hig.tlv ? 'Seção 8 cita limites de exposição' : 'Seção 8 não cita limites de exposição');
     },
     compat(p) {
       if (!p.fds.analisada) return;
       if (p.comp.incompDeclaradas === null) { p.comp.incompDeclaradas = (p.comp.incompativeis || []).length > 0; p.auto.compat = p.comp.incompDeclaradas ? 'incompatibilidades lidas nas Seções 7 e 10' : 'nenhuma incompatibilidade declarada nas Seções 7 e 10'; }
       if (!(p.comp.controles || []).length) { const sg = E.sugestoes(p).controlesArm; if (sg.length) p.comp.controles = sg; }
       const loc = S.local(p.ctx.localId);
+      if (p.armazenamento === 'granel' && !p.comp.localOk) { p.comp.localOk = 'sim'; p.auto.compatLocal = 'tanque: fora do escopo da NBR 17160 (NBR 17505 e NR-20)'; return; }
       if (loc && !p.comp.localOk) {
         const cp = E.compatibilidade(p, loc, S.produtos());
         p.comp._motor = cp.status;
@@ -24337,6 +24369,8 @@ var vfs = {
       ['Onde será utilizado', nz([p.ctx.area, p.ctx.atividade].filter(Boolean).join(' | '))],
       ['Finalidade', nz(p.finalidade)], ['Aplicação / forma de uso', nz(p.aplicacao)],
       ['Local de armazenamento', loc ? loc.nome + ' (' + loc.tipo + ')' : '—'],
+      ['Natureza do produto', p.natureza === 'carga' ? 'Produto armazenado ou movimentado pelo terminal (carga)' : 'Insumo de operação, manutenção, limpeza ou conservação'],
+      ['Forma de armazenamento', p.armazenamento === 'granel' ? 'A granel, em tanque (NBR 17505 e NR-20)' : 'Embalado ou fracionado (NBR 17160)'],
       ['Lista de homologados', p.lista.naLista === true ? 'Já consta: ' + nz(p.lista.numero) : p.lista.naLista === false ? 'Não consta' : '—'],
     ] });
 
@@ -24365,7 +24399,7 @@ var vfs = {
       ['Seções ausentes', faltam.length ? faltam.join(', ') : 'Nenhuma'],
     ] });
 
-    B.push({ t: 'h1', text: '4 Triagem GHS: rejeição automática' });
+    B.push({ t: 'h1', text: E.ehCarga(p) ? '4 Triagem GHS: perigos CMR e PFC (produto armazenado pelo terminal)' : '4 Triagem GHS: rejeição automática' });
     const tri = av.tri;
     B.push({ t: 'table', head: ['Critério', 'Resultado'], widths: [34, 66], rows: [
       ['Cancerígeno', tri.criticos.some((c) => c.tipo === 'cancerigeno') ? 'Identificado' : 'Não identificado'],
@@ -24374,6 +24408,15 @@ var vfs = {
       ['Contém PFCs / PFAS', tri.criticos.some((c) => c.tipo === 'pfc') ? 'Identificado' : 'Não identificado'],
     ] });
     if (tri.criticos.length) B.push({ t: 'list', items: tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']') });
+    if (E.cmrCarga(p)) {
+      const cm = p.cmr || {};
+      B.push({ t: 'callout', tone: 'warn', title: 'Sem reprovação automática: produto é a carga do terminal', text: 'O critério interno de rejeição por CMR e PFC vale para insumos. Para o produto armazenado pelo terminal, a homologação exige justificativa de não substituição, controles de exposição e parecer de Higiene Ocupacional.' });
+      B.push({ t: 'kv', rows: [
+        ['Justificativa de não substituição', nz(cm.justificativa)],
+        ['Controles de exposição', (cm.controles || []).length ? cm.controles.map((k) => ((O.CMR_CONTROLES || []).find((x) => x[0] === k) || [k, k])[1]).join('\n') : '—'],
+        ['Controles implantados e verificados', sn(!!cm.controlesOk)],
+      ] });
+    }
     B.push({ t: 'kv', rows: [
       ['Palavra de advertência', nz(p.ghs.palavra)],
       ['Frases H', (p.ghs.h || []).length ? p.ghs.h.map((h) => h + ' ' + (G.hText(h) || '')).join('; ') : '—'],
@@ -24411,7 +24454,8 @@ var vfs = {
 
     B.push({ t: 'h1', text: '8 Compatibilidade química e segregação no armazenamento' });
     B.push({ t: 'kv', rows: [
-      ['Classe de armazenamento (NBR 17160)', E.classeArm(p).id + ' | ' + O.NBR17160.nome(E.classeArm(p).id) + ' | ' + E.classeArm(p).motivo],
+      ['Classe de armazenamento (NBR 17160)', p.armazenamento === 'granel' ? 'Não se aplica: tanque está fora do escopo da NBR 17160 (aplicam-se NBR 17505 e NR-20)' : E.classeArm(p).id + ' | ' + O.NBR17160.nome(E.classeArm(p).id) + ' | ' + E.classeArm(p).motivo],
+      ...(p.armazenamento === 'granel' ? [['Requisitos do tanque atendidos', (p.comp.granel || []).length ? p.comp.granel.map((k) => ({ dique: 'Bacia ou dique de contenção (NBR 17505)', nr20: 'Classificação da instalação e prontuário (NR-20)', aterramento: 'Aterramento e proteção contra descargas', incendio: 'Proteção e combate a incêndio', vapores: 'Controle de emissões e vapores', drenagem: 'Drenagem e contenção de águas de combate' }[k] || k)).join('\n') : '—']] : []),
       ['Incompatibilidades declaradas (Seções 7 e 10)', p.comp.incompDeclaradas === true ? (p.comp.incompativeis || []).map(nomeG).join(', ') + (p.comp.incompTexto ? '. ' + p.comp.incompTexto : '') : p.comp.incompDeclaradas === false ? 'Nenhuma declarada' : '—'],
       ['Local avaliado', loc ? loc.nome + ' (' + loc.tipo + ')' : '—'],
       ['Resultado para o local', p.comp.localOk === 'sim' ? 'Compatível' : p.comp.localOk === 'conflito' ? 'Conflito de segregação' : p.comp.localOk === 'insuficiente' ? 'Informação insuficiente na FDS' : '—'],
@@ -24619,6 +24663,11 @@ var vfs = {
     av.pendencias.forEach((x) => add(x, 'Pendência da análise', 'Responsável técnico', '', 'Pendente'));
     av.condicionantes.forEach((x) => add(x, 'Condicionante de liberação', 'Responsável técnico', '', 'Pendente'));
     if (p.par.pgrIndicador === 'requer') add('Atualizar o PGR e o Inventário de Riscos com este produto antes da liberação de uso', 'NR-01 | Etapa 12', p.par.pgrResponsavel, p.par.pgrPrazo ? fmtData(p.par.pgrPrazo) : '', 'Pendente');
+    if (E.cmrCarga(p)) {
+      (p.cmr.controles || []).forEach((k) => add('Controle de exposição CMR ou PFC: ' + ((O.CMR_CONTROLES || []).find((x) => x[0] === k) || [k, k])[1], 'Etapa 7 | SST', 'SST / Higiene Ocupacional', 'Antes da liberação', p.cmr.controlesOk ? 'Implantado' : 'Pendente'));
+      add('Obter e arquivar o parecer de Higiene Ocupacional para o agente CMR ou PFC', 'NR-01 | NR-15', 'Higiene Ocupacional', 'Antes da liberação', p.hig.parecerExigidoOk ? 'Concluído' : 'Pendente');
+    }
+    if (ok && p.armazenamento === 'granel') ['dique', 'nr20', 'aterramento', 'incendio', 'vapores', 'drenagem'].filter((k) => !(p.comp.granel || []).includes(k)).forEach((k) => add('Tanque: ' + ({ dique: 'confirmar bacia ou dique de contenção (NBR 17505)', nr20: 'confirmar classificação da instalação e prontuário (NR-20)', aterramento: 'confirmar aterramento e proteção contra descargas', incendio: 'confirmar proteção e combate a incêndio', vapores: 'confirmar controle de emissões e vapores', drenagem: 'confirmar drenagem e contenção de águas de combate' }[k]), 'NBR 17505 | NR-20', 'Segurança de processo', 'Antes da liberação', 'Pendente'));
     if (p.hig.dosimetria === true) add('Realizar a avaliação quantitativa (dosimetria ou varredura) antes da liberação de uso', 'NR-15 | Etapa 9.3', 'Higiene Ocupacional', '', 'Pendente');
     if (ok) {
       linhas(p.ocup.subst).forEach((x) => add('Substituição: ' + x, 'Etapa 8a | SST', 'Solicitante / SST', 'Antes da liberação'));
@@ -25208,7 +25257,7 @@ var vfs = {
       if (!file.files[0]) return;
       try { ta.value = await O.FDS.lerArquivo(file.files[0]); analisar(); } catch (e) { U.toast(e.message); }
     });
-    const ex = h('select', { 'aria-label': 'FDS de exemplo' }, h('option', { value: '' }, 'FDS de exemplo (demonstração)'), h('option', { value: 'solvente' }, 'Solvente inflamável'), h('option', { value: 'alcalino' }, 'Limpador alcalino'), h('option', { value: 'benzeno' }, 'Desengraxante com benzeno (reprova)'));
+    const ex = h('select', { 'aria-label': 'FDS de exemplo' }, h('option', { value: '' }, 'FDS de exemplo (demonstração)'), h('option', { value: 'gasolina' }, 'Gasolina (produto armazenado pelo terminal)'), h('option', { value: 'solvente' }, 'Solvente inflamável'), h('option', { value: 'alcalino' }, 'Limpador alcalino'), h('option', { value: 'benzeno' }, 'Desengraxante com benzeno (reprova)'));
     ex.addEventListener('change', () => { if (ex.value) { ta.value = O.SAMPLES[ex.value]; analisar(); } });
     return h('div', { class: 'card' }, h('h3', {}, 'Análise da FDS'), h('p', { class: 'small' }, 'A análise lê o texto, localiza as 16 seções e sugere frases H e P, componentes (CAS), classificação de transporte, incompatibilidades e indícios de CMR e PFC. Os valores são sugestões: você confirma cada etapa.'),
       ta, h('div', { class: 'row', style: 'margin:8px 0' }, h('button', { class: 'btn', onclick: analisar }, 'Analisar texto'), h('button', { class: 'btn ghost', onclick: () => file.click() }, 'Carregar arquivo'), file, h('div', { style: 'min-width:240px' }, ex)), out);
@@ -25219,6 +25268,19 @@ var vfs = {
     el.addEventListener('change', () => { U.set(p, path, G.splitCodes(el.value, prefix)); U.salvar(p); el.value = U.get(p, path).join(' '); });
     return h('label', { class: 'f' }, h('span', {}, label), el, hint ? h('small', {}, hint) : null);
   };
+
+  // Produto armazenado pelo terminal com agente CMR ou PFC: justificativa e controles de exposição
+  function cmrCard(p, api) {
+    const tri = E.triagem(p);
+    const c = h('div', { class: 'card' }, h('h3', {}, 'Controles de exposição a agentes CMR e PFC ', U.disc('SST')),
+      h('p', { class: 'small' }, 'O produto é a carga do terminal, então a substituição não se aplica. A homologação fica condicionada a justificativa, aos controles abaixo e ao parecer de Higiene Ocupacional (etapa 9).'),
+      U.input(p, 'cmr.justificativa', { rows: 3, label: 'Justificativa de não substituição', ph: 'Ex.: gasolina é produto comercializado e armazenado pelo terminal; não há alternativa de menor perigo.' }),
+      h('p', { class: 'q' }, 'Controles de exposição existentes'),
+      U.checks(p, 'cmr.controles', (O.CMR_CONTROLES || []).map((x) => ({ v: x[0], label: x[1] })), {}),
+      h('div', { class: 'opts' }, U.flag(p, 'cmr.controlesOk', 'Confirmo que os controles selecionados estão implantados e verificados', 'Sem esta confirmação, o produto é homologado com condicionantes.')));
+    if (tri.criticos.some((x) => /71-43-2/.test(x.fonte)) || (p.fds.cas || []).includes('71-43-2')) c.appendChild(U.alert('', 'Benzeno', 'Verifique a aplicabilidade da NR-15 Anexo 13-A (benzeno) e do PCMSO para os expostos. A conferência cabe ao responsável técnico.'));
+    return c;
+  }
 
   // ---------------------------------------------------------- definição das etapas
   const ORDER = ['fds0', 'ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano', 'saida'];
@@ -25232,7 +25294,7 @@ var vfs = {
   function visiveis(p) {
     const fim = p.lista.naLista === true;
     const rej = !!p.rejeicaoAuto;
-    const triRej = !!(p.fds.analisada && E.triagem(p).reprovado);
+    const triRej = !!(p.fds.analisada && E.rejeitaAuto(p));
     return ORDER.filter((id) => {
       if (triRej && ['fds', 'fds2'].includes(id) && !p.confirmadas[id] && !fim) return false;
       if (fim) return ['fds0', 'ctx', 'ident', 'finalidade', 'lista', 'saida'].includes(id);
@@ -25244,8 +25306,7 @@ var vfs = {
   }
 
   function reavaliarRejeicao(p) {
-    const tri = E.triagem(p);
-    p.rejeicaoAuto = (p.confirmadas.ghs && tri.reprovado) || (p.confirmadas.imdg && p.imdg.incompativelOperacao) || false;
+    p.rejeicaoAuto = (p.confirmadas.ghs && E.rejeitaAuto(p)) || (p.confirmadas.imdg && p.imdg.incompativelOperacao) || false;
   }
 
   function checarSimplificada(p) {
@@ -25270,7 +25331,7 @@ var vfs = {
             h('div', { class: 'card' }, h('h3', {}, 'Lido da FDS'), h('ul', { style: 'margin:0 0 0 18px;padding:0' }, L.map((x) => h('li', {}, x)))),
             h('div', { class: 'card' }, h('h3', {}, 'Falta informar'), h('ul', { style: 'margin:0 0 0 18px;padding:0' }, F.map((x) => h('li', {}, x))))));
           const tri = E.triagem(p);
-          if (tri.criticos.length) w.appendChild(U.alert('crit', 'Reprovação automática identificada na FDS', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']')));
+          if (tri.criticos.length) w.appendChild(U.alert('warn', 'Perigo CMR ou PFC identificado na FDS', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']').concat(['Insumo: reprovação automática. Produto armazenado pelo terminal (carga): homologação com controles de exposição. Informe a natureza do produto na etapa seguinte.'])));
           w.appendChild(h('div', { class: 'opts' }, U.flag(p, 'modoAuto', 'Confirmar automaticamente as etapas que a FDS responde por completo', 'Você revisa tudo na decisão. Etapas com conflito ou dado faltante sempre param para você.', api.rerender)));
         } else w.appendChild(h('p', { class: 'small' }, 'Sem FDS, todas as respostas serão manuais. Você pode enviar a FDS depois, em qualquer etapa.'));
         return w;
@@ -25281,9 +25342,28 @@ var vfs = {
     ctx: {
       render(p, api) {
         const wrap = h('div');
-        wrap.appendChild(U.q('', 'Onde o produto será utilizado?'));
-        wrap.appendChild(U.radio(p, 'ctx.area', ['Operação', 'Manutenção', 'Limpeza', 'Obra'].map((x) => ({ v: x, label: x })), { onChange: () => { if (!p.finalidade && ['Operação', 'Manutenção', 'Limpeza'].includes(p.ctx.area)) p.finalidade = p.ctx.area; } }));
-        wrap.appendChild(U.input(p, 'ctx.atividade', { label: 'Atividade ou área (opcional)', ph: 'Ex.: limpeza de peças na oficina mecânica' }));
+        wrap.appendChild(U.q('', 'Qual é a natureza do produto?'));
+        wrap.appendChild(U.radio(p, 'natureza', [
+          { v: 'insumo', label: 'Insumo de operação, manutenção, limpeza ou conservação', hint: 'Cancerígeno, mutagênico, teratogênico e PFC reprovam de forma automática' },
+          { v: 'carga', label: 'Produto armazenado ou movimentado pelo terminal (carga)', hint: 'Sem reprovação automática por CMR e PFC: homologação com controles de exposição' },
+        ], { uid: 'nat', onChange: () => {
+          if (p.natureza === 'carga') { p.ctx.area = 'Armazenamento (carga)'; if (!p.finalidade || ['Operação', 'Manutenção', 'Limpeza', 'Conservação'].includes(p.finalidade)) p.finalidade = 'Armazenamento de carga'; if (!p.armazenamento) p.armazenamento = ''; }
+          else { if (p.ctx.area === 'Armazenamento (carga)') p.ctx.area = ''; if (p.finalidade === 'Armazenamento de carga') p.finalidade = ''; p.armazenamento = 'embalado'; }
+          U.salvarJa(p); api.rerender();
+        } }));
+        if (p.natureza === 'insumo') {
+          wrap.appendChild(U.q('', 'Onde o produto será utilizado?'));
+          wrap.appendChild(U.radio(p, 'ctx.area', ['Operação', 'Manutenção', 'Limpeza', 'Obra'].map((x) => ({ v: x, label: x })), { onChange: () => { if (!p.finalidade && ['Operação', 'Manutenção', 'Limpeza'].includes(p.ctx.area)) p.finalidade = p.ctx.area; } }));
+          wrap.appendChild(U.input(p, 'ctx.atividade', { label: 'Atividade ou área (opcional)', ph: 'Ex.: limpeza de peças na oficina mecânica' }));
+        }
+        if (p.natureza === 'carga') {
+          wrap.appendChild(U.q('', 'Como o produto é armazenado?'));
+          wrap.appendChild(U.radio(p, 'armazenamento', [
+            { v: 'granel', label: 'A granel, em tanque', hint: 'Fora do escopo da NBR 17160: aplicam-se a NBR 17505 e a NR-20' },
+            { v: 'embalado', label: 'Embalado ou fracionado', hint: 'Segregação pela NBR 17160' },
+          ], { uid: 'arm', onChange: api.rerender }));
+          wrap.appendChild(U.input(p, 'ctx.atividade', { label: 'Operação (opcional)', ph: 'Ex.: recebimento, armazenamento e expedição de gasolina' }));
+        }
         wrap.appendChild(U.q('', 'Onde o produto será armazenado?'));
         const locs = S.locais();
         const sel = U.select(p, 'ctx.localId', locs.map((l) => [l.id, l.nome + ' (' + l.tipo + ')']), { empty: locs.length ? 'Selecione o local' : 'Nenhum local cadastrado: crie abaixo' });
@@ -25296,7 +25376,7 @@ var vfs = {
           h('small', {}, 'A distância livre limita a segregação possível: 6 m para "separado de", 24 m para o nível 4. Contêiner pequeno ou armário: use 0.')));
         return wrap;
       },
-      validar: (p) => [!p.ctx.area && 'Informe onde o produto será utilizado.', !p.ctx.localId && 'Selecione ou cadastre o local de armazenamento.'].filter(Boolean),
+      validar: (p) => [!p.natureza && 'Informe a natureza do produto.', p.natureza === 'insumo' && !p.ctx.area && 'Informe onde o produto será utilizado.', p.natureza === 'carga' && !p.armazenamento && 'Informe se o armazenamento é a granel ou embalado.', !p.ctx.localId && 'Selecione ou cadastre o local de armazenamento.'].filter(Boolean),
     },
     // ------------------------------------------------ 1
     ident: {
@@ -25316,7 +25396,7 @@ var vfs = {
       render(p) {
         const w = h('div');
         w.appendChild(U.q(2, 'Qual será a finalidade do produto?'));
-        w.appendChild(U.radio(p, 'finalidade', ['Operação', 'Manutenção', 'Limpeza', 'Conservação'].map((x) => ({ v: x, label: x }))));
+        w.appendChild(U.radio(p, 'finalidade', (p.natureza === 'carga' ? ['Armazenamento de carga'] : ['Operação', 'Manutenção', 'Limpeza', 'Conservação']).map((x) => ({ v: x, label: x }))));
         w.appendChild(U.input(p, 'aplicacao', { label: 'Forma de aplicação / uso', ph: 'Ex.: aplicação manual com pano; imersão de peças; pulverização', hint: 'Usada na comparação de similaridade (etapa 4).' }));
         return w;
       },
@@ -25418,14 +25498,15 @@ var vfs = {
         w.appendChild(h('div', { class: 'grid g2' }, listaInput(p, 'ghs.h', 'Frases H (Seção 2 da FDS)', 'H', 'Separe por espaço. Ex.: H225 H319 H336'), listaInput(p, 'ghs.p', 'Frases P (Seção 2 da FDS)', 'P', 'Usadas na rotulagem.')));
         w.appendChild(h('label', { class: 'f' }, h('span', {}, 'Componentes (CAS) da Seção 3'), (() => { const el = h('input', { type: 'text', value: (p.fds.cas || []).join(', ') }); el.addEventListener('change', () => { p.fds.cas = el.value.split(/[\s,;]+/).filter((x) => /^\d{2,7}-\d{2}-\d$/.test(x)); U.salvar(p); }); return el; })()));
         const tri = E.triagem(p);
-        if (tri.criticos.length) w.appendChild(U.alert('crit', 'Reprovação automática: ' + tri.criticos.length + ' evidência(s)', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']')));
+        if (tri.criticos.length && E.ehCarga(p)) { w.appendChild(U.alert('warn', 'Produto armazenado pelo terminal: sem reprovação automática (' + tri.criticos.length + ' evidência(s) CMR ou PFC)', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']'))); w.appendChild(cmrCard(p, api)); }
+        else if (tri.criticos.length) w.appendChild(U.alert('crit', 'Reprovação automática: ' + tri.criticos.length + ' evidência(s)', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']')));
         tri.suspeitos.forEach((c) => w.appendChild(U.alert('warn', 'Alerta', c.detalhe)));
         tri.informativos.forEach((c) => w.appendChild(U.alert('', null, c)));
         w.appendChild(h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: () => { const c = tri.criticos; p.ghs.cancerigeno = c.some((x) => x.tipo === 'cancerigeno'); p.ghs.mutagenico = c.some((x) => x.tipo === 'mutagenico'); p.ghs.teratogenico = c.some((x) => x.tipo === 'teratogenico' || x.tipo === 'reprodutivo'); p.ghs.pfc = c.some((x) => x.tipo === 'pfc'); p.ghs.nenhum = !c.length; U.salvarJa(p); api.rerender(); } }, 'Marcar conforme a análise')));
         w.appendChild(h('div', { class: 'opts' }, U.flag(p, 'ghs.cancerigeno', 'Cancerígeno', 'Categoria 1A, 1B ou 2 (H350, H351)', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.teratogenico', 'Teratogênico', 'Toxicidade para o desenvolvimento (H360D, H361d)', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.mutagenico', 'Mutagênico', 'H340, H341', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.pfc', 'Contém PFCs', 'Per e polifluorados (PFAS, PFOA, PFOS, fluoropolímeros)', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.nenhum', 'Nenhum dos acima', 'Só vale se a Seção 2 e a Seção 3 não trouxerem os indícios acima', (v) => { if (v) { p.ghs.cancerigeno = p.ghs.teratogenico = p.ghs.mutagenico = p.ghs.pfc = false; } api.rerender(); })));
         const dv = G.derive(p.ghs.h);
         if (dv.pictos.length) w.appendChild(h('div', { class: 'pictos' }, dv.pictos.map((c) => h('span', { html: O.Pic.ghs(c, 56), title: G.PICTO[c] })), h('span', { class: 'muted' }, 'Palavra de advertência: ' + (dv.palavra || '—'))));
-        w.appendChild(U.alert('', 'Critério interno', 'Cancerígenos, teratogênicos, mutagênicos e produtos com PFCs são reprovados de forma automática. O motor também lê as frases H e os CAS: marcar "Nenhum" não anula uma evidência encontrada.'));
+        w.appendChild(U.alert('', 'Critério interno', 'Insumos cancerígenos, teratogênicos, mutagênicos ou com PFCs são reprovados de forma automática. Produto armazenado pelo terminal (carga) não é reprovado: exige justificativa e controles de exposição. O motor também lê as frases H e os CAS: marcar "Nenhum" não anula uma evidência encontrada.'));
         return w;
       },
       validar: (p) => {
@@ -25433,6 +25514,7 @@ var vfs = {
         const any = p.ghs.cancerigeno || p.ghs.teratogenico || p.ghs.mutagenico || p.ghs.pfc || p.ghs.nenhum;
         if (!any && !E.triagem(p).criticos.length) e.push('Marque uma opção (ou "Nenhum dos acima").');
         if (!(p.ghs.h || []).length && !p.ghs.nenhum && !any) e.push('Informe as frases H da Seção 2 ou confirme "Nenhum dos acima".');
+        if (E.cmrCarga(p)) { if (!String(p.cmr.justificativa || '').trim()) e.push('Registre a justificativa de não substituição (produto armazenado pelo terminal).'); if (!(p.cmr.controles || []).length) e.push('Selecione os controles de exposição a agentes CMR ou PFC.'); }
         return e;
       },
       depois(p) {
@@ -25555,6 +25637,19 @@ var vfs = {
         if (p.comp.incompDeclaradas) { w.appendChild(h('p', { class: 'q' }, 'Incompatível com:')); w.appendChild(U.checks(p, 'comp.incompativeis', T.RG.map((r) => ({ v: r[0], label: r[1] })))); w.appendChild(U.input(p, 'comp.incompTexto', { rows: 2, label: 'Texto da FDS (opcional)' })); }
         w.appendChild(h('p', { class: 'q' }, 'Este produto é, ele mesmo, do grupo:'));
         w.appendChild(U.checks(p, 'comp.grupos', T.RG.filter((r) => r[0] !== 'ignicao').map((r) => ({ v: r[0], label: r[1] }))));
+        if (p.armazenamento === 'granel') {
+          if (!p.comp.localOk) { p.comp.localOk = 'sim'; U.salvar(p); }
+          w.appendChild(U.alert('info', 'Armazenamento a granel em tanque', 'Fora do escopo da NBR 17160 (item d). Aplicam-se a NBR 17505 (líquidos inflamáveis e combustíveis), a NR-20 e o projeto do parque de tanques. A matriz de incompatibilidade da NBR 17160 não é aplicada.'));
+          w.appendChild(U.q('11.2', 'Quais requisitos do armazenamento em tanque estão atendidos?'));
+          w.appendChild(U.checks(p, 'comp.granel', [
+            { v: 'dique', label: 'Bacia ou dique de contenção conforme a NBR 17505' },
+            { v: 'nr20', label: 'Classificação da instalação, áreas classificadas e prontuário conforme a NR-20' },
+            { v: 'aterramento', label: 'Aterramento e proteção contra descargas eletrostáticas e atmosféricas' },
+            { v: 'incendio', label: 'Proteção e combate a incêndio do parque de tanques' },
+            { v: 'vapores', label: 'Controle de emissões e vapores' },
+            { v: 'drenagem', label: 'Drenagem, separação água e óleo e contenção de águas de combate' },
+          ]));
+        } else {
         const ca = E.classeArm(p), cmb = E.combustivel(p);
         w.appendChild(h('div', { class: 'card' }, h('h4', {}, 'Classe de armazenamento (NBR 17160, Anexo D) ', U.disc('PSM')),
           h('p', {}, h('b', {}, ca.id + ' | ' + O.NBR17160.nome(ca.id)), ' | critério: ' + ca.motivo + '.'),
@@ -25582,6 +25677,7 @@ var vfs = {
           w.appendChild(U.input(p, 'comp.observacoes', { rows: 2, label: 'Medida de segregação ou local alternativo' }));
         }
         if (p.comp.localOk === 'insuficiente') w.appendChild(pendenciaBox(p, api, 'compat', ['Informação insuficiente nas Seções 7 e 10 para avaliar armazenamento e incompatibilidades.']));
+        }
         w.appendChild(U.q('11.3', 'O armazenamento exige controles adicionais específicos?'));
         const sg = E.sugestoes(p);
         if (sg.controlesArm.length) w.appendChild(h('div', { class: 'sug' }, h('b', {}, 'Sugeridos pela FDS e pela classe: '), sg.controlesArm.map((k) => (T.CONTROLES_ARM.find((c) => c[0] === k) || [0, k])[1]).join('; '), ' ', h('button', { class: 'btn sm sec', onclick: () => { p.comp.controles = sg.controlesArm.slice(); U.salvarJa(p); api.rerender(); } }, 'Aplicar')));
@@ -25949,7 +26045,7 @@ var vfs = {
         h('div', { class: 'card' }, h('h3', {}, 'Uso e armazenamento'), kv([['Onde', [p.ctx.area, p.ctx.atividade].filter(Boolean).join(' | ')], ['Finalidade', p.finalidade], ['Aplicação', p.aplicacao], ['Local', loc ? loc.nome + ' (' + loc.tipo + ')' : ''], ['Via de análise', E.simplificadaVigente(p) ? 'Simplificada (read-across)' : 'Completa']])),
         h('div', { class: 'card' }, h('h3', {}, 'Perigos GHS ', U.disc('SST')), h('div', { class: 'pictos' }, (p.ghs.pictos || []).map((c) => h('span', { html: O.Pic.ghs(c, 52), title: G.PICTO[c] }))), h('p', {}, h('b', {}, p.ghs.palavra || 'Sem palavra de advertência')), h('div', {}, (p.ghs.h || []).map((x) => h('span', { class: 'chip' + (av.tri.criticos.some((c) => c.fonte === x) ? ' crit' : ''), title: G.hText(x) || '' }, x)))),
         h('div', { class: 'card' }, h('h3', {}, 'Transporte ', U.disc('PSM')), kv([['ONU', p.imdg.onu], ['Nome', p.imdg.nome], ['Classe', p.imdg.classe], ['Grupo de embalagem', p.imdg.pg], ['Número de risco', p.imdg.numeroRisco], ['NR-20', n20.aplica ? n20.categoria : 'Não aplicável pelo ponto de fulgor']])),
-        h('div', { class: 'card' }, h('h3', {}, 'Triagem CMR e PFC'), av.tri.criticos.length ? U.alert('crit', 'Reprovação automática', av.tri.criticos.map((c) => c.detalhe)) : U.alert('ok', 'Sem evidência de cancerígeno, mutagênico, teratogênico ou PFC', 'Com base nas frases H, nos CAS e no texto da FDS analisada.'))));
+        h('div', { class: 'card' }, h('h3', {}, 'Triagem CMR e PFC'), av.tri.criticos.length ? (E.ehCarga(p) ? U.alert('warn', 'Perigo CMR ou PFC em produto armazenado pelo terminal', av.tri.criticos.map((c) => c.detalhe).concat(['Sem reprovação automática: exige controles de exposição e parecer de Higiene Ocupacional.'])) : U.alert('crit', 'Reprovação automática', av.tri.criticos.map((c) => c.detalhe))) : U.alert('ok', 'Sem evidência de cancerígeno, mutagênico, teratogênico ou PFC', 'Com base nas frases H, nos CAS e no texto da FDS analisada.'))));
     } else if (tab === 'fds') {
       root.appendChild(O.Wizard.fdsPanel(p, () => O.route()));
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Seções da FDS (editáveis)'), h('p', { class: 'small' }, 'O texto das seções 4, 5, 6, 8, 9, 12, 13 e 14 alimenta a ficha de emergência, o envelope e o checklist.'),
@@ -26020,7 +26116,7 @@ var vfs = {
       const av = E.avaliar(p, S.produtos());
       const n20 = E.nr20(p);
       out.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Resultado da triagem'),
-        av.tri.criticos.length ? U.alert('crit', 'Reprovação automática pelo critério interno', av.tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']')) : U.alert('ok', 'Sem cancerígeno, mutagênico, teratogênico ou PFC identificado', 'Confirme a Seção 3 e a Seção 11 da FDS na etapa 7 da homologação.'),
+        av.tri.criticos.length ? U.alert('warn', 'Perigo CMR ou PFC identificado', av.tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']').concat(['Insumo: reprovação automática. Produto armazenado pelo terminal (carga): homologação com controles de exposição.'])) : U.alert('ok', 'Sem cancerígeno, mutagênico, teratogênico ou PFC identificado', 'Confirme a Seção 3 e a Seção 11 da FDS na etapa 7 da homologação.'),
         av.tri.suspeitos.map((x) => U.alert('warn', 'Alerta', x.detalhe)), n20.aplica ? h('div', { class: 'alert warn' }, h('b', {}, 'NR-20: ' + n20.categoria), n20.texto) : null,
         h('div', { class: 'pictos' }, (p.ghs.pictos || []).map((c) => h('span', { html: O.Pic.ghs(c, 60), title: G.PICTO[c] })), h('b', {}, p.ghs.palavra)),
         h('div', {}, (p.ghs.h || []).map((x) => h('div', {}, h('span', { class: 'chip' }, x), G.hText(x)))),

@@ -155,7 +155,7 @@
   const PFAS_TERMS = /(pfas|pfc\b|pfcs\b|perfluor|polifluor|per-?\s?e\s?polifluor|fluorotel[oô]mer|fluoropol[ií]mer|fluorosurfactante|pfoa|pfos|ptfe|c6\s*fluor)/i;
 
   // Tipos de local de armazenamento
-  const LOCAIS_TIPO = ['Contêiner de PQ', 'Oficina', 'Almoxarifado', 'Área operacional', 'Obra / campo', 'Outro'];
+  const LOCAIS_TIPO = ['Tanques', 'Contêiner de PQ', 'Oficina', 'Almoxarifado', 'Área operacional', 'Obra / campo', 'Outro'];
   const FINALIDADES = ['Operação', 'Manutenção', 'Limpeza', 'Conservação', 'Obra'];
 
   const CONTROLES_ARM = [
@@ -179,6 +179,18 @@
     { sigla: 'NBR 7503', titulo: 'ABNT NBR 7503', uso: 'Ficha de emergência e envelope para o transporte terrestre de produtos perigosos.', onde: 'Ficha de emergência e envelope' },
     { sigla: 'NR-26', titulo: 'NR-26 Sinalização de Segurança', uso: 'Rotulagem preventiva e FDS no local de trabalho conforme GHS.', onde: 'Controles de armazenamento' },
     { sigla: 'NR-01 / NR-15', titulo: 'NR-01 (GRO/PGR) e NR-15 (Atividades e operações insalubres)', uso: 'Interface com o Inventário de Riscos e limites de tolerância.', onde: 'Etapas 9 e 12' },
+  ];
+
+  // controles de exposição a agentes CMR e PFC para produto armazenado pelo terminal
+  O.CMR_CONTROLES = [
+    ['exposicao', 'Programa de controle de exposição: avaliação quantitativa de agentes CMR no PGR'],
+    ['saude', 'Vigilância da saúde dos expostos (PCMSO)'],
+    ['fechado', 'Transferência em sistema fechado, com controle ou recuperação de vapores'],
+    ['acesso', 'Acesso restrito e sinalização das áreas de exposição'],
+    ['epi', 'EPI respiratório e de pele adequados, com programa de proteção respiratória'],
+    ['treino', 'Treinamento específico sobre os agentes CMR e PFC'],
+    ['emerg', 'Plano de resposta a emergência e primeiros socorros para o agente'],
+    ['legal', 'Requisitos legais específicos verificados (por exemplo, NR-15 Anexo 13-A para benzeno)'],
   ];
 
   O.TRANSPORT = {

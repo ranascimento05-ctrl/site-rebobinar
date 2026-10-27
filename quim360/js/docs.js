@@ -60,6 +60,8 @@
       ['Onde será utilizado', nz([p.ctx.area, p.ctx.atividade].filter(Boolean).join(' | '))],
       ['Finalidade', nz(p.finalidade)], ['Aplicação / forma de uso', nz(p.aplicacao)],
       ['Local de armazenamento', loc ? loc.nome + ' (' + loc.tipo + ')' : '—'],
+      ['Natureza do produto', p.natureza === 'carga' ? 'Produto armazenado ou movimentado pelo terminal (carga)' : 'Insumo de operação, manutenção, limpeza ou conservação'],
+      ['Forma de armazenamento', p.armazenamento === 'granel' ? 'A granel, em tanque (NBR 17505 e NR-20)' : 'Embalado ou fracionado (NBR 17160)'],
       ['Lista de homologados', p.lista.naLista === true ? 'Já consta: ' + nz(p.lista.numero) : p.lista.naLista === false ? 'Não consta' : '—'],
     ] });
 
@@ -88,7 +90,7 @@
       ['Seções ausentes', faltam.length ? faltam.join(', ') : 'Nenhuma'],
     ] });
 
-    B.push({ t: 'h1', text: '4 Triagem GHS: rejeição automática' });
+    B.push({ t: 'h1', text: E.ehCarga(p) ? '4 Triagem GHS: perigos CMR e PFC (produto armazenado pelo terminal)' : '4 Triagem GHS: rejeição automática' });
     const tri = av.tri;
     B.push({ t: 'table', head: ['Critério', 'Resultado'], widths: [34, 66], rows: [
       ['Cancerígeno', tri.criticos.some((c) => c.tipo === 'cancerigeno') ? 'Identificado' : 'Não identificado'],
@@ -97,6 +99,15 @@
       ['Contém PFCs / PFAS', tri.criticos.some((c) => c.tipo === 'pfc') ? 'Identificado' : 'Não identificado'],
     ] });
     if (tri.criticos.length) B.push({ t: 'list', items: tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']') });
+    if (E.cmrCarga(p)) {
+      const cm = p.cmr || {};
+      B.push({ t: 'callout', tone: 'warn', title: 'Sem reprovação automática: produto é a carga do terminal', text: 'O critério interno de rejeição por CMR e PFC vale para insumos. Para o produto armazenado pelo terminal, a homologação exige justificativa de não substituição, controles de exposição e parecer de Higiene Ocupacional.' });
+      B.push({ t: 'kv', rows: [
+        ['Justificativa de não substituição', nz(cm.justificativa)],
+        ['Controles de exposição', (cm.controles || []).length ? cm.controles.map((k) => ((O.CMR_CONTROLES || []).find((x) => x[0] === k) || [k, k])[1]).join('\n') : '—'],
+        ['Controles implantados e verificados', sn(!!cm.controlesOk)],
+      ] });
+    }
     B.push({ t: 'kv', rows: [
       ['Palavra de advertência', nz(p.ghs.palavra)],
       ['Frases H', (p.ghs.h || []).length ? p.ghs.h.map((h) => h + ' ' + (G.hText(h) || '')).join('; ') : '—'],
@@ -134,7 +145,8 @@
 
     B.push({ t: 'h1', text: '8 Compatibilidade química e segregação no armazenamento' });
     B.push({ t: 'kv', rows: [
-      ['Classe de armazenamento (NBR 17160)', E.classeArm(p).id + ' | ' + O.NBR17160.nome(E.classeArm(p).id) + ' | ' + E.classeArm(p).motivo],
+      ['Classe de armazenamento (NBR 17160)', p.armazenamento === 'granel' ? 'Não se aplica: tanque está fora do escopo da NBR 17160 (aplicam-se NBR 17505 e NR-20)' : E.classeArm(p).id + ' | ' + O.NBR17160.nome(E.classeArm(p).id) + ' | ' + E.classeArm(p).motivo],
+      ...(p.armazenamento === 'granel' ? [['Requisitos do tanque atendidos', (p.comp.granel || []).length ? p.comp.granel.map((k) => ({ dique: 'Bacia ou dique de contenção (NBR 17505)', nr20: 'Classificação da instalação e prontuário (NR-20)', aterramento: 'Aterramento e proteção contra descargas', incendio: 'Proteção e combate a incêndio', vapores: 'Controle de emissões e vapores', drenagem: 'Drenagem e contenção de águas de combate' }[k] || k)).join('\n') : '—']] : []),
       ['Incompatibilidades declaradas (Seções 7 e 10)', p.comp.incompDeclaradas === true ? (p.comp.incompativeis || []).map(nomeG).join(', ') + (p.comp.incompTexto ? '. ' + p.comp.incompTexto : '') : p.comp.incompDeclaradas === false ? 'Nenhuma declarada' : '—'],
       ['Local avaliado', loc ? loc.nome + ' (' + loc.tipo + ')' : '—'],
       ['Resultado para o local', p.comp.localOk === 'sim' ? 'Compatível' : p.comp.localOk === 'conflito' ? 'Conflito de segregação' : p.comp.localOk === 'insuficiente' ? 'Informação insuficiente na FDS' : '—'],
@@ -342,6 +354,11 @@
     av.pendencias.forEach((x) => add(x, 'Pendência da análise', 'Responsável técnico', '', 'Pendente'));
     av.condicionantes.forEach((x) => add(x, 'Condicionante de liberação', 'Responsável técnico', '', 'Pendente'));
     if (p.par.pgrIndicador === 'requer') add('Atualizar o PGR e o Inventário de Riscos com este produto antes da liberação de uso', 'NR-01 | Etapa 12', p.par.pgrResponsavel, p.par.pgrPrazo ? fmtData(p.par.pgrPrazo) : '', 'Pendente');
+    if (E.cmrCarga(p)) {
+      (p.cmr.controles || []).forEach((k) => add('Controle de exposição CMR ou PFC: ' + ((O.CMR_CONTROLES || []).find((x) => x[0] === k) || [k, k])[1], 'Etapa 7 | SST', 'SST / Higiene Ocupacional', 'Antes da liberação', p.cmr.controlesOk ? 'Implantado' : 'Pendente'));
+      add('Obter e arquivar o parecer de Higiene Ocupacional para o agente CMR ou PFC', 'NR-01 | NR-15', 'Higiene Ocupacional', 'Antes da liberação', p.hig.parecerExigidoOk ? 'Concluído' : 'Pendente');
+    }
+    if (ok && p.armazenamento === 'granel') ['dique', 'nr20', 'aterramento', 'incendio', 'vapores', 'drenagem'].filter((k) => !(p.comp.granel || []).includes(k)).forEach((k) => add('Tanque: ' + ({ dique: 'confirmar bacia ou dique de contenção (NBR 17505)', nr20: 'confirmar classificação da instalação e prontuário (NR-20)', aterramento: 'confirmar aterramento e proteção contra descargas', incendio: 'confirmar proteção e combate a incêndio', vapores: 'confirmar controle de emissões e vapores', drenagem: 'confirmar drenagem e contenção de águas de combate' }[k]), 'NBR 17505 | NR-20', 'Segurança de processo', 'Antes da liberação', 'Pendente'));
     if (p.hig.dosimetria === true) add('Realizar a avaliação quantitativa (dosimetria ou varredura) antes da liberação de uso', 'NR-15 | Etapa 9.3', 'Higiene Ocupacional', '', 'Pendente');
     if (ok) {
       linhas(p.ocup.subst).forEach((x) => add('Substituição: ' + x, 'Etapa 8a | SST', 'Solicitante / SST', 'Antes da liberação'));

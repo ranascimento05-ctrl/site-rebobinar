@@ -63,7 +63,7 @@
       if (!file.files[0]) return;
       try { ta.value = await O.FDS.lerArquivo(file.files[0]); analisar(); } catch (e) { U.toast(e.message); }
     });
-    const ex = h('select', { 'aria-label': 'FDS de exemplo' }, h('option', { value: '' }, 'FDS de exemplo (demonstração)'), h('option', { value: 'solvente' }, 'Solvente inflamável'), h('option', { value: 'alcalino' }, 'Limpador alcalino'), h('option', { value: 'benzeno' }, 'Desengraxante com benzeno (reprova)'));
+    const ex = h('select', { 'aria-label': 'FDS de exemplo' }, h('option', { value: '' }, 'FDS de exemplo (demonstração)'), h('option', { value: 'gasolina' }, 'Gasolina (produto armazenado pelo terminal)'), h('option', { value: 'solvente' }, 'Solvente inflamável'), h('option', { value: 'alcalino' }, 'Limpador alcalino'), h('option', { value: 'benzeno' }, 'Desengraxante com benzeno (reprova)'));
     ex.addEventListener('change', () => { if (ex.value) { ta.value = O.SAMPLES[ex.value]; analisar(); } });
     return h('div', { class: 'card' }, h('h3', {}, 'Análise da FDS'), h('p', { class: 'small' }, 'A análise lê o texto, localiza as 16 seções e sugere frases H e P, componentes (CAS), classificação de transporte, incompatibilidades e indícios de CMR e PFC. Os valores são sugestões: você confirma cada etapa.'),
       ta, h('div', { class: 'row', style: 'margin:8px 0' }, h('button', { class: 'btn', onclick: analisar }, 'Analisar texto'), h('button', { class: 'btn ghost', onclick: () => file.click() }, 'Carregar arquivo'), file, h('div', { style: 'min-width:240px' }, ex)), out);
@@ -74,6 +74,19 @@
     el.addEventListener('change', () => { U.set(p, path, G.splitCodes(el.value, prefix)); U.salvar(p); el.value = U.get(p, path).join(' '); });
     return h('label', { class: 'f' }, h('span', {}, label), el, hint ? h('small', {}, hint) : null);
   };
+
+  // Produto armazenado pelo terminal com agente CMR ou PFC: justificativa e controles de exposição
+  function cmrCard(p, api) {
+    const tri = E.triagem(p);
+    const c = h('div', { class: 'card' }, h('h3', {}, 'Controles de exposição a agentes CMR e PFC ', U.disc('SST')),
+      h('p', { class: 'small' }, 'O produto é a carga do terminal, então a substituição não se aplica. A homologação fica condicionada a justificativa, aos controles abaixo e ao parecer de Higiene Ocupacional (etapa 9).'),
+      U.input(p, 'cmr.justificativa', { rows: 3, label: 'Justificativa de não substituição', ph: 'Ex.: gasolina é produto comercializado e armazenado pelo terminal; não há alternativa de menor perigo.' }),
+      h('p', { class: 'q' }, 'Controles de exposição existentes'),
+      U.checks(p, 'cmr.controles', (O.CMR_CONTROLES || []).map((x) => ({ v: x[0], label: x[1] })), {}),
+      h('div', { class: 'opts' }, U.flag(p, 'cmr.controlesOk', 'Confirmo que os controles selecionados estão implantados e verificados', 'Sem esta confirmação, o produto é homologado com condicionantes.')));
+    if (tri.criticos.some((x) => /71-43-2/.test(x.fonte)) || (p.fds.cas || []).includes('71-43-2')) c.appendChild(U.alert('', 'Benzeno', 'Verifique a aplicabilidade da NR-15 Anexo 13-A (benzeno) e do PCMSO para os expostos. A conferência cabe ao responsável técnico.'));
+    return c;
+  }
 
   // ---------------------------------------------------------- definição das etapas
   const ORDER = ['fds0', 'ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano', 'saida'];
@@ -87,7 +100,7 @@
   function visiveis(p) {
     const fim = p.lista.naLista === true;
     const rej = !!p.rejeicaoAuto;
-    const triRej = !!(p.fds.analisada && E.triagem(p).reprovado);
+    const triRej = !!(p.fds.analisada && E.rejeitaAuto(p));
     return ORDER.filter((id) => {
       if (triRej && ['fds', 'fds2'].includes(id) && !p.confirmadas[id] && !fim) return false;
       if (fim) return ['fds0', 'ctx', 'ident', 'finalidade', 'lista', 'saida'].includes(id);
@@ -99,8 +112,7 @@
   }
 
   function reavaliarRejeicao(p) {
-    const tri = E.triagem(p);
-    p.rejeicaoAuto = (p.confirmadas.ghs && tri.reprovado) || (p.confirmadas.imdg && p.imdg.incompativelOperacao) || false;
+    p.rejeicaoAuto = (p.confirmadas.ghs && E.rejeitaAuto(p)) || (p.confirmadas.imdg && p.imdg.incompativelOperacao) || false;
   }
 
   function checarSimplificada(p) {
@@ -125,7 +137,7 @@
             h('div', { class: 'card' }, h('h3', {}, 'Lido da FDS'), h('ul', { style: 'margin:0 0 0 18px;padding:0' }, L.map((x) => h('li', {}, x)))),
             h('div', { class: 'card' }, h('h3', {}, 'Falta informar'), h('ul', { style: 'margin:0 0 0 18px;padding:0' }, F.map((x) => h('li', {}, x))))));
           const tri = E.triagem(p);
-          if (tri.criticos.length) w.appendChild(U.alert('crit', 'Reprovação automática identificada na FDS', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']')));
+          if (tri.criticos.length) w.appendChild(U.alert('warn', 'Perigo CMR ou PFC identificado na FDS', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']').concat(['Insumo: reprovação automática. Produto armazenado pelo terminal (carga): homologação com controles de exposição. Informe a natureza do produto na etapa seguinte.'])));
           w.appendChild(h('div', { class: 'opts' }, U.flag(p, 'modoAuto', 'Confirmar automaticamente as etapas que a FDS responde por completo', 'Você revisa tudo na decisão. Etapas com conflito ou dado faltante sempre param para você.', api.rerender)));
         } else w.appendChild(h('p', { class: 'small' }, 'Sem FDS, todas as respostas serão manuais. Você pode enviar a FDS depois, em qualquer etapa.'));
         return w;
@@ -136,9 +148,28 @@
     ctx: {
       render(p, api) {
         const wrap = h('div');
-        wrap.appendChild(U.q('', 'Onde o produto será utilizado?'));
-        wrap.appendChild(U.radio(p, 'ctx.area', ['Operação', 'Manutenção', 'Limpeza', 'Obra'].map((x) => ({ v: x, label: x })), { onChange: () => { if (!p.finalidade && ['Operação', 'Manutenção', 'Limpeza'].includes(p.ctx.area)) p.finalidade = p.ctx.area; } }));
-        wrap.appendChild(U.input(p, 'ctx.atividade', { label: 'Atividade ou área (opcional)', ph: 'Ex.: limpeza de peças na oficina mecânica' }));
+        wrap.appendChild(U.q('', 'Qual é a natureza do produto?'));
+        wrap.appendChild(U.radio(p, 'natureza', [
+          { v: 'insumo', label: 'Insumo de operação, manutenção, limpeza ou conservação', hint: 'Cancerígeno, mutagênico, teratogênico e PFC reprovam de forma automática' },
+          { v: 'carga', label: 'Produto armazenado ou movimentado pelo terminal (carga)', hint: 'Sem reprovação automática por CMR e PFC: homologação com controles de exposição' },
+        ], { uid: 'nat', onChange: () => {
+          if (p.natureza === 'carga') { p.ctx.area = 'Armazenamento (carga)'; if (!p.finalidade || ['Operação', 'Manutenção', 'Limpeza', 'Conservação'].includes(p.finalidade)) p.finalidade = 'Armazenamento de carga'; if (!p.armazenamento) p.armazenamento = ''; }
+          else { if (p.ctx.area === 'Armazenamento (carga)') p.ctx.area = ''; if (p.finalidade === 'Armazenamento de carga') p.finalidade = ''; p.armazenamento = 'embalado'; }
+          U.salvarJa(p); api.rerender();
+        } }));
+        if (p.natureza === 'insumo') {
+          wrap.appendChild(U.q('', 'Onde o produto será utilizado?'));
+          wrap.appendChild(U.radio(p, 'ctx.area', ['Operação', 'Manutenção', 'Limpeza', 'Obra'].map((x) => ({ v: x, label: x })), { onChange: () => { if (!p.finalidade && ['Operação', 'Manutenção', 'Limpeza'].includes(p.ctx.area)) p.finalidade = p.ctx.area; } }));
+          wrap.appendChild(U.input(p, 'ctx.atividade', { label: 'Atividade ou área (opcional)', ph: 'Ex.: limpeza de peças na oficina mecânica' }));
+        }
+        if (p.natureza === 'carga') {
+          wrap.appendChild(U.q('', 'Como o produto é armazenado?'));
+          wrap.appendChild(U.radio(p, 'armazenamento', [
+            { v: 'granel', label: 'A granel, em tanque', hint: 'Fora do escopo da NBR 17160: aplicam-se a NBR 17505 e a NR-20' },
+            { v: 'embalado', label: 'Embalado ou fracionado', hint: 'Segregação pela NBR 17160' },
+          ], { uid: 'arm', onChange: api.rerender }));
+          wrap.appendChild(U.input(p, 'ctx.atividade', { label: 'Operação (opcional)', ph: 'Ex.: recebimento, armazenamento e expedição de gasolina' }));
+        }
         wrap.appendChild(U.q('', 'Onde o produto será armazenado?'));
         const locs = S.locais();
         const sel = U.select(p, 'ctx.localId', locs.map((l) => [l.id, l.nome + ' (' + l.tipo + ')']), { empty: locs.length ? 'Selecione o local' : 'Nenhum local cadastrado: crie abaixo' });
@@ -151,7 +182,7 @@
           h('small', {}, 'A distância livre limita a segregação possível: 6 m para "separado de", 24 m para o nível 4. Contêiner pequeno ou armário: use 0.')));
         return wrap;
       },
-      validar: (p) => [!p.ctx.area && 'Informe onde o produto será utilizado.', !p.ctx.localId && 'Selecione ou cadastre o local de armazenamento.'].filter(Boolean),
+      validar: (p) => [!p.natureza && 'Informe a natureza do produto.', p.natureza === 'insumo' && !p.ctx.area && 'Informe onde o produto será utilizado.', p.natureza === 'carga' && !p.armazenamento && 'Informe se o armazenamento é a granel ou embalado.', !p.ctx.localId && 'Selecione ou cadastre o local de armazenamento.'].filter(Boolean),
     },
     // ------------------------------------------------ 1
     ident: {
@@ -171,7 +202,7 @@
       render(p) {
         const w = h('div');
         w.appendChild(U.q(2, 'Qual será a finalidade do produto?'));
-        w.appendChild(U.radio(p, 'finalidade', ['Operação', 'Manutenção', 'Limpeza', 'Conservação'].map((x) => ({ v: x, label: x }))));
+        w.appendChild(U.radio(p, 'finalidade', (p.natureza === 'carga' ? ['Armazenamento de carga'] : ['Operação', 'Manutenção', 'Limpeza', 'Conservação']).map((x) => ({ v: x, label: x }))));
         w.appendChild(U.input(p, 'aplicacao', { label: 'Forma de aplicação / uso', ph: 'Ex.: aplicação manual com pano; imersão de peças; pulverização', hint: 'Usada na comparação de similaridade (etapa 4).' }));
         return w;
       },
@@ -273,14 +304,15 @@
         w.appendChild(h('div', { class: 'grid g2' }, listaInput(p, 'ghs.h', 'Frases H (Seção 2 da FDS)', 'H', 'Separe por espaço. Ex.: H225 H319 H336'), listaInput(p, 'ghs.p', 'Frases P (Seção 2 da FDS)', 'P', 'Usadas na rotulagem.')));
         w.appendChild(h('label', { class: 'f' }, h('span', {}, 'Componentes (CAS) da Seção 3'), (() => { const el = h('input', { type: 'text', value: (p.fds.cas || []).join(', ') }); el.addEventListener('change', () => { p.fds.cas = el.value.split(/[\s,;]+/).filter((x) => /^\d{2,7}-\d{2}-\d$/.test(x)); U.salvar(p); }); return el; })()));
         const tri = E.triagem(p);
-        if (tri.criticos.length) w.appendChild(U.alert('crit', 'Reprovação automática: ' + tri.criticos.length + ' evidência(s)', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']')));
+        if (tri.criticos.length && E.ehCarga(p)) { w.appendChild(U.alert('warn', 'Produto armazenado pelo terminal: sem reprovação automática (' + tri.criticos.length + ' evidência(s) CMR ou PFC)', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']'))); w.appendChild(cmrCard(p, api)); }
+        else if (tri.criticos.length) w.appendChild(U.alert('crit', 'Reprovação automática: ' + tri.criticos.length + ' evidência(s)', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']')));
         tri.suspeitos.forEach((c) => w.appendChild(U.alert('warn', 'Alerta', c.detalhe)));
         tri.informativos.forEach((c) => w.appendChild(U.alert('', null, c)));
         w.appendChild(h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: () => { const c = tri.criticos; p.ghs.cancerigeno = c.some((x) => x.tipo === 'cancerigeno'); p.ghs.mutagenico = c.some((x) => x.tipo === 'mutagenico'); p.ghs.teratogenico = c.some((x) => x.tipo === 'teratogenico' || x.tipo === 'reprodutivo'); p.ghs.pfc = c.some((x) => x.tipo === 'pfc'); p.ghs.nenhum = !c.length; U.salvarJa(p); api.rerender(); } }, 'Marcar conforme a análise')));
         w.appendChild(h('div', { class: 'opts' }, U.flag(p, 'ghs.cancerigeno', 'Cancerígeno', 'Categoria 1A, 1B ou 2 (H350, H351)', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.teratogenico', 'Teratogênico', 'Toxicidade para o desenvolvimento (H360D, H361d)', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.mutagenico', 'Mutagênico', 'H340, H341', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.pfc', 'Contém PFCs', 'Per e polifluorados (PFAS, PFOA, PFOS, fluoropolímeros)', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.nenhum', 'Nenhum dos acima', 'Só vale se a Seção 2 e a Seção 3 não trouxerem os indícios acima', (v) => { if (v) { p.ghs.cancerigeno = p.ghs.teratogenico = p.ghs.mutagenico = p.ghs.pfc = false; } api.rerender(); })));
         const dv = G.derive(p.ghs.h);
         if (dv.pictos.length) w.appendChild(h('div', { class: 'pictos' }, dv.pictos.map((c) => h('span', { html: O.Pic.ghs(c, 56), title: G.PICTO[c] })), h('span', { class: 'muted' }, 'Palavra de advertência: ' + (dv.palavra || '—'))));
-        w.appendChild(U.alert('', 'Critério interno', 'Cancerígenos, teratogênicos, mutagênicos e produtos com PFCs são reprovados de forma automática. O motor também lê as frases H e os CAS: marcar "Nenhum" não anula uma evidência encontrada.'));
+        w.appendChild(U.alert('', 'Critério interno', 'Insumos cancerígenos, teratogênicos, mutagênicos ou com PFCs são reprovados de forma automática. Produto armazenado pelo terminal (carga) não é reprovado: exige justificativa e controles de exposição. O motor também lê as frases H e os CAS: marcar "Nenhum" não anula uma evidência encontrada.'));
         return w;
       },
       validar: (p) => {
@@ -288,6 +320,7 @@
         const any = p.ghs.cancerigeno || p.ghs.teratogenico || p.ghs.mutagenico || p.ghs.pfc || p.ghs.nenhum;
         if (!any && !E.triagem(p).criticos.length) e.push('Marque uma opção (ou "Nenhum dos acima").');
         if (!(p.ghs.h || []).length && !p.ghs.nenhum && !any) e.push('Informe as frases H da Seção 2 ou confirme "Nenhum dos acima".');
+        if (E.cmrCarga(p)) { if (!String(p.cmr.justificativa || '').trim()) e.push('Registre a justificativa de não substituição (produto armazenado pelo terminal).'); if (!(p.cmr.controles || []).length) e.push('Selecione os controles de exposição a agentes CMR ou PFC.'); }
         return e;
       },
       depois(p) {
@@ -410,6 +443,19 @@
         if (p.comp.incompDeclaradas) { w.appendChild(h('p', { class: 'q' }, 'Incompatível com:')); w.appendChild(U.checks(p, 'comp.incompativeis', T.RG.map((r) => ({ v: r[0], label: r[1] })))); w.appendChild(U.input(p, 'comp.incompTexto', { rows: 2, label: 'Texto da FDS (opcional)' })); }
         w.appendChild(h('p', { class: 'q' }, 'Este produto é, ele mesmo, do grupo:'));
         w.appendChild(U.checks(p, 'comp.grupos', T.RG.filter((r) => r[0] !== 'ignicao').map((r) => ({ v: r[0], label: r[1] }))));
+        if (p.armazenamento === 'granel') {
+          if (!p.comp.localOk) { p.comp.localOk = 'sim'; U.salvar(p); }
+          w.appendChild(U.alert('info', 'Armazenamento a granel em tanque', 'Fora do escopo da NBR 17160 (item d). Aplicam-se a NBR 17505 (líquidos inflamáveis e combustíveis), a NR-20 e o projeto do parque de tanques. A matriz de incompatibilidade da NBR 17160 não é aplicada.'));
+          w.appendChild(U.q('11.2', 'Quais requisitos do armazenamento em tanque estão atendidos?'));
+          w.appendChild(U.checks(p, 'comp.granel', [
+            { v: 'dique', label: 'Bacia ou dique de contenção conforme a NBR 17505' },
+            { v: 'nr20', label: 'Classificação da instalação, áreas classificadas e prontuário conforme a NR-20' },
+            { v: 'aterramento', label: 'Aterramento e proteção contra descargas eletrostáticas e atmosféricas' },
+            { v: 'incendio', label: 'Proteção e combate a incêndio do parque de tanques' },
+            { v: 'vapores', label: 'Controle de emissões e vapores' },
+            { v: 'drenagem', label: 'Drenagem, separação água e óleo e contenção de águas de combate' },
+          ]));
+        } else {
         const ca = E.classeArm(p), cmb = E.combustivel(p);
         w.appendChild(h('div', { class: 'card' }, h('h4', {}, 'Classe de armazenamento (NBR 17160, Anexo D) ', U.disc('PSM')),
           h('p', {}, h('b', {}, ca.id + ' | ' + O.NBR17160.nome(ca.id)), ' | critério: ' + ca.motivo + '.'),
@@ -437,6 +483,7 @@
           w.appendChild(U.input(p, 'comp.observacoes', { rows: 2, label: 'Medida de segregação ou local alternativo' }));
         }
         if (p.comp.localOk === 'insuficiente') w.appendChild(pendenciaBox(p, api, 'compat', ['Informação insuficiente nas Seções 7 e 10 para avaliar armazenamento e incompatibilidades.']));
+        }
         w.appendChild(U.q('11.3', 'O armazenamento exige controles adicionais específicos?'));
         const sg = E.sugestoes(p);
         if (sg.controlesArm.length) w.appendChild(h('div', { class: 'sug' }, h('b', {}, 'Sugeridos pela FDS e pela classe: '), sg.controlesArm.map((k) => (T.CONTROLES_ARM.find((c) => c[0] === k) || [0, k])[1]).join('; '), ' ', h('button', { class: 'btn sm sec', onclick: () => { p.comp.controles = sg.controlesArm.slice(); U.salvarJa(p); api.rerender(); } }, 'Aplicar')));

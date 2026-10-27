@@ -26,7 +26,7 @@
 
   // preenchimento sugerido por etapa (só em etapa ainda não confirmada)
   const PREP = {
-    finalidade(p) { if (!p.finalidade && ['Operação', 'Manutenção', 'Limpeza'].includes(p.ctx.area)) { p.finalidade = p.ctx.area; p.auto.finalidade = 'copiada do local de uso'; } },
+    finalidade(p) { if (!p.finalidade && p.natureza === 'carga') { p.finalidade = 'Armazenamento de carga'; p.auto.finalidade = 'produto armazenado pelo terminal'; return; } if (!p.finalidade && ['Operação', 'Manutenção', 'Limpeza'].includes(p.ctx.area)) { p.finalidade = p.ctx.area; p.auto.finalidade = 'copiada do local de uso'; } },
     lista(p) { if (p.lista.naLista === null) { const m = similar(p); if (m) p.auto.listaSug = m.id; else { p.lista.naLista = false; p.auto.lista = 'nenhum produto homologado com este nome'; } } },
     sim(p) {
       if (p.sim.ativa !== null) return;
@@ -83,14 +83,15 @@
     pgr(p) {
       if (!p.fds.analisada || p.hig.tlv !== null) return;
       const s8 = secao(p, 8);
-      p.hig.tlv = /tlv|acgih|nr-?\s?15|limite de toler|twa|stel/i.test(s8);
-      p.auto.pgr = p.hig.tlv ? 'Seção 8 cita limites de exposição' : 'Seção 8 não cita limites de exposição';
+      p.hig.tlv = /tlv|acgih|nr-?\s?15|limite de toler|twa|stel/i.test(s8) || E.cmrCarga(p);
+      p.auto.pgr = E.cmrCarga(p) ? 'agente CMR ou PFC: parecer de Higiene Ocupacional obrigatório' : (p.hig.tlv ? 'Seção 8 cita limites de exposição' : 'Seção 8 não cita limites de exposição');
     },
     compat(p) {
       if (!p.fds.analisada) return;
       if (p.comp.incompDeclaradas === null) { p.comp.incompDeclaradas = (p.comp.incompativeis || []).length > 0; p.auto.compat = p.comp.incompDeclaradas ? 'incompatibilidades lidas nas Seções 7 e 10' : 'nenhuma incompatibilidade declarada nas Seções 7 e 10'; }
       if (!(p.comp.controles || []).length) { const sg = E.sugestoes(p).controlesArm; if (sg.length) p.comp.controles = sg; }
       const loc = S.local(p.ctx.localId);
+      if (p.armazenamento === 'granel' && !p.comp.localOk) { p.comp.localOk = 'sim'; p.auto.compatLocal = 'tanque: fora do escopo da NBR 17160 (NBR 17505 e NR-20)'; return; }
       if (loc && !p.comp.localOk) {
         const cp = E.compatibilidade(p, loc, S.produtos());
         p.comp._motor = cp.status;

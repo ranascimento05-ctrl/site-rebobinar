@@ -13,6 +13,7 @@
       confirmadas: {},
       ctx: { area: '', atividade: '', localId: '' },
       nome: '', fornecedor: '', codigoFornecedor: '',
+      natureza: '', armazenamento: '', cmr: { justificativa: '', controles: [], controlesOk: false },
       finalidade: '', aplicacao: '',
       lista: { naLista: null, numero: '' },
       sim: { ativa: null, refId: '', familia: false, forma: false, componentes: false, parecerCitaFamilia: false, divergencia: '', encerrada: false },
@@ -29,7 +30,7 @@
       amb: { risco: null, contencao: '', residuos: '', derramamento: '' },
       hig: { tlv: null, parecerExigidoOk: false, pgr: '', dosimetria: null, justificativa: '', tlvAgentes: '' },
       imdg: { onu: '', nome: '', classe: '', subrisco: '', pg: '', numeroRisco: '', ems: '', poluente: false, pontoFulgor: '', incompativelOperacao: false, naoRegulado: false },
-      comp: { classeArm: '', combustivel: null, estado: '', incompDeclaradas: null, grupos: [], incompativeis: [], incompTexto: '', localOk: '', solucao: '', controles: [], limite: '', tempMax: '', observacoes: '' },
+      comp: { granel: [], classeArm: '', combustivel: null, estado: '', incompDeclaradas: null, grupos: [], incompativeis: [], incompTexto: '', localOk: '', solucao: '', controles: [], limite: '', tempMax: '', observacoes: '' },
       par: { tem: null, descricao: '', pgrIndicador: '', pgrPrazo: '', pgrResponsavel: '' },
       dec: { valor: '', justificativa: '', data: '', numero: '', sharepoint: '' },
       trein: { gerar: null },
@@ -86,6 +87,11 @@
     out.reprovado = out.criticos.length > 0;
     return out;
   }
+
+  // Produto armazenado ou movimentado pelo terminal (carga): a reprovação automática de CMR e PFC vale só para insumos
+  const ehCarga = (p) => p.natureza === 'carga';
+  const rejeitaAuto = (p) => triagem(p).reprovado && !ehCarga(p);
+  const cmrCarga = (p) => ehCarga(p) && triagem(p).reprovado;
 
   // ---------- NR-20 ----------
   function nr20(p) {
@@ -167,7 +173,7 @@
     const itens = (local.itens || []).map((i) => ({ nome: i.nome, arm: armDoItem(i), aprox: !i.classeArm, grupos: i.grupos || [], incompativeis: i.incompativeis || [], origem: 'manual' }));
     (produtos || []).forEach((q) => {
       if (q.id === excluirId) return;
-      if (q.ctx && q.ctx.localId === local.id && ['homologado', 'condicionado'].includes(q.status)) {
+      if (q.ctx && q.ctx.localId === local.id && ['homologado', 'condicionado'].includes(q.status) && q.armazenamento !== 'granel') {
         itens.push({ nome: q.nome, arm: classeArm(q).id, grupos: q.comp.grupos || [], incompativeis: q.comp.incompativeis || [], origem: 'homologado', pid: q.id });
       }
     });
@@ -203,6 +209,7 @@
     const res = { local: local ? local.nome : '', pares: [], grupos: [], itens: 0, status: 'sem_local', exigeM: 0, mensagens: [], classe: null };
     if (!local) return res;
     const ca = classeArm(p); res.classe = ca;
+    if (p.armazenamento === 'granel') { res.status = 'compativel'; res.granel = true; res.mensagens.push('Armazenamento a granel em tanque: fora do escopo da NBR 17160. Aplicam-se a NBR 17505 e a NR-20.'); return res; }
     const mine = { nome: p.nome, arm: ca.id, grupos: p.comp.grupos || [], incompativeis: p.comp.incompativeis || [] };
     const itens = itensDoLocal(local, produtos, p.id);
     res.itens = itens.length;
@@ -246,7 +253,7 @@
     const has = (re) => h.some((c) => re.test(c));
     const s = { ocup: { subst: [], eng: [], adm: [], epi: [] }, amb: { contencao: [], residuos: [], derramamento: [] }, controlesArm: [], risco: { ocup: false, amb: false } };
     const grave = has(/^H(300|310|330|340|350|360|370|372|304|314|334)/);
-    if (grave) { s.ocup.subst.push('Avaliar produto equivalente de menor perigo antes de aprovar (substituição).'); s.risco.ocup = true; }
+    if (grave) { s.ocup.subst.push(ehCarga(p) ? 'Substituição não se aplica: o produto é a carga do terminal. Priorizar controles de engenharia e administrativos.' : 'Avaliar produto equivalente de menor perigo antes de aprovar (substituição).'); s.risco.ocup = true; }
     if (has(/^H(33\d|335|336|334)$/) || has(/^H22[0-6]$/)) { s.ocup.eng.push('Ventilação geral diluidora ou exaustão local no ponto de uso; usar em local ventilado ou ao ar livre.'); s.ocup.epi.push('Proteção respiratória com filtro adequado ao agente (Seção 8 da FDS), se a exposição não ficar sob controle.'); s.risco.ocup = true; }
     if (has(/^H(31\d|314|317)$/)) { s.ocup.epi.push('Luvas de material resistente ao produto (conforme Seção 8 da FDS) e vestimenta de proteção.'); s.ocup.adm.push('Higiene pessoal após o manuseio; trocar de imediato roupa contaminada.'); s.risco.ocup = true; }
     if (has(/^H(314|318|319|320)$/)) { s.ocup.epi.push('Óculos de ampla visão; protetor facial na transferência de volumes.'); s.ocup.eng.push('Lava-olhos e chuveiro de emergência a menos de 10 s do ponto de uso.'); s.risco.ocup = true; }
@@ -338,7 +345,18 @@
       const rot = { cancerigeno: 'Cancerígeno', mutagenico: 'Mutagênico', teratogenico: 'Teratogênico', reprodutivo: 'Tóxico à reprodução', pfc: 'Contém PFCs ou PFAS' };
       const g = {};
       r.tri.criticos.forEach((c) => { (g[c.tipo] = g[c.tipo] || []).push(c.fonte === 'analista' ? 'marcado pelo analista' : c.fonte + (c.detalhe.includes('componente ') ? ' (' + c.detalhe.split('componente ')[1].split(' consta')[0] + ')' : '')); });
-      Object.keys(g).forEach((k) => r.reprovacoes.push('Critério interno (GHS): ' + rot[k] + ' [' + g[k].join('; ') + '].'));
+      const lista = Object.keys(g).map((k) => rot[k] + ' [' + g[k].join('; ') + ']');
+      if (!ehCarga(p)) Object.keys(g).forEach((k) => r.reprovacoes.push('Critério interno (GHS): ' + rot[k] + ' [' + g[k].join('; ') + '].'));
+      else {
+        // produto armazenado pelo terminal: sem reprovação automática, mas com controles de exposição obrigatórios
+        r.cmr = lista;
+        r.alertas.push('Produto armazenado pelo terminal com perigo CMR ou PFC: ' + lista.join('; ') + '. Sem reprovação automática; exige justificativa de não substituição, controles de exposição e parecer de Higiene Ocupacional.');
+        const c = p.cmr || {};
+        if (!String(c.justificativa || '').trim()) r.pendencias.push('Justificativa de não substituição do agente CMR ou PFC não registrada (produto é a carga do terminal), etapa 7.');
+        if (!(c.controles || []).length) r.pendencias.push('Controles de exposição a agentes CMR ou PFC não selecionados, etapa 7.');
+        if (!p.hig.parecerExigidoOk) r.pendencias.push('Parecer formal de Higiene Ocupacional exigido antes da decisão (agente CMR ou PFC).');
+        if ((c.controles || []).length && !c.controlesOk) r.condicionantes.push('Implantar e verificar os controles de exposição a agentes CMR ou PFC: ' + c.controles.map((k) => ((O.CMR_CONTROLES || []).find((x) => x[0] === k) || [k, k])[1]).join('; ') + '.');
+      }
     }
     r.tri.suspeitos.forEach((c) => r.alertas.push(c.detalhe));
 
@@ -373,5 +391,5 @@
     return r;
   }
 
-  O.Engine = { novoProduto, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});
