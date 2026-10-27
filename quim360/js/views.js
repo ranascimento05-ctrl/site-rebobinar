@@ -11,13 +11,14 @@
     const ok = ['homologado', 'condicionado'].includes(p.status);
     const prods = S.produtos();
     const decidido = !!p.confirmadas.decisao || p.status !== 'em_analise';
+    const lida = !!(p.fds.analisada || p.nome) && p.status !== 'reprovado'; // ficha, rótulo e envelope saem já com a FDS lida (preliminares até a decisão)
     const c = [{ id: 'relatorio', nome: 'Relatório de homologação', desc: 'Decisão, FDS, triagem GHS, impactos, PGR, IMDG, segregação e rastreabilidade.', fn: () => D.relatorio(p, prods), on: true }];
     c.splice(1, 0, { id: 'analise', nome: 'Relatório da análise da FDS', desc: 'Leitura da FDS: validade, GHS, composição, triagem CMR e PFC, transporte, classe de armazenamento e controles sugeridos. Disponível a qualquer momento.', fn: () => D.analiseFds(p, prods), on: !!(p.fds.analisada || p.nome) });
     c.push({ id: 'quadro', nome: 'Quadro de compatibilidade', desc: 'Este produto e os homologados comparados dois a dois, com grupos que podem dividir o setor de armazém.', fn: () => D.quadroCompat(p, prods), on: E.homologados(prods).filter((x) => x.id !== p.id && x.armazenamento !== 'granel').length >= 1 && p.armazenamento !== 'granel' });
     c.push({ id: 'plano', nome: 'Plano de ação', desc: 'Ações, origem, responsável e prazo para colocar o produto em uso (ou encerrar, se reprovado).', fn: () => D.planoAcao(p, prods), on: decidido });
-    c.push({ id: 'ficha', nome: 'Ficha de emergência', desc: 'Estrutura NBR 7503 e Manual ABIQUIM: riscos, isolamento, fogo, derramamento, primeiros socorros.', fn: () => D.fichaEmergencia(p), on: ok });
-    c.push({ id: 'rotulo', nome: 'Rotulagem', desc: 'Rótulo GHS (NBR 14725), etiqueta de uso (NR-26) e rótulos de risco (NBR 7500).', fn: () => D.rotulagem(p), on: ok });
-    c.push({ id: 'envelope', nome: 'Envelope de transporte', desc: 'Painel de segurança, rótulos de risco, conduta do motorista e ficha de emergência.', fn: () => D.envelope(p), on: ok });
+    c.push({ id: 'ficha', nome: 'Ficha de emergência', desc: 'Estrutura NBR 7503 e Manual ABIQUIM: riscos, isolamento, fogo, derramamento, primeiros socorros.', fn: () => D.fichaEmergencia(p), on: ok || lida });
+    c.push({ id: 'rotulo', nome: 'Rotulagem', desc: 'Rótulo GHS (NBR 14725), etiqueta de uso (NR-26) e rótulos de risco (NBR 7500).', fn: () => D.rotulagem(p), on: ok || lida });
+    c.push({ id: 'envelope', nome: 'Envelope de transporte', desc: 'Painel de segurança, rótulos de risco, conduta do motorista e ficha de emergência.', fn: () => D.envelope(p), on: ok || lida });
     c.push({ id: 'treino', nome: 'Checklist de treinamento', desc: 'Manuseio, armazenamento, descarte, emergência e lista de presença.', fn: () => D.treinamento(p), on: ok && p.trein.gerar !== false });
     return c;
   };
@@ -68,7 +69,7 @@
         area.appendChild(h('div', { class: 'row', style: 'margin-bottom:10px' }, h('a', { class: 'btn', href: '#/doc/' + p.id + '/relatorio' }, 'Abrir relatório em tela cheia')));
         area.appendChild(h('div', { class: 'paper', html: R.html(D.relatorio(p, S.produtos())) }));
       } else {
-        cat.forEach((d) => area.appendChild(h('div', { class: 'card', style: d.on ? '' : 'opacity:.5' }, h('h3', {}, d.nome), h('p', { class: 'small' }, d.desc + (d.on ? '' : ' Disponível após a homologação.')), d.on ? V.docBotoes(p, d) : null)));
+        cat.forEach((d) => area.appendChild(h('div', { class: 'card', style: d.on ? '' : 'opacity:.5' }, h('h3', {}, d.nome), h('p', { class: 'small' }, d.desc + (d.on ? '' : ' Disponível após a leitura da FDS ou da homologação.')), d.on ? V.docBotoes(p, d) : null)));
         area.appendChild(V.pacote(p));
         area.appendChild(h('p', { class: 'small' }, 'Word (.docx) e PDF são baixados como arquivo. "Imprimir" abre a impressão do navegador, se preferir.'));
       }
@@ -171,7 +172,7 @@
       if (outros.length) { const dq = V.catalogo(p).find((x) => x.id === 'quadro'); if (dq && dq.on) root.appendChild(h('div', { class: 'card' }, h('h3', {}, dq.nome), h('p', { class: 'small' }, dq.desc), V.docBotoes(p, dq))); root.appendChild(V.gruposCard([p].concat(outros))); }
     } else if (tab === 'docs') {
       root.appendChild(V.pacote(p));
-      V.catalogo(p).forEach((d) => root.appendChild(h('div', { class: 'card', style: d.on ? '' : 'opacity:.5' }, h('h3', {}, d.nome), h('p', { class: 'small' }, d.desc + (d.on ? '' : ' Disponível após a homologação.')), d.on ? V.docBotoes(p, d) : null)));
+      V.catalogo(p).forEach((d) => root.appendChild(h('div', { class: 'card', style: d.on ? '' : 'opacity:.5' }, h('h3', {}, d.nome), h('p', { class: 'small' }, d.desc + (d.on ? '' : ' Disponível após a leitura da FDS ou da homologação.')), d.on ? V.docBotoes(p, d) : null)));
     } else {
       const link = D.linkRegistro(p);
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Cadastro próprio na lista de homologados'), kv([['Registro', p.dec.numero], ['Data', D.fmtData(p.dec.data)], ['Status', st[0]]]),

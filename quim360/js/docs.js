@@ -198,10 +198,14 @@
   }
 
   // Ficha de emergência: sequência de campos da ABNT NBR 7503 (identificação, riscos, EPI, ações em caso de acidente, telefones)
+  function prelim(p) {
+    return ['homologado', 'condicionado'].includes(p.status) ? [] : [{ t: 'callout', tone: 'warn', title: 'Versão preliminar', text: 'Gerada a partir da leitura da FDS, antes da decisão de homologação. Confira os dados e use somente após a homologação.' }];
+  }
   function fichaEmergencia(p) {
     const s = p.fds.secoes || {};
     const B = [];
     B.push(capa('Ficha de emergência', 'QUIM 360 | Ficha de Emergência | ' + nz(p.nome), p, [['Estrutura', 'ABNT NBR 7503, Resolução ANTT 5.947/21 e Manual ABIQUIM']]));
+    B.push(...prelim(p));
     B.push({ t: 'imgs', items: [{ svg: O.Pic.painel(p.imdg.numeroRisco, p.imdg.onu, 240), w: 240, h: 120, cap: 'Número de risco e número ONU' }].concat(E.classesDoProduto(p).map((cl, i) => ({ svg: O.Pic.transporte(cl, 110), w: 110, h: 110, cap: (i === 0 ? 'Risco principal ' : 'Risco subsidiário ') + cl }))) });
     B.push({ t: 'table', head: ['Nome apropriado para embarque', 'Classe ou subclasse', 'Grupo de embalagem'], widths: [58, 24, 18], rows: [[nz(p.imdg.nome || p.nome), nz(p.imdg.classe) + (p.imdg.subrisco ? ' (subsidiário ' + p.imdg.subrisco + ')' : ''), nz(p.imdg.pg)]] });
     B.push({ t: 'table', head: ['Aspecto', 'Descrição'], widths: [18, 82], rows: [['Estado físico, cor e odor', trecho(s[9], ['estado físico', 'aspecto', 'odor'], 220, false) || corta(s[9], 220) || '—'], ['Ponto de fulgor e densidade', [p.imdg.pontoFulgor !== '' ? 'Ponto de fulgor: ' + p.imdg.pontoFulgor + ' °C' : '', trecho(s[9], ['densidade'], 100, false)].filter(Boolean).join('. ') || '—']] });
@@ -249,6 +253,7 @@
     const grp = agrupaP(p);
     const B = [];
     B.push(capa('Rotulagem', 'QUIM 360 | Rótulo GHS e rótulo de risco | ' + nz(p.nome), p, [['Base', 'ABNT NBR 14725-3, GHS, NR-26 e NBR 7500']]));
+    B.push(...prelim(p));
     B.push({ t: 'h1', text: '1 Rótulo de recipiente (GHS)' });
     const inner = [];
     inner.push({ t: 'h2', text: nz(p.nome) });
@@ -300,7 +305,7 @@
     inner.push({ t: 'p', bold: true, text: 'Contém: ficha de emergência, documento fiscal e documentos do transporte.' });
     inner.push({ t: 'kv', rows: [['Expedidor', ''], ['Destinatário', ''], ['Veículo (placa) e condutor', '']] });
     // a primeira página é a face do envelope; a capa da marca fica na ficha de emergência que vai dentro dele
-    const B = [{ t: 'box', border: '#c2410c', bg: '#fdba74', children: inner }, { t: 'pagebreak' }];
+    const B = [...prelim(p), { t: 'box', border: '#c2410c', bg: '#fdba74', children: inner }, { t: 'pagebreak' }];
     return B.concat(fichaEmergencia(p));
   }
 
