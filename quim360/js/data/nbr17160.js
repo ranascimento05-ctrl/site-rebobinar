@@ -64,25 +64,25 @@
   ORDEM.forEach((a) => { const v = LINHAS[a].split(','); MATRIZ[a] = {}; ORDEM.forEach((b, j) => { MATRIZ[a][b] = v[j]; }); });
 
   const OBS = {
-    1: 'Um responsável técnico deve avaliar e autorizar formalmente o armazenamento conjunto. Verificar regulamentação específica.',
-    2: 'Gases pressurizados: no máximo 50 recipientes (no máximo 25 de gás inflamável, oxidante ou tóxico), separados por parede de material não combustível com pelo menos 2 m de altura, mantendo 5 m entre a parede e os materiais combustíveis.',
-    3: 'Cilindros de gás pressurizado no mesmo armazém: até 150 cilindros ou 15 contêineres pressurizados de gases inflamáveis, oxidantes ou tóxicos (H331); gases inertes em qualquer quantidade; mais de 15 cilindros de gases altamente tóxicos (H330) em local separado; 2 m entre inflamáveis e oxidantes; sem restrição ao ar livre.',
-    4: 'Permitido conforme a quantidade total: Tabela 3 (classes 3, 5.1B, 6.1A e 6.1B) ou Tabela 4 (classes 4.1B e 6.1A).',
-    5: 'Materiais que propagam incêndio com rapidez (papel, têxteis, madeira, aparas, feno, palha, papelão) não podem ficar na área de armazenamento, salvo se fizerem parte da unitização da carga de inflamáveis.',
-    6: 'Só podem ficar juntos se a interação indesejada não originar um novo risco.',
-    7: 'Oxidantes com materiais combustíveis: até 1 t no total sem limitação; acima de 1 t, consultar responsável técnico. Seguir também a observação 5.',
-    8: 'Só é permitido com segregação por distanciamento mínimo de 5 m entre os corrosivos ácidos e os corrosivos básicos (alcalinos), combustíveis ou não.',
+    1: 'Um responsável técnico deve avaliar e autorizar formalmente o armazenamento dessas substâncias. Regulamentações específicas para armazenamento em conjunto de produtos perigosos devem ser avaliadas.',
+    2: 'Armazenamento conjunto só é permitido se houver um máximo de 50 recipientes contendo gás pressurizados, desde que não mais de 25 recipientes sejam de gás inflamável, oxidante ou tóxicos; e forem separados por uma parede de pelo menos 2 m de altura feita de materiais não combustíveis; e seja mantida uma distância mínima de 5 m entre a parede e os materiais combustíveis.',
+    3: 'Cilindros contendo gás pressurizado podem ser armazenados em conjunto no mesmo armazém, desde que: recipientes de gases comprimidos contendo gases inflamáveis, oxidantes, tóxicos identificados com a frase H331 ou gases tóxicos podem ser armazenados desde que não se exceda o número de 150 cilindros ou 15 contêineres pressurizados (pressure barrels); além disso, podem ser armazenados recipientes com gases inertes em qualquer quantidade; recipientes pressurizados com gases inflamáveis e com gases inertes podem ser armazenados em qualquer quantidade; recipientes pressurizados com gases oxidantes e com gases inertes podem ser armazenados em qualquer quantidade; recipientes pressurizados com gases tóxicos identificados com H331 ou gases altamente tóxicos e com gases inertes podem ser armazenados em qualquer quantidade; nos casos de 1 a 3, podem ser armazenados mais de 15 cilindros ou um contêiner pressurizado com gases altamente tóxicos agudos identificados com H330; maiores quantidades com gases tóxicos devem ser armazenadas em um local separado; deve ser mantida uma distância mínima de 2 m entre os recipientes contendo inflamáveis e recipientes contendo gases oxidantes; não há restrições para o armazenamento ao ar livre.',
+    4: 'Armazenamento é permitido nas seguintes condições: armazenamento entre as classes 3, 5.1B, 6.1A e 6.1B deve seguir a Tabela 3; armazenamento entre as classes 4.1B e 6.1A deve seguir a Tabela 4.',
+    5: 'Materiais que possam contribuir para a rápida propagação de incêndios devido a sua natureza ou quantidade, como, por exemplo, papel, têxteis, madeira, aparas de madeira, feno, palha, papelão, não podem ser armazenados na área de armazenamento, a não ser que eles sejam parte da unitização da carga de inflamáveis.',
+    6: 'Diferentes materiais somente podem ser armazenados juntos se o resultado da interação indesejada dessas substâncias não originar um novo risco.',
+    7: 'Substâncias oxidantes podem ser armazenadas com materiais combustíveis desde que: em quantidades de até um total de 1 t, sem limitação; em quantidades superiores a 1 t, consultar um responsável técnico para orientação; os requisitos da observação 5 também devem ser seguidos.',
+    8: 'Só é permitido se houver segregação por distanciamento mínimo de 5 m entre os corrosivos ácidos, combustíveis ou não, com os corrosivos básicos (alcalino), combustíveis ou não.',
   };
 
-  const TABELA3 = { titulo: 'Tabela 3 | Armazenamento conjunto entre as classes 3, 5.1B, 6.1A e 6.1B', linhas: [
-    ['Até 1 t', 'Sem restrições.'],
-    ['Até 20 t', 'Sem restrições se o armazém tiver sistema automático de extinção de incêndio, ou sistema automático de alarme de incêndio com extinção não automática e brigada de incêndio no local.'],
+  const TABELA3 = { titulo: 'Tabela 3 | Requisitos para o armazenamento conjunto entre as classes 3, 5.1 B, 6.1 A e 6.1 B', linhas: [
+    ['≤ 1 t', 'Sem restrições.'],
+    ['≤ 20 t', 'Sem restrições caso o armazém possua: sistema de extinção automática de incêndios; ou sistema automático de alarme de incêndio em conjunto com um sistema de extinção de incêndios não automática e uma brigada de incêndio no local.'],
   ] };
-  const TABELA4 = { titulo: 'Tabela 4 | Armazenamento conjunto entre as classes 4.1B e 6.1A', linhas: [
-    ['Até 1 t', 'Sem restrições.'],
-    ['Até 20 t', 'Sem restrições se, em armazéns, houver sistema automático de alarme de incêndio. Ao ar livre: detecção e alarme com monitoramento de hora em hora e evidência de funcionamento do sistema automático.'],
-    ['Até 50 t', 'Sem restrições se houver alarme automático de incêndio e brigada que chegue ao local em até 10 min.'],
-    ['Até 100 t', 'Sem restrições se houver extinção automática, ou alarme automático com extinção não automática e brigada no local.'],
+  const TABELA4 = { titulo: 'Tabela 4 | Requisitos para o armazenamento conjunto entre as classes 4.1 B e 6.1 A', linhas: [
+    ['≤ 1 t', 'Sem restrições.'],
+    ['≤ 20 t', 'Sem restrições se: em armazéns, possuir sistema de alarme de incêndio automático; ao ar livre, sistema de detecção e alarme de incêndios assegurados por monitoramento de hora em hora, com opções de notificação, como telefone, alarme de incêndio, rádio etc., e haver evidências de que um sistema automático de alarme e detecção de incêndio funcione no local.'],
+    ['≤ 50 t', 'Sem restrições se possuir: sistema de alarme de incêndio automático; e brigada de incêndio que possa chegar ao local em até 10 min depois que o alarme foi acionado.'],
+    ['≤ 100 t', 'Sem restrições se possuir: sistema de extinção automática de incêndios; ou sistema automático de alarme de incêndio em conjunto com um sistema de extinção de incêndios não automática e uma brigada de incêndio no local.'],
   ] };
 
   // regras gerais do armazenamento conjunto (9.1.1.3 e 9.1.1.4)
@@ -108,8 +108,8 @@
     { re: /^H250$/, rotulo: 'Pirofórico', limite: 'sem quantidade indicada na tabela', acima: 'Seções 7 e 8 acima de 200 kg' },
     { re: /^H(251|252)$/, rotulo: 'Sujeito a autoaquecimento', limite: 'sem quantidade indicada na tabela', acima: 'Seção 8 acima de 200 kg' },
     { re: /^H242$/, rotulo: 'Autorreativo', limite: 'sem quantidade indicada na tabela', acima: 'Seção 8 acima de 200 kg' },
-    { re: /^H271$/, rotulo: 'Oxidante líquido, categoria 1, 2 ou 3 (H271)', limite: '1 kg', acima: 'Seções 7 e 11 acima de 5 kg' },
-    { re: /^H272$/, rotulo: 'Oxidante sólido (H272)', limite: '50 kg', acima: 'Seções 7 e 11 acima de 200 kg' },
+    { re: /^H271$/, rotulo: 'Líquidos e sólidos oxidantes, categoria 1 (H271)', limite: '1 kg', acima: 'Seções 7 e 11 acima de 5 kg' },
+    { re: /^H272$/, rotulo: 'Líquidos e sólidos oxidantes, categoria 2 ou 3 (H272)', limite: '50 kg', acima: 'Seções 7 e 11 acima de 200 kg' },
     { re: /^H(280|281)$/, rotulo: 'Gás sob pressão', limite: '2,5 L', acima: 'Seção 12 acima de 2,5 L' },
     { re: /^H(220|221)$/, rotulo: 'Gás inflamável / aerossol inflamável', limite: '2,5 L (gás) ou 20 kg (aerossol)', acima: 'Seções 7, 8 e 12; Seção 13 e Anexo B para aerossóis' },
     { re: /^H(222|223)$/, rotulo: 'Aerossol', limite: '20 kg', acima: 'Seção 8 e Seção 13 acima de 200 kg; Anexo B' },
@@ -138,9 +138,12 @@
     { k: 'h260', rotulo: 'Emite gás inflamável em contato com a água (H260, H261)', re: /^H(260|261)$/, classes: ['4.3'], fora: 200, faixas: [{ acima: 200, secoes: 'Seção 8' }], analise: '' },
     { k: 'ox1', rotulo: 'Altamente oxidante, categoria 1 ou grupo de embalagem I (H271)', re: /^H271$/, classes: ['5.1A'], fora: 1, faixas: [{ acima: 5, secoes: 'Seções 7 e 11' }], analise: '11.1.3 (entre 1 e 5 kg)' },
     { k: 'ox23', rotulo: 'Oxidante, categoria 2 ou 3 (H272)', re: /^H272$/, classes: ['5.1B'], fora: 50, faixas: [{ acima: 200, secoes: 'Seções 7 e 11' }], analise: '11.1.3 (entre 50 e 200 kg)' },
-    { k: 'gas', rotulo: 'Gás sob pressão, inflamável ou oxidante (H220, H221, H270, H280, H281) | volume em L', re: /^H(220|221|270|280|281)$/, classes: ['2A'], unidade: 'L', fora: 2.5, faixas: [{ acima: 2.5, secoes: 'Seção 12' }, { acima: 200, secoes: 'Seções 7 e 8 (inflamáveis e oxidantes, em kg)' }], analise: '' },
-    { k: 'aer', rotulo: 'Aerossol (H222, H223)', re: /^H(222|223)$/, classes: ['2B'], fora: 20, faixas: [{ acima: 200, secoes: 'Seções 8 e 13' }], analise: '' },
+    { k: 'gasp', rotulo: 'Gás sob pressão: comprimido, liquefeito, refrigerado ou dissolvido (H280, H281) | volume em L', re: /^H(280|281)$/, classes: [], unidade: 'L', fora: 2.5, faixas: [{ acima: 2.5, secoes: 'Seção 12' }], analise: '' },
+    { k: 'gasinf', rotulo: 'Gás inflamável, categoria 1 ou 2 (H220, H221) | volume em L', re: /^H(220|221)$/, classes: ['2A'], unidade: 'L', fora: 2.5, faixas: [{ acima: 2.5, secoes: 'Seção 12' }], analise: '', nota: 'Acima de 200 kg: Seções 7 e 8 também valem.' },
+    { k: 'gasox', rotulo: 'Gás oxidante, categoria 1 (H270) | volume em L', re: /^H270$/, classes: [], unidade: 'L', fora: 2.5, faixas: [{ acima: 2.5, secoes: 'Seção 12' }], analise: '', nota: 'Acima de 200 kg: Seção 7 também vale.' },
+    { k: 'aer', rotulo: 'Aerossol (H222, H223)', re: /^H(222|223)$/, classes: ['2B'], fora: 20, faixas: [{ acima: 200, secoes: 'Seções 8 e 13' }], analise: '', nota: 'Anexo B quando aplicável (áreas de venda), a partir de qualquer quantidade.' },
     { k: 'corr', rotulo: 'Corrosivo (H290, H314)', re: /^H(290|314)$/, classes: ['8A', '8B'], fora: 1000, faixas: [{ acima: 200, secoes: 'Seção 7' }], analise: '' },
+    { k: 'solcomb', rotulo: 'Sólido combustível (classe de armazenamento 11, sem frase H)', re: /^$/, classes: ['11'], fora: null, faixas: [], analise: 'quantidade-limite a ser determinada pelo empregador, normalmente em toneladas (Tabela 1)', empregador: true },
   ];
   // quantidades das Tabelas 3 e 4 (kg) para o armazenamento conjunto
   const CONJUNTAS = [
@@ -160,17 +163,20 @@
   ];
   // Tabela F.2: pontos por frase H. grupo: pontos do mesmo grupo não se somam (vale o maior, conforme a coluna de prioridade)
   const F2 = {
-    EUH029: ['eu', 2], H300: ['agudo', 4], H301: ['agudo', 3], H302: ['agudo', 1], H304: ['agudo', 1], H310: ['agudo', 4], H311: ['agudo', 3], H312: ['agudo', 1],
-    H340: ['gen', 9], H341: ['gen', 2], H350: ['gen', 9], H351: ['gen', 2], H360: ['rep', 4], H361: ['rep', 4],
-    H370: ['stotU', 4], H371: ['stotU', 2], H372: ['stotR', 4], H373: ['stotR', 2],
-    H400: ['aq', 6], H410: ['aq', 8], H411: ['aq', 6], H412: ['aq', 4],
+    EUH029: [2, []], H300: [4, []], H301: [3, ['H310']], H302: [1, ['H311', 'H310']], H304: [1, ['H312', 'H302']],
+    H310: [4, ['H300']], H311: [3, ['H301', 'H300']], H312: [1, ['H302', 'H301', 'H300']],
+    H340: [9, ['H350']], H341: [2, ['H351']], H350: [9, []], H351: [2, []], H360: [4, []], H361: [4, []],
+    H370: [4, []], H371: [2, []], H372: [4, []], H373: [2, []],
+    H400: [6, []], H410: [8, []], H411: [6, []], H412: [4, []],
   };
-  const F1_NOTA = 'Pontuação simplificada: dentro de cada grupo (toxicidade aguda, mutagênico e cancerígeno, reprodução, órgãos-alvo por exposição única ou repetida, ambiente aquático) vale a maior pontuação, sem somar, como indica a coluna de prioridade da Tabela F.2. Confira a tabela na norma.';
+  // F.2.3.3: pontos de precaução quando há ensaio ecotoxicológico mas nenhuma frase H ambiental
+  const F2_ENSAIO = [['lt1', 'Menor que 1 mg/L', 8], ['1a10', 'De 1 a 10 mg/L', 6], ['10a100', 'De 10 a 100 mg/L', 4], ['gt100', 'Maior que 100 mg/L', 2]];
+  const F1_NOTA = 'Pontuação pela Tabela F.2: cada frase H soma seus pontos, exceto quando a frase indicada na coluna "prioridade sobre outros perigos" também está presente (ex.: H301 não soma com H310).';
 
   const BY = {}; CLASSES.forEach((c) => { BY[c[0]] = { id: c[0], nome: c[1], criterio: c[2] }; });
 
   O.NBR17160 = {
-    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, CATS, CONJUNTAS, F1, CATK, F2, F1_NOTA, BY,
+    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, CATS, CONJUNTAS, F1, CATK, F2, F2_ENSAIO, F1_NOTA, BY,
     nome(id) { return BY[id] ? BY[id].nome : ''; },
     // 'R' | 'G' | '1'..'8' | null (classe fora da matriz, por exemplo 9)
     par(a, b) { return MATRIZ[a] && MATRIZ[a][b] !== undefined ? MATRIZ[a][b] : null; },

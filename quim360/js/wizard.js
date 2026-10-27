@@ -512,6 +512,7 @@
         w.appendChild(h('div', { class: 'opts' },
           U.flag(p, 'cpa.semToxAguda', 'A FDS não traz dados de toxicidade aguda oral e dérmica', 'Soma 4 pontos de precaução (F.2.3.1).', drawC),
           U.flag(p, 'cpa.semAmbiental', 'A FDS não traz informações ecológicas (Seção 12)', 'Soma 8 pontos de precaução (F.2.3.2).', drawC),
+          U.select(p, 'cpa.ensaio', O.NBR17160.F2_ENSAIO.map((x) => [x[0], x[1]]), { label: 'Sem frase H ambiental, mas com ensaio ecotoxicológico (peixe CL50 96 h, pulga d\'água CE50 48 h ou algas CEr50 72 h)', empty: 'Sem ensaio informado', onChange: drawC }),
           U.flag(p, 'cpa.biodegradavel', 'Facilmente biodegradável e sem potencial de bioacumulação (comprovado)', 'Reduz 2 pontos da precaução ambiental.', drawC)));
         drawC(); w.appendChild(boxC);
         w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'comp.limite', { label: 'Quantidade máxima armazenada', ph: 'Ex.: 200 L' }), U.input(p, 'comp.tempMax', { label: 'Temperatura máxima de armazenamento (Seção 7)', ph: 'Ex.: 35 °C' })));

@@ -13,7 +13,7 @@
       confirmadas: {},
       ctx: { area: '', atividade: '', localId: '' },
       nome: '', fornecedor: '', codigoFornecedor: '',
-      cpa: { semToxAguda: false, semAmbiental: false, biodegradavel: false },
+      cpa: { semToxAguda: false, semAmbiental: false, biodegradavel: false, ensaio: '' },
       natureza: '', armazenamento: '', cmr: { justificativa: '', controles: [], controlesOk: false },
       finalidade: '', aplicacao: '',
       lista: { naLista: null, numero: '' },
@@ -149,7 +149,7 @@
     if (has(/^H242$/) || cl.includes('5.2')) return R('5.2', 'peróxido orgânico ou autorreativo (H242 ou classe 5.2)');
     if (has(/^H25[012]$/) || cl.includes('4.2')) return R('4.2', 'pirofórico ou autoaquecimento (H250 a H252 ou classe 4.2)');
     if (has(/^H26[01]$/) || cl.includes('4.3')) return R('4.3', 'emite gás inflamável com água (H260, H261 ou classe 4.3)');
-    if (has(/^H228$/) || cl.includes('4.1')) return R('4.1B', 'sólido inflamável (H228 ou classe 4.1)');
+    if (has(/^H228$/) || cl.includes('4.1')) return R('4.1B', 'sólido inflamável (H228 ou classe 4.1)' + (has(/^H228$/) ? '' : '; classe 4.1 sem H228 exige análise individual (Anexo D, D.10.1)'));
     if (['1942', '2067', '2071', '2426', '3375'].includes(onu)) return R('5.1C', 'nitrato de amônio (ONU ' + onu + ')');
     if (has(/^H271$/) || (cl.includes('5.1') && pg === 'I')) return R('5.1A', 'fortemente oxidante (H271 ou classe 5.1, grupo I)');
     if (has(/^H272$/) || cl.includes('5.1')) return R('5.1B', 'oxidante (H272 ou classe 5.1)');
@@ -253,7 +253,7 @@
     const res = { itens, semQtd: itens.filter((i) => i.qtd == null).map((i) => i.nome), total: 0, informado: itens.some((i) => i.qtd != null), cats: [], total1500: false, conjuntas: [], obs7: [], exige: [] };
     itens.forEach((i) => { if (i.qtd != null) res.total += i.qtd; });
     res.total1500 = res.total > 1500;
-    const geral = { k: 'geral', rotulo: 'Perigosos não especificados na Tabela 1', fora: 1000, faixas: [{ acima: 200, secoes: 'Seção 9 (armazenamento conjunto)' }], analise: '' };
+    const geral = { k: 'geral', rotulo: 'Perigosos não especificados na Tabela 1', fora: 1000, faixas: [{ acima: 200, secoes: 'Seção 9 (armazenamento conjunto)', conjunto: true }], analise: '' };
     const por = {};
     itens.forEach((it) => {
       const { cats, aprox } = catsDoItem(it);
@@ -261,16 +261,18 @@
     });
     Object.keys(por).forEach((k) => {
       const g = por[k], c = g.c, q = g.qtd;
-      const ativas = c.faixas.filter((f) => q > f.acima);
+      const ativas = c.faixas.filter((f) => q > f.acima && (!f.conjunto || g.itens.length > 1));
       let status = 'dentro';
       if (c.fora != null && q > c.fora) status = 'armazem';
       if (c.analise && c.fora != null && q > c.fora && !ativas.length) status = 'analise';
       if (c.sub && g.sub > c.sub.limite && status === 'dentro') status = 'armazem';
       if (ativas.length) status = 'secoes';
+      if (c.empregador && q > 0) status = 'analise';
       const secoes = ativas.map((f) => f.secoes).join('; ');
-      const r = { k, rotulo: c.rotulo, unidade: c.unidade || 'kg', qtd: q, fora: c.fora, status, secoes, analise: c.analise, itens: g.itens, aprox: g.aprox, subTexto: c.sub && g.sub > c.sub.limite ? c.sub.texto : '' };
+      const r = { k, rotulo: c.rotulo, unidade: c.unidade || 'kg', qtd: q, fora: c.fora, status, secoes, analise: c.analise, nota: c.nota || '', itens: g.itens, aprox: g.aprox, subTexto: c.sub && g.sub > c.sub.limite ? c.sub.texto : '' };
       res.cats.push(r);
-      if (status === 'secoes') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ' acima de ' + Math.max.apply(null, ativas.map((f) => f.acima)) + ' ' + r.unidade + ' → ' + secoes + '.');
+      if (status === 'secoes') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ' acima de ' + Math.max.apply(null, ativas.map((f) => f.acima)) + ' ' + r.unidade + ' → ' + secoes + '.' + (c.nota && q > 200 ? ' ' + c.nota : ''));
+      else if (status === 'analise' && c.empregador) res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' kg, ' + c.analise + '.');
       else if (status === 'analise') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ', faixa em que as medidas saem da análise de risco (' + c.analise + ').');
       else if (status === 'armazem') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ' acima de ' + (c.fora != null && q > c.fora ? c.fora : c.sub.limite) + ' ' + r.unidade + ' → armazenar em armazém segregado (6.3.1)' + (r.subTexto ? ' [' + r.subTexto + ']' : '') + '.');
     });
@@ -296,12 +298,19 @@
 
   // ---------- Anexo F | classe de perigo à água (CPA) e volume de contenção da água de extinção ----------
   function pontosAgua(hs, flags) {
-    const NB = N(); const g = {}; const det = [];
-    (hs || []).forEach((c) => { const f = NB.F2[c]; if (f && (!g[f[0]] || f[1] > g[f[0]][1])) g[f[0]] = [c, f[1]]; });
-    let t = 0; Object.keys(g).forEach((k) => { t += g[k][1]; det.push(g[k][0] + ' (' + g[k][1] + ')'); });
-    const fl = flags || {};
+    const NB = N(); const fl = flags || {}; const det = []; let t = 0;
+    const tem = (c) => (hs || []).includes(c);
+    Object.keys(NB.F2).forEach((c) => {
+      if (!tem(c)) return;
+      const [pts, anula] = NB.F2[c];
+      const sup = anula.find(tem);
+      if (sup) { det.push(c + ' (0, não soma com ' + sup + ')'); return; }
+      t += pts; det.push(c + ' (' + pts + ')');
+    });
     if (fl.semToxAguda) { t += 4; det.push('sem dados de toxicidade aguda oral e dérmica (4)'); }
+    const temAmb = ['H400', 'H410', 'H411', 'H412'].some(tem);
     if (fl.semAmbiental) { const v = fl.biodegradavel ? 6 : 8; t += v; det.push('sem informação ambiental (' + v + ')'); }
+    else if (fl.ensaio && !temAmb && !fl.biodegradavel) { const e = NB.F2_ENSAIO.find((x) => x[0] === fl.ensaio); if (e) { t += e[2]; det.push('ensaio ecotoxicológico ' + e[1] + ' (' + e[2] + ')'); } }
     return { pontos: t, cpa: t > 8 ? 3 : t > 4 ? 2 : 1, detalhe: det };
   }
   function cpaProduto(p) { return pontosAgua(p.ghs.h || [], p.cpa || {}); }

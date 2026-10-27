@@ -23180,25 +23180,25 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   ORDEM.forEach((a) => { const v = LINHAS[a].split(','); MATRIZ[a] = {}; ORDEM.forEach((b, j) => { MATRIZ[a][b] = v[j]; }); });
 
   const OBS = {
-    1: 'Um responsável técnico deve avaliar e autorizar formalmente o armazenamento conjunto. Verificar regulamentação específica.',
-    2: 'Gases pressurizados: no máximo 50 recipientes (no máximo 25 de gás inflamável, oxidante ou tóxico), separados por parede de material não combustível com pelo menos 2 m de altura, mantendo 5 m entre a parede e os materiais combustíveis.',
-    3: 'Cilindros de gás pressurizado no mesmo armazém: até 150 cilindros ou 15 contêineres pressurizados de gases inflamáveis, oxidantes ou tóxicos (H331); gases inertes em qualquer quantidade; mais de 15 cilindros de gases altamente tóxicos (H330) em local separado; 2 m entre inflamáveis e oxidantes; sem restrição ao ar livre.',
-    4: 'Permitido conforme a quantidade total: Tabela 3 (classes 3, 5.1B, 6.1A e 6.1B) ou Tabela 4 (classes 4.1B e 6.1A).',
-    5: 'Materiais que propagam incêndio com rapidez (papel, têxteis, madeira, aparas, feno, palha, papelão) não podem ficar na área de armazenamento, salvo se fizerem parte da unitização da carga de inflamáveis.',
-    6: 'Só podem ficar juntos se a interação indesejada não originar um novo risco.',
-    7: 'Oxidantes com materiais combustíveis: até 1 t no total sem limitação; acima de 1 t, consultar responsável técnico. Seguir também a observação 5.',
-    8: 'Só é permitido com segregação por distanciamento mínimo de 5 m entre os corrosivos ácidos e os corrosivos básicos (alcalinos), combustíveis ou não.',
+    1: 'Um responsável técnico deve avaliar e autorizar formalmente o armazenamento dessas substâncias. Regulamentações específicas para armazenamento em conjunto de produtos perigosos devem ser avaliadas.',
+    2: 'Armazenamento conjunto só é permitido se houver um máximo de 50 recipientes contendo gás pressurizados, desde que não mais de 25 recipientes sejam de gás inflamável, oxidante ou tóxicos; e forem separados por uma parede de pelo menos 2 m de altura feita de materiais não combustíveis; e seja mantida uma distância mínima de 5 m entre a parede e os materiais combustíveis.',
+    3: 'Cilindros contendo gás pressurizado podem ser armazenados em conjunto no mesmo armazém, desde que: recipientes de gases comprimidos contendo gases inflamáveis, oxidantes, tóxicos identificados com a frase H331 ou gases tóxicos podem ser armazenados desde que não se exceda o número de 150 cilindros ou 15 contêineres pressurizados (pressure barrels); além disso, podem ser armazenados recipientes com gases inertes em qualquer quantidade; recipientes pressurizados com gases inflamáveis e com gases inertes podem ser armazenados em qualquer quantidade; recipientes pressurizados com gases oxidantes e com gases inertes podem ser armazenados em qualquer quantidade; recipientes pressurizados com gases tóxicos identificados com H331 ou gases altamente tóxicos e com gases inertes podem ser armazenados em qualquer quantidade; nos casos de 1 a 3, podem ser armazenados mais de 15 cilindros ou um contêiner pressurizado com gases altamente tóxicos agudos identificados com H330; maiores quantidades com gases tóxicos devem ser armazenadas em um local separado; deve ser mantida uma distância mínima de 2 m entre os recipientes contendo inflamáveis e recipientes contendo gases oxidantes; não há restrições para o armazenamento ao ar livre.',
+    4: 'Armazenamento é permitido nas seguintes condições: armazenamento entre as classes 3, 5.1B, 6.1A e 6.1B deve seguir a Tabela 3; armazenamento entre as classes 4.1B e 6.1A deve seguir a Tabela 4.',
+    5: 'Materiais que possam contribuir para a rápida propagação de incêndios devido a sua natureza ou quantidade, como, por exemplo, papel, têxteis, madeira, aparas de madeira, feno, palha, papelão, não podem ser armazenados na área de armazenamento, a não ser que eles sejam parte da unitização da carga de inflamáveis.',
+    6: 'Diferentes materiais somente podem ser armazenados juntos se o resultado da interação indesejada dessas substâncias não originar um novo risco.',
+    7: 'Substâncias oxidantes podem ser armazenadas com materiais combustíveis desde que: em quantidades de até um total de 1 t, sem limitação; em quantidades superiores a 1 t, consultar um responsável técnico para orientação; os requisitos da observação 5 também devem ser seguidos.',
+    8: 'Só é permitido se houver segregação por distanciamento mínimo de 5 m entre os corrosivos ácidos, combustíveis ou não, com os corrosivos básicos (alcalino), combustíveis ou não.',
   };
 
-  const TABELA3 = { titulo: 'Tabela 3 | Armazenamento conjunto entre as classes 3, 5.1B, 6.1A e 6.1B', linhas: [
-    ['Até 1 t', 'Sem restrições.'],
-    ['Até 20 t', 'Sem restrições se o armazém tiver sistema automático de extinção de incêndio, ou sistema automático de alarme de incêndio com extinção não automática e brigada de incêndio no local.'],
+  const TABELA3 = { titulo: 'Tabela 3 | Requisitos para o armazenamento conjunto entre as classes 3, 5.1 B, 6.1 A e 6.1 B', linhas: [
+    ['≤ 1 t', 'Sem restrições.'],
+    ['≤ 20 t', 'Sem restrições caso o armazém possua: sistema de extinção automática de incêndios; ou sistema automático de alarme de incêndio em conjunto com um sistema de extinção de incêndios não automática e uma brigada de incêndio no local.'],
   ] };
-  const TABELA4 = { titulo: 'Tabela 4 | Armazenamento conjunto entre as classes 4.1B e 6.1A', linhas: [
-    ['Até 1 t', 'Sem restrições.'],
-    ['Até 20 t', 'Sem restrições se, em armazéns, houver sistema automático de alarme de incêndio. Ao ar livre: detecção e alarme com monitoramento de hora em hora e evidência de funcionamento do sistema automático.'],
-    ['Até 50 t', 'Sem restrições se houver alarme automático de incêndio e brigada que chegue ao local em até 10 min.'],
-    ['Até 100 t', 'Sem restrições se houver extinção automática, ou alarme automático com extinção não automática e brigada no local.'],
+  const TABELA4 = { titulo: 'Tabela 4 | Requisitos para o armazenamento conjunto entre as classes 4.1 B e 6.1 A', linhas: [
+    ['≤ 1 t', 'Sem restrições.'],
+    ['≤ 20 t', 'Sem restrições se: em armazéns, possuir sistema de alarme de incêndio automático; ao ar livre, sistema de detecção e alarme de incêndios assegurados por monitoramento de hora em hora, com opções de notificação, como telefone, alarme de incêndio, rádio etc., e haver evidências de que um sistema automático de alarme e detecção de incêndio funcione no local.'],
+    ['≤ 50 t', 'Sem restrições se possuir: sistema de alarme de incêndio automático; e brigada de incêndio que possa chegar ao local em até 10 min depois que o alarme foi acionado.'],
+    ['≤ 100 t', 'Sem restrições se possuir: sistema de extinção automática de incêndios; ou sistema automático de alarme de incêndio em conjunto com um sistema de extinção de incêndios não automática e uma brigada de incêndio no local.'],
   ] };
 
   // regras gerais do armazenamento conjunto (9.1.1.3 e 9.1.1.4)
@@ -23224,8 +23224,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     { re: /^H250$/, rotulo: 'Pirofórico', limite: 'sem quantidade indicada na tabela', acima: 'Seções 7 e 8 acima de 200 kg' },
     { re: /^H(251|252)$/, rotulo: 'Sujeito a autoaquecimento', limite: 'sem quantidade indicada na tabela', acima: 'Seção 8 acima de 200 kg' },
     { re: /^H242$/, rotulo: 'Autorreativo', limite: 'sem quantidade indicada na tabela', acima: 'Seção 8 acima de 200 kg' },
-    { re: /^H271$/, rotulo: 'Oxidante líquido, categoria 1, 2 ou 3 (H271)', limite: '1 kg', acima: 'Seções 7 e 11 acima de 5 kg' },
-    { re: /^H272$/, rotulo: 'Oxidante sólido (H272)', limite: '50 kg', acima: 'Seções 7 e 11 acima de 200 kg' },
+    { re: /^H271$/, rotulo: 'Líquidos e sólidos oxidantes, categoria 1 (H271)', limite: '1 kg', acima: 'Seções 7 e 11 acima de 5 kg' },
+    { re: /^H272$/, rotulo: 'Líquidos e sólidos oxidantes, categoria 2 ou 3 (H272)', limite: '50 kg', acima: 'Seções 7 e 11 acima de 200 kg' },
     { re: /^H(280|281)$/, rotulo: 'Gás sob pressão', limite: '2,5 L', acima: 'Seção 12 acima de 2,5 L' },
     { re: /^H(220|221)$/, rotulo: 'Gás inflamável / aerossol inflamável', limite: '2,5 L (gás) ou 20 kg (aerossol)', acima: 'Seções 7, 8 e 12; Seção 13 e Anexo B para aerossóis' },
     { re: /^H(222|223)$/, rotulo: 'Aerossol', limite: '20 kg', acima: 'Seção 8 e Seção 13 acima de 200 kg; Anexo B' },
@@ -23254,9 +23254,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     { k: 'h260', rotulo: 'Emite gás inflamável em contato com a água (H260, H261)', re: /^H(260|261)$/, classes: ['4.3'], fora: 200, faixas: [{ acima: 200, secoes: 'Seção 8' }], analise: '' },
     { k: 'ox1', rotulo: 'Altamente oxidante, categoria 1 ou grupo de embalagem I (H271)', re: /^H271$/, classes: ['5.1A'], fora: 1, faixas: [{ acima: 5, secoes: 'Seções 7 e 11' }], analise: '11.1.3 (entre 1 e 5 kg)' },
     { k: 'ox23', rotulo: 'Oxidante, categoria 2 ou 3 (H272)', re: /^H272$/, classes: ['5.1B'], fora: 50, faixas: [{ acima: 200, secoes: 'Seções 7 e 11' }], analise: '11.1.3 (entre 50 e 200 kg)' },
-    { k: 'gas', rotulo: 'Gás sob pressão, inflamável ou oxidante (H220, H221, H270, H280, H281) | volume em L', re: /^H(220|221|270|280|281)$/, classes: ['2A'], unidade: 'L', fora: 2.5, faixas: [{ acima: 2.5, secoes: 'Seção 12' }, { acima: 200, secoes: 'Seções 7 e 8 (inflamáveis e oxidantes, em kg)' }], analise: '' },
-    { k: 'aer', rotulo: 'Aerossol (H222, H223)', re: /^H(222|223)$/, classes: ['2B'], fora: 20, faixas: [{ acima: 200, secoes: 'Seções 8 e 13' }], analise: '' },
+    { k: 'gasp', rotulo: 'Gás sob pressão: comprimido, liquefeito, refrigerado ou dissolvido (H280, H281) | volume em L', re: /^H(280|281)$/, classes: [], unidade: 'L', fora: 2.5, faixas: [{ acima: 2.5, secoes: 'Seção 12' }], analise: '' },
+    { k: 'gasinf', rotulo: 'Gás inflamável, categoria 1 ou 2 (H220, H221) | volume em L', re: /^H(220|221)$/, classes: ['2A'], unidade: 'L', fora: 2.5, faixas: [{ acima: 2.5, secoes: 'Seção 12' }], analise: '', nota: 'Acima de 200 kg: Seções 7 e 8 também valem.' },
+    { k: 'gasox', rotulo: 'Gás oxidante, categoria 1 (H270) | volume em L', re: /^H270$/, classes: [], unidade: 'L', fora: 2.5, faixas: [{ acima: 2.5, secoes: 'Seção 12' }], analise: '', nota: 'Acima de 200 kg: Seção 7 também vale.' },
+    { k: 'aer', rotulo: 'Aerossol (H222, H223)', re: /^H(222|223)$/, classes: ['2B'], fora: 20, faixas: [{ acima: 200, secoes: 'Seções 8 e 13' }], analise: '', nota: 'Anexo B quando aplicável (áreas de venda), a partir de qualquer quantidade.' },
     { k: 'corr', rotulo: 'Corrosivo (H290, H314)', re: /^H(290|314)$/, classes: ['8A', '8B'], fora: 1000, faixas: [{ acima: 200, secoes: 'Seção 7' }], analise: '' },
+    { k: 'solcomb', rotulo: 'Sólido combustível (classe de armazenamento 11, sem frase H)', re: /^$/, classes: ['11'], fora: null, faixas: [], analise: 'quantidade-limite a ser determinada pelo empregador, normalmente em toneladas (Tabela 1)', empregador: true },
   ];
   // quantidades das Tabelas 3 e 4 (kg) para o armazenamento conjunto
   const CONJUNTAS = [
@@ -23276,17 +23279,20 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   ];
   // Tabela F.2: pontos por frase H. grupo: pontos do mesmo grupo não se somam (vale o maior, conforme a coluna de prioridade)
   const F2 = {
-    EUH029: ['eu', 2], H300: ['agudo', 4], H301: ['agudo', 3], H302: ['agudo', 1], H304: ['agudo', 1], H310: ['agudo', 4], H311: ['agudo', 3], H312: ['agudo', 1],
-    H340: ['gen', 9], H341: ['gen', 2], H350: ['gen', 9], H351: ['gen', 2], H360: ['rep', 4], H361: ['rep', 4],
-    H370: ['stotU', 4], H371: ['stotU', 2], H372: ['stotR', 4], H373: ['stotR', 2],
-    H400: ['aq', 6], H410: ['aq', 8], H411: ['aq', 6], H412: ['aq', 4],
+    EUH029: [2, []], H300: [4, []], H301: [3, ['H310']], H302: [1, ['H311', 'H310']], H304: [1, ['H312', 'H302']],
+    H310: [4, ['H300']], H311: [3, ['H301', 'H300']], H312: [1, ['H302', 'H301', 'H300']],
+    H340: [9, ['H350']], H341: [2, ['H351']], H350: [9, []], H351: [2, []], H360: [4, []], H361: [4, []],
+    H370: [4, []], H371: [2, []], H372: [4, []], H373: [2, []],
+    H400: [6, []], H410: [8, []], H411: [6, []], H412: [4, []],
   };
-  const F1_NOTA = 'Pontuação simplificada: dentro de cada grupo (toxicidade aguda, mutagênico e cancerígeno, reprodução, órgãos-alvo por exposição única ou repetida, ambiente aquático) vale a maior pontuação, sem somar, como indica a coluna de prioridade da Tabela F.2. Confira a tabela na norma.';
+  // F.2.3.3: pontos de precaução quando há ensaio ecotoxicológico mas nenhuma frase H ambiental
+  const F2_ENSAIO = [['lt1', 'Menor que 1 mg/L', 8], ['1a10', 'De 1 a 10 mg/L', 6], ['10a100', 'De 10 a 100 mg/L', 4], ['gt100', 'Maior que 100 mg/L', 2]];
+  const F1_NOTA = 'Pontuação pela Tabela F.2: cada frase H soma seus pontos, exceto quando a frase indicada na coluna "prioridade sobre outros perigos" também está presente (ex.: H301 não soma com H310).';
 
   const BY = {}; CLASSES.forEach((c) => { BY[c[0]] = { id: c[0], nome: c[1], criterio: c[2] }; });
 
   O.NBR17160 = {
-    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, CATS, CONJUNTAS, F1, CATK, F2, F1_NOTA, BY,
+    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, CATS, CONJUNTAS, F1, CATK, F2, F2_ENSAIO, F1_NOTA, BY,
     nome(id) { return BY[id] ? BY[id].nome : ''; },
     // 'R' | 'G' | '1'..'8' | null (classe fora da matriz, por exemplo 9)
     par(a, b) { return MATRIZ[a] && MATRIZ[a][b] !== undefined ? MATRIZ[a][b] : null; },
@@ -23409,7 +23415,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       confirmadas: {},
       ctx: { area: '', atividade: '', localId: '' },
       nome: '', fornecedor: '', codigoFornecedor: '',
-      cpa: { semToxAguda: false, semAmbiental: false, biodegradavel: false },
+      cpa: { semToxAguda: false, semAmbiental: false, biodegradavel: false, ensaio: '' },
       natureza: '', armazenamento: '', cmr: { justificativa: '', controles: [], controlesOk: false },
       finalidade: '', aplicacao: '',
       lista: { naLista: null, numero: '' },
@@ -23545,7 +23551,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     if (has(/^H242$/) || cl.includes('5.2')) return R('5.2', 'peróxido orgânico ou autorreativo (H242 ou classe 5.2)');
     if (has(/^H25[012]$/) || cl.includes('4.2')) return R('4.2', 'pirofórico ou autoaquecimento (H250 a H252 ou classe 4.2)');
     if (has(/^H26[01]$/) || cl.includes('4.3')) return R('4.3', 'emite gás inflamável com água (H260, H261 ou classe 4.3)');
-    if (has(/^H228$/) || cl.includes('4.1')) return R('4.1B', 'sólido inflamável (H228 ou classe 4.1)');
+    if (has(/^H228$/) || cl.includes('4.1')) return R('4.1B', 'sólido inflamável (H228 ou classe 4.1)' + (has(/^H228$/) ? '' : '; classe 4.1 sem H228 exige análise individual (Anexo D, D.10.1)'));
     if (['1942', '2067', '2071', '2426', '3375'].includes(onu)) return R('5.1C', 'nitrato de amônio (ONU ' + onu + ')');
     if (has(/^H271$/) || (cl.includes('5.1') && pg === 'I')) return R('5.1A', 'fortemente oxidante (H271 ou classe 5.1, grupo I)');
     if (has(/^H272$/) || cl.includes('5.1')) return R('5.1B', 'oxidante (H272 ou classe 5.1)');
@@ -23649,7 +23655,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const res = { itens, semQtd: itens.filter((i) => i.qtd == null).map((i) => i.nome), total: 0, informado: itens.some((i) => i.qtd != null), cats: [], total1500: false, conjuntas: [], obs7: [], exige: [] };
     itens.forEach((i) => { if (i.qtd != null) res.total += i.qtd; });
     res.total1500 = res.total > 1500;
-    const geral = { k: 'geral', rotulo: 'Perigosos não especificados na Tabela 1', fora: 1000, faixas: [{ acima: 200, secoes: 'Seção 9 (armazenamento conjunto)' }], analise: '' };
+    const geral = { k: 'geral', rotulo: 'Perigosos não especificados na Tabela 1', fora: 1000, faixas: [{ acima: 200, secoes: 'Seção 9 (armazenamento conjunto)', conjunto: true }], analise: '' };
     const por = {};
     itens.forEach((it) => {
       const { cats, aprox } = catsDoItem(it);
@@ -23657,16 +23663,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     });
     Object.keys(por).forEach((k) => {
       const g = por[k], c = g.c, q = g.qtd;
-      const ativas = c.faixas.filter((f) => q > f.acima);
+      const ativas = c.faixas.filter((f) => q > f.acima && (!f.conjunto || g.itens.length > 1));
       let status = 'dentro';
       if (c.fora != null && q > c.fora) status = 'armazem';
       if (c.analise && c.fora != null && q > c.fora && !ativas.length) status = 'analise';
       if (c.sub && g.sub > c.sub.limite && status === 'dentro') status = 'armazem';
       if (ativas.length) status = 'secoes';
+      if (c.empregador && q > 0) status = 'analise';
       const secoes = ativas.map((f) => f.secoes).join('; ');
-      const r = { k, rotulo: c.rotulo, unidade: c.unidade || 'kg', qtd: q, fora: c.fora, status, secoes, analise: c.analise, itens: g.itens, aprox: g.aprox, subTexto: c.sub && g.sub > c.sub.limite ? c.sub.texto : '' };
+      const r = { k, rotulo: c.rotulo, unidade: c.unidade || 'kg', qtd: q, fora: c.fora, status, secoes, analise: c.analise, nota: c.nota || '', itens: g.itens, aprox: g.aprox, subTexto: c.sub && g.sub > c.sub.limite ? c.sub.texto : '' };
       res.cats.push(r);
-      if (status === 'secoes') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ' acima de ' + Math.max.apply(null, ativas.map((f) => f.acima)) + ' ' + r.unidade + ' → ' + secoes + '.');
+      if (status === 'secoes') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ' acima de ' + Math.max.apply(null, ativas.map((f) => f.acima)) + ' ' + r.unidade + ' → ' + secoes + '.' + (c.nota && q > 200 ? ' ' + c.nota : ''));
+      else if (status === 'analise' && c.empregador) res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' kg, ' + c.analise + '.');
       else if (status === 'analise') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ', faixa em que as medidas saem da análise de risco (' + c.analise + ').');
       else if (status === 'armazem') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ' acima de ' + (c.fora != null && q > c.fora ? c.fora : c.sub.limite) + ' ' + r.unidade + ' → armazenar em armazém segregado (6.3.1)' + (r.subTexto ? ' [' + r.subTexto + ']' : '') + '.');
     });
@@ -23692,12 +23700,19 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   // ---------- Anexo F | classe de perigo à água (CPA) e volume de contenção da água de extinção ----------
   function pontosAgua(hs, flags) {
-    const NB = N(); const g = {}; const det = [];
-    (hs || []).forEach((c) => { const f = NB.F2[c]; if (f && (!g[f[0]] || f[1] > g[f[0]][1])) g[f[0]] = [c, f[1]]; });
-    let t = 0; Object.keys(g).forEach((k) => { t += g[k][1]; det.push(g[k][0] + ' (' + g[k][1] + ')'); });
-    const fl = flags || {};
+    const NB = N(); const fl = flags || {}; const det = []; let t = 0;
+    const tem = (c) => (hs || []).includes(c);
+    Object.keys(NB.F2).forEach((c) => {
+      if (!tem(c)) return;
+      const [pts, anula] = NB.F2[c];
+      const sup = anula.find(tem);
+      if (sup) { det.push(c + ' (0, não soma com ' + sup + ')'); return; }
+      t += pts; det.push(c + ' (' + pts + ')');
+    });
     if (fl.semToxAguda) { t += 4; det.push('sem dados de toxicidade aguda oral e dérmica (4)'); }
+    const temAmb = ['H400', 'H410', 'H411', 'H412'].some(tem);
     if (fl.semAmbiental) { const v = fl.biodegradavel ? 6 : 8; t += v; det.push('sem informação ambiental (' + v + ')'); }
+    else if (fl.ensaio && !temAmb && !fl.biodegradavel) { const e = NB.F2_ENSAIO.find((x) => x[0] === fl.ensaio); if (e) { t += e[2]; det.push('ensaio ecotoxicológico ' + e[1] + ' (' + e[2] + ')'); } }
     return { pontos: t, cpa: t > 8 ? 3 : t > 4 ? 2 : 1, detalhe: det };
   }
   function cpaProduto(p) { return pontosAgua(p.ghs.h || [], p.cpa || {}); }
@@ -26018,6 +26033,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         w.appendChild(h('div', { class: 'opts' },
           U.flag(p, 'cpa.semToxAguda', 'A FDS não traz dados de toxicidade aguda oral e dérmica', 'Soma 4 pontos de precaução (F.2.3.1).', drawC),
           U.flag(p, 'cpa.semAmbiental', 'A FDS não traz informações ecológicas (Seção 12)', 'Soma 8 pontos de precaução (F.2.3.2).', drawC),
+          U.select(p, 'cpa.ensaio', O.NBR17160.F2_ENSAIO.map((x) => [x[0], x[1]]), { label: 'Sem frase H ambiental, mas com ensaio ecotoxicológico (peixe CL50 96 h, pulga d\'água CE50 48 h ou algas CEr50 72 h)', empty: 'Sem ensaio informado', onChange: drawC }),
           U.flag(p, 'cpa.biodegradavel', 'Facilmente biodegradável e sem potencial de bioacumulação (comprovado)', 'Reduz 2 pontos da precaução ambiental.', drawC)));
         drawC(); w.appendChild(boxC);
         w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'comp.limite', { label: 'Quantidade máxima armazenada', ph: 'Ex.: 200 L' }), U.input(p, 'comp.tempMax', { label: 'Temperatura máxima de armazenamento (Seção 7)', ph: 'Ex.: 35 °C' })));
@@ -26238,7 +26254,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     if (res.semQtd.length) c.appendChild(U.alert('warn', 'Quantidade não informada', res.semQtd.join('; ') + '. Sem a quantidade, o item não entra na soma e as seções aplicáveis podem estar subestimadas.'));
     if (res.informado) {
       c.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Perigo', 'Quantidade', 'Limite fora de armazém', 'Situação', 'Passa a valer'].map((x) => h('th', {}, x)))),
-        h('tbody', {}, res.cats.map((x) => h('tr', {}, h('td', {}, x.rotulo, x.aprox ? h('small', { class: 'muted' }, ' (aprox.)') : null, h('br'), h('small', { class: 'muted' }, x.itens.join(', '))), h('td', {}, String(Math.round(x.qtd * 100) / 100).replace('.', ',') + ' ' + x.unidade), h('td', {}, x.fora != null ? String(x.fora).replace('.', ',') + ' ' + x.unidade : 'não indicado'), h('td', {}, U.badge(ST_LIM[x.status][0], ST_LIM[x.status][1])), h('td', {}, x.status === 'secoes' ? x.secoes : x.status === 'analise' ? x.analise : '—')))))));
+        h('tbody', {}, res.cats.map((x) => h('tr', {}, h('td', {}, x.rotulo, x.aprox ? h('small', { class: 'muted' }, ' (aprox.)') : null, h('br'), h('small', { class: 'muted' }, x.itens.join(', '))), h('td', {}, String(Math.round(x.qtd * 100) / 100).replace('.', ',') + ' ' + x.unidade), h('td', {}, x.fora != null ? String(x.fora).replace('.', ',') + ' ' + x.unidade : 'não indicado'), h('td', {}, U.badge(ST_LIM[x.status][0], ST_LIM[x.status][1])), h('td', {}, (x.status === 'secoes' ? x.secoes : x.status === 'analise' ? x.analise : '—') + (x.nota && x.qtd > 0 ? ' | ' + x.nota : ''))))))));
       c.appendChild(h('p', { class: 'small' }, 'Massa líquida total no local: ' + Math.round(res.total).toLocaleString('pt-BR') + ' kg' + (res.total1500 ? ' (acima de 1 500 kg: 6.3.1.3)' : '') + '.'));
       res.conjuntas.forEach((j) => c.appendChild(U.alert('warn', j.titulo.split(' |')[0] + ' | armazenamento conjunto das classes ' + j.classes.join(', ') + ': ' + Math.round(j.qtd) + ' kg (' + j.faixa + ')', j.texto)));
       res.obs7.forEach((o) => c.appendChild(U.alert('warn', 'Observação 7 | ' + o.a + ' com ' + o.b, Math.round(o.qtd) + ' kg acima de 1 t: consultar o responsável técnico.')));
