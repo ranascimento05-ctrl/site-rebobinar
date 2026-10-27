@@ -13,6 +13,7 @@
       confirmadas: {},
       ctx: { area: '', atividade: '', localId: '' },
       nome: '', fornecedor: '', codigoFornecedor: '',
+      cpa: { semToxAguda: false, semAmbiental: false, biodegradavel: false },
       natureza: '', armazenamento: '', cmr: { justificativa: '', controles: [], controlesOk: false },
       finalidade: '', aplicacao: '',
       lista: { naLista: null, numero: '' },
@@ -292,6 +293,43 @@
     return res;
   }
 
+
+  // ---------- Anexo F | classe de perigo à água (CPA) e volume de contenção da água de extinção ----------
+  function pontosAgua(hs, flags) {
+    const NB = N(); const g = {}; const det = [];
+    (hs || []).forEach((c) => { const f = NB.F2[c]; if (f && (!g[f[0]] || f[1] > g[f[0]][1])) g[f[0]] = [c, f[1]]; });
+    let t = 0; Object.keys(g).forEach((k) => { t += g[k][1]; det.push(g[k][0] + ' (' + g[k][1] + ')'); });
+    const fl = flags || {};
+    if (fl.semToxAguda) { t += 4; det.push('sem dados de toxicidade aguda oral e dérmica (4)'); }
+    if (fl.semAmbiental) { const v = fl.biodegradavel ? 6 : 8; t += v; det.push('sem informação ambiental (' + v + ')'); }
+    return { pontos: t, cpa: t > 8 ? 3 : t > 4 ? 2 : 1, detalhe: det };
+  }
+  function cpaProduto(p) { return pontosAgua(p.ghs.h || [], p.cpa || {}); }
+  function volumeAgua(areaM2, catK, cpa) {
+    const F1 = N().F1; const col = (catK === 'K3' || catK === 'K4') ? 2 : 1;
+    const a = Number(areaM2) || 0; if (a <= 0) return null;
+    let v;
+    if (a <= F1[0][0]) v = F1[0][col] * a / F1[0][0];
+    else if (a >= F1[F1.length - 1][0]) v = F1[F1.length - 1][col];
+    else { const i = F1.findIndex((r) => r[0] >= a); const lo = F1[i - 1], hi = F1[i]; v = lo[col] + (hi[col] - lo[col]) * (a - lo[0]) / (hi[0] - lo[0]); }
+    return { base: v, fator: cpa === 3 ? 2 : cpa === 2 ? 1.5 : 1, total: v * (cpa === 3 ? 2 : cpa === 2 ? 1.5 : 1) };
+  }
+  function contencaoLocal(local, produtos, extra) {
+    const itens = itensDoLocal(local, produtos, extra && extra.id);
+    if (extra && extra.armazenamento !== 'granel') itens.push(itemDe(extra));
+    const linhas = []; const semDados = [];
+    itens.forEach((it) => {
+      const prod = it.pid ? (it.pid === (extra && extra.id) ? extra : (produtos || []).find((x) => x.id === it.pid)) : null;
+      const hs = prod ? (prod.ghs.h || []) : (it.h || []);
+      if (!hs.length) { semDados.push(it.nome); return; }
+      linhas.push(Object.assign({ nome: it.nome }, pontosAgua(hs, prod ? prod.cpa : {})));
+    });
+    const cpa = linhas.reduce((m, x) => Math.max(m, x.cpa), 1);
+    const vol = volumeAgua(local.areaM2, local.catK, cpa);
+    const mat = Number(local.volMaterialM3) || 0;
+    return { linhas, semDados, cpa, vol, catK: local.catK || '', areaM2: Number(local.areaM2) || 0, material: mat, total: vol ? vol.total + mat : null };
+  }
+
   // ---------- Compatibilidade entre dois produtos (aplicação prática da matriz) ----------
   function compatPar(a, b) {
     const A = { nome: a.nome, arm: classeArm(a).id, grupos: a.comp.grupos || [], incompativeis: a.comp.incompativeis || [] };
@@ -471,5 +509,5 @@
     return r;
   }
 
-  O.Engine = { gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});

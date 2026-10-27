@@ -389,6 +389,11 @@
           else E.gatilhosLocal(loc, produtos, p).exige.forEach((x) => add(x, 'NBR 17160 | Tabela 1 e Seções 6 a 14', 'Responsável técnico / Gestor do local', 'Antes do primeiro recebimento'));
         }
       }
+      if (loc && p.armazenamento !== 'granel') {
+        const ct = E.contencaoLocal(loc, produtos, p);
+        if (ct.vol) add('Garantir a retenção da água de extinção de incêndio: cerca de ' + (Math.round(ct.total * 10) / 10).toLocaleString('pt-BR') + ' m³ em ' + loc.nome + ' (CPA ' + ct.cpa + ')', 'NBR 17160 | Anexo F', 'Meio ambiente / Engenharia', 'Antes do primeiro recebimento');
+        else add('Informar a área do setor e a categoria de segurança de ' + loc.nome + ' para estimar a retenção da água de extinção (Anexo F)', 'NBR 17160 | Anexo F', 'Meio ambiente', 'Antes do primeiro recebimento');
+      }
       add('Rotular recipientes e frações conforme o GHS (NBR 14725) e a NR-26', 'Rotulagem', 'Gestor do local', 'Antes do primeiro uso');
       add('Disponibilizar a FDS em português no ponto de uso e no local de armazenamento', 'NR-26', 'Gestor do local', 'Antes do primeiro uso');
       if (p.trein.gerar !== false) add('Treinar a equipe com o checklist de treinamento e arquivar a lista de presença', 'Etapa 14 | SST', 'SST / Gestor da área', 'Antes do primeiro uso');
@@ -424,6 +429,13 @@
     B.push({ t: 'table', head: ['Perigo', 'Quantidade', 'Limite fora de armazém', 'Situação', 'Passa a valer'], widths: [34, 12, 16, 18, 20], rows: g.cats.length ? g.cats.map((x) => [x.rotulo + (x.aprox ? ' (aprox.)' : '') + ' | ' + x.itens.join(', '), String(Math.round(x.qtd * 100) / 100).replace('.', ',') + ' ' + x.unidade, x.fora != null ? String(x.fora).replace('.', ',') + ' ' + x.unidade : 'não indicado', ST_TXT[x.status], x.status === 'secoes' ? x.secoes : x.status === 'analise' ? x.analise : '—']) : [['Sem dados', '', '', '', '']] });
     if (g.exige.length) { B.push({ t: 'h1', text: '3 O que passa a valer neste local' }); B.push({ t: 'list', items: g.exige }); }
     g.conjuntas.forEach((j) => B.push({ t: 'callout', tone: 'warn', title: j.titulo.split(' |')[0] + ' | classes ' + j.classes.join(', ') + ': ' + Math.round(j.qtd) + ' kg (' + j.faixa + ')', text: j.texto }));
+    const ct = E.contencaoLocal(local, produtos);
+    B.push({ t: 'h1', text: (g.exige.length ? '4' : '3') + ' Contenção da água de extinção (Anexo F)' });
+    if (ct.linhas.length) B.push({ t: 'table', head: ['Produto', 'Pontos', 'CPA', 'Composição'], widths: [34, 10, 10, 46], rows: ct.linhas.map((x) => [x.nome, String(x.pontos), 'CPA ' + x.cpa, x.detalhe.join('; ') || '—']) });
+    if (ct.semDados.length) B.push({ t: 'p', small: true, text: 'Sem frases H (fora do cálculo): ' + ct.semDados.join('; ') + '.' });
+    const fm = (n) => (Math.round(n * 10) / 10).toLocaleString('pt-BR');
+    B.push({ t: 'kv', rows: [['Área do setor', ct.areaM2 ? fm(ct.areaM2) + ' m²' : 'não informada'], ['Categoria de segurança', ct.catK || 'não informada (considerada K1/K2)'], ['Classe de perigo à água do local', 'CPA ' + ct.cpa], ['Volume pela Tabela F.1', ct.vol ? fm(ct.vol.base) + ' m³' : 'informe a área do setor'], ['Volume com fator de CPA', ct.vol ? fm(ct.vol.total) + ' m³' : '—'], ['Volume de material que pode vazar', ct.material ? fm(ct.material) + ' m³' : 'não informado'], ['Volume total a reter', ct.total != null ? fm(ct.total) + ' m³' : '—']] });
+    B.push({ t: 'p', small: true, text: O.NBR17160.F1_NOTA + ' O Anexo F é informativo; considere as exigências do corpo de bombeiros e do órgão ambiental.' });
     B.push({ t: 'p', small: true, text: 'As seções 7 a 14 e os anexos exigidos devem ser atendidos conforme o texto da norma vigente. Este quadro orienta a análise e não substitui a decisão do responsável técnico.' });
     B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico'], ['Gestor do local', '']] });
     return B;

@@ -148,10 +148,29 @@
     { obs: 4, titulo: 'Tabela 4', classes: ['4.1B', '6.1A'], faixas: [1000, 20000, 50000, 100000], t: 'TABELA4' },
   ];
 
+
+  // Anexo F | contenção de águas de extinção de incêndio (informativo)
+  // Tabela F.1: área do setor (m²) → volume (m³) para CPA 1, colunas K1/K2 e K3/K4
+  const F1 = [[25, 6, 6], [50, 12, 12], [75, 18, 18], [100, 25, 25], [150, 45, 40], [200, 70, 55], [250, 100, 70], [300, 135, 90], [400, 200, 125], [500, 250, 150], [600, 300, 150], [700, 350, 150], [800, 400, 150], [900, 450, 150], [1000, 500, 150]];
+  const CATK = [
+    ['K1', 'K1 | corpo de bombeiros público, hidrantes, sem detecção prévia de incêndio'],
+    ['K2', 'K2 | corpo de bombeiros público, hidrantes, com detecção prévia de incêndio'],
+    ['K3', 'K3 | brigada de incêndio profissional, hidrantes e detecção prévia'],
+    ['K4', 'K4 | brigada ou bombeiros, detecção prévia e extinção automática (sprinklers)'],
+  ];
+  // Tabela F.2: pontos por frase H. grupo: pontos do mesmo grupo não se somam (vale o maior, conforme a coluna de prioridade)
+  const F2 = {
+    EUH029: ['eu', 2], H300: ['agudo', 4], H301: ['agudo', 3], H302: ['agudo', 1], H304: ['agudo', 1], H310: ['agudo', 4], H311: ['agudo', 3], H312: ['agudo', 1],
+    H340: ['gen', 9], H341: ['gen', 2], H350: ['gen', 9], H351: ['gen', 2], H360: ['rep', 4], H361: ['rep', 4],
+    H370: ['stotU', 4], H371: ['stotU', 2], H372: ['stotR', 4], H373: ['stotR', 2],
+    H400: ['aq', 6], H410: ['aq', 8], H411: ['aq', 6], H412: ['aq', 4],
+  };
+  const F1_NOTA = 'Pontuação simplificada: dentro de cada grupo (toxicidade aguda, mutagênico e cancerígeno, reprodução, órgãos-alvo por exposição única ou repetida, ambiente aquático) vale a maior pontuação, sem somar, como indica a coluna de prioridade da Tabela F.2. Confira a tabela na norma.';
+
   const BY = {}; CLASSES.forEach((c) => { BY[c[0]] = { id: c[0], nome: c[1], criterio: c[2] }; });
 
   O.NBR17160 = {
-    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, CATS, CONJUNTAS, BY,
+    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, CATS, CONJUNTAS, F1, CATK, F2, F1_NOTA, BY,
     nome(id) { return BY[id] ? BY[id].nome : ''; },
     // 'R' | 'G' | '1'..'8' | null (classe fora da matriz, por exemplo 9)
     par(a, b) { return MATRIZ[a] && MATRIZ[a][b] !== undefined ? MATRIZ[a][b] : null; },

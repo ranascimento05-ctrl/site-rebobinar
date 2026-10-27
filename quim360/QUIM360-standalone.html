@@ -23264,10 +23264,29 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     { obs: 4, titulo: 'Tabela 4', classes: ['4.1B', '6.1A'], faixas: [1000, 20000, 50000, 100000], t: 'TABELA4' },
   ];
 
+
+  // Anexo F | contenção de águas de extinção de incêndio (informativo)
+  // Tabela F.1: área do setor (m²) → volume (m³) para CPA 1, colunas K1/K2 e K3/K4
+  const F1 = [[25, 6, 6], [50, 12, 12], [75, 18, 18], [100, 25, 25], [150, 45, 40], [200, 70, 55], [250, 100, 70], [300, 135, 90], [400, 200, 125], [500, 250, 150], [600, 300, 150], [700, 350, 150], [800, 400, 150], [900, 450, 150], [1000, 500, 150]];
+  const CATK = [
+    ['K1', 'K1 | corpo de bombeiros público, hidrantes, sem detecção prévia de incêndio'],
+    ['K2', 'K2 | corpo de bombeiros público, hidrantes, com detecção prévia de incêndio'],
+    ['K3', 'K3 | brigada de incêndio profissional, hidrantes e detecção prévia'],
+    ['K4', 'K4 | brigada ou bombeiros, detecção prévia e extinção automática (sprinklers)'],
+  ];
+  // Tabela F.2: pontos por frase H. grupo: pontos do mesmo grupo não se somam (vale o maior, conforme a coluna de prioridade)
+  const F2 = {
+    EUH029: ['eu', 2], H300: ['agudo', 4], H301: ['agudo', 3], H302: ['agudo', 1], H304: ['agudo', 1], H310: ['agudo', 4], H311: ['agudo', 3], H312: ['agudo', 1],
+    H340: ['gen', 9], H341: ['gen', 2], H350: ['gen', 9], H351: ['gen', 2], H360: ['rep', 4], H361: ['rep', 4],
+    H370: ['stotU', 4], H371: ['stotU', 2], H372: ['stotR', 4], H373: ['stotR', 2],
+    H400: ['aq', 6], H410: ['aq', 8], H411: ['aq', 6], H412: ['aq', 4],
+  };
+  const F1_NOTA = 'Pontuação simplificada: dentro de cada grupo (toxicidade aguda, mutagênico e cancerígeno, reprodução, órgãos-alvo por exposição única ou repetida, ambiente aquático) vale a maior pontuação, sem somar, como indica a coluna de prioridade da Tabela F.2. Confira a tabela na norma.';
+
   const BY = {}; CLASSES.forEach((c) => { BY[c[0]] = { id: c[0], nome: c[1], criterio: c[2] }; });
 
   O.NBR17160 = {
-    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, CATS, CONJUNTAS, BY,
+    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, CATS, CONJUNTAS, F1, CATK, F2, F1_NOTA, BY,
     nome(id) { return BY[id] ? BY[id].nome : ''; },
     // 'R' | 'G' | '1'..'8' | null (classe fora da matriz, por exemplo 9)
     par(a, b) { return MATRIZ[a] && MATRIZ[a][b] !== undefined ? MATRIZ[a][b] : null; },
@@ -23390,6 +23409,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       confirmadas: {},
       ctx: { area: '', atividade: '', localId: '' },
       nome: '', fornecedor: '', codigoFornecedor: '',
+      cpa: { semToxAguda: false, semAmbiental: false, biodegradavel: false },
       natureza: '', armazenamento: '', cmr: { justificativa: '', controles: [], controlesOk: false },
       finalidade: '', aplicacao: '',
       lista: { naLista: null, numero: '' },
@@ -23669,6 +23689,43 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return res;
   }
 
+
+  // ---------- Anexo F | classe de perigo à água (CPA) e volume de contenção da água de extinção ----------
+  function pontosAgua(hs, flags) {
+    const NB = N(); const g = {}; const det = [];
+    (hs || []).forEach((c) => { const f = NB.F2[c]; if (f && (!g[f[0]] || f[1] > g[f[0]][1])) g[f[0]] = [c, f[1]]; });
+    let t = 0; Object.keys(g).forEach((k) => { t += g[k][1]; det.push(g[k][0] + ' (' + g[k][1] + ')'); });
+    const fl = flags || {};
+    if (fl.semToxAguda) { t += 4; det.push('sem dados de toxicidade aguda oral e dérmica (4)'); }
+    if (fl.semAmbiental) { const v = fl.biodegradavel ? 6 : 8; t += v; det.push('sem informação ambiental (' + v + ')'); }
+    return { pontos: t, cpa: t > 8 ? 3 : t > 4 ? 2 : 1, detalhe: det };
+  }
+  function cpaProduto(p) { return pontosAgua(p.ghs.h || [], p.cpa || {}); }
+  function volumeAgua(areaM2, catK, cpa) {
+    const F1 = N().F1; const col = (catK === 'K3' || catK === 'K4') ? 2 : 1;
+    const a = Number(areaM2) || 0; if (a <= 0) return null;
+    let v;
+    if (a <= F1[0][0]) v = F1[0][col] * a / F1[0][0];
+    else if (a >= F1[F1.length - 1][0]) v = F1[F1.length - 1][col];
+    else { const i = F1.findIndex((r) => r[0] >= a); const lo = F1[i - 1], hi = F1[i]; v = lo[col] + (hi[col] - lo[col]) * (a - lo[0]) / (hi[0] - lo[0]); }
+    return { base: v, fator: cpa === 3 ? 2 : cpa === 2 ? 1.5 : 1, total: v * (cpa === 3 ? 2 : cpa === 2 ? 1.5 : 1) };
+  }
+  function contencaoLocal(local, produtos, extra) {
+    const itens = itensDoLocal(local, produtos, extra && extra.id);
+    if (extra && extra.armazenamento !== 'granel') itens.push(itemDe(extra));
+    const linhas = []; const semDados = [];
+    itens.forEach((it) => {
+      const prod = it.pid ? (it.pid === (extra && extra.id) ? extra : (produtos || []).find((x) => x.id === it.pid)) : null;
+      const hs = prod ? (prod.ghs.h || []) : (it.h || []);
+      if (!hs.length) { semDados.push(it.nome); return; }
+      linhas.push(Object.assign({ nome: it.nome }, pontosAgua(hs, prod ? prod.cpa : {})));
+    });
+    const cpa = linhas.reduce((m, x) => Math.max(m, x.cpa), 1);
+    const vol = volumeAgua(local.areaM2, local.catK, cpa);
+    const mat = Number(local.volMaterialM3) || 0;
+    return { linhas, semDados, cpa, vol, catK: local.catK || '', areaM2: Number(local.areaM2) || 0, material: mat, total: vol ? vol.total + mat : null };
+  }
+
   // ---------- Compatibilidade entre dois produtos (aplicação prática da matriz) ----------
   function compatPar(a, b) {
     const A = { nome: a.nome, arm: classeArm(a).id, grupos: a.comp.grupos || [], incompativeis: a.comp.incompativeis || [] };
@@ -23848,7 +23905,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return r;
   }
 
-  O.Engine = { gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});
 </script>
 <script>/* Analisador de FDS (ABNT NBR 14725): extrai dados do texto colado ou de arquivo .txt/.pdf.
@@ -24786,6 +24843,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           else E.gatilhosLocal(loc, produtos, p).exige.forEach((x) => add(x, 'NBR 17160 | Tabela 1 e Seções 6 a 14', 'Responsável técnico / Gestor do local', 'Antes do primeiro recebimento'));
         }
       }
+      if (loc && p.armazenamento !== 'granel') {
+        const ct = E.contencaoLocal(loc, produtos, p);
+        if (ct.vol) add('Garantir a retenção da água de extinção de incêndio: cerca de ' + (Math.round(ct.total * 10) / 10).toLocaleString('pt-BR') + ' m³ em ' + loc.nome + ' (CPA ' + ct.cpa + ')', 'NBR 17160 | Anexo F', 'Meio ambiente / Engenharia', 'Antes do primeiro recebimento');
+        else add('Informar a área do setor e a categoria de segurança de ' + loc.nome + ' para estimar a retenção da água de extinção (Anexo F)', 'NBR 17160 | Anexo F', 'Meio ambiente', 'Antes do primeiro recebimento');
+      }
       add('Rotular recipientes e frações conforme o GHS (NBR 14725) e a NR-26', 'Rotulagem', 'Gestor do local', 'Antes do primeiro uso');
       add('Disponibilizar a FDS em português no ponto de uso e no local de armazenamento', 'NR-26', 'Gestor do local', 'Antes do primeiro uso');
       if (p.trein.gerar !== false) add('Treinar a equipe com o checklist de treinamento e arquivar a lista de presença', 'Etapa 14 | SST', 'SST / Gestor da área', 'Antes do primeiro uso');
@@ -24821,6 +24883,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     B.push({ t: 'table', head: ['Perigo', 'Quantidade', 'Limite fora de armazém', 'Situação', 'Passa a valer'], widths: [34, 12, 16, 18, 20], rows: g.cats.length ? g.cats.map((x) => [x.rotulo + (x.aprox ? ' (aprox.)' : '') + ' | ' + x.itens.join(', '), String(Math.round(x.qtd * 100) / 100).replace('.', ',') + ' ' + x.unidade, x.fora != null ? String(x.fora).replace('.', ',') + ' ' + x.unidade : 'não indicado', ST_TXT[x.status], x.status === 'secoes' ? x.secoes : x.status === 'analise' ? x.analise : '—']) : [['Sem dados', '', '', '', '']] });
     if (g.exige.length) { B.push({ t: 'h1', text: '3 O que passa a valer neste local' }); B.push({ t: 'list', items: g.exige }); }
     g.conjuntas.forEach((j) => B.push({ t: 'callout', tone: 'warn', title: j.titulo.split(' |')[0] + ' | classes ' + j.classes.join(', ') + ': ' + Math.round(j.qtd) + ' kg (' + j.faixa + ')', text: j.texto }));
+    const ct = E.contencaoLocal(local, produtos);
+    B.push({ t: 'h1', text: (g.exige.length ? '4' : '3') + ' Contenção da água de extinção (Anexo F)' });
+    if (ct.linhas.length) B.push({ t: 'table', head: ['Produto', 'Pontos', 'CPA', 'Composição'], widths: [34, 10, 10, 46], rows: ct.linhas.map((x) => [x.nome, String(x.pontos), 'CPA ' + x.cpa, x.detalhe.join('; ') || '—']) });
+    if (ct.semDados.length) B.push({ t: 'p', small: true, text: 'Sem frases H (fora do cálculo): ' + ct.semDados.join('; ') + '.' });
+    const fm = (n) => (Math.round(n * 10) / 10).toLocaleString('pt-BR');
+    B.push({ t: 'kv', rows: [['Área do setor', ct.areaM2 ? fm(ct.areaM2) + ' m²' : 'não informada'], ['Categoria de segurança', ct.catK || 'não informada (considerada K1/K2)'], ['Classe de perigo à água do local', 'CPA ' + ct.cpa], ['Volume pela Tabela F.1', ct.vol ? fm(ct.vol.base) + ' m³' : 'informe a área do setor'], ['Volume com fator de CPA', ct.vol ? fm(ct.vol.total) + ' m³' : '—'], ['Volume de material que pode vazar', ct.material ? fm(ct.material) + ' m³' : 'não informado'], ['Volume total a reter', ct.total != null ? fm(ct.total) + ' m³' : '—']] });
+    B.push({ t: 'p', small: true, text: O.NBR17160.F1_NOTA + ' O Anexo F é informativo; considere as exigências do corpo de bombeiros e do órgão ambiental.' });
     B.push({ t: 'p', small: true, text: 'As seções 7 a 14 e os anexos exigidos devem ser atendidos conforme o texto da norma vigente. Este quadro orienta a análise e não substitui a decisão do responsável técnico.' });
     B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico'], ['Gestor do local', '']] });
     return B;
@@ -25944,6 +26013,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         const drawQ = () => { boxQ.innerHTML = ''; if (loc && p.comp.qtdKg !== '' && p.comp.qtdKg != null) boxQ.appendChild(O.Views.gatilhos(E.gatilhosLocal(loc, S.produtos(), p), 'Quantidades-limite em ' + loc.nome)); };
         w.appendChild(U.input(p, 'comp.qtdKg', { type: 'number', label: 'Quantidade a armazenar no local (kg; gases em L)', hint: 'Massa líquida. Inflamáveis: volume nominal da embalagem (6.2.8). Com ela, o app soma o que já está no local e aponta as seções da NBR 17160 que passam a valer.', onInput: drawQ }));
         drawQ(); w.appendChild(boxQ);
+        const boxC = h('div'); const drawC = () => { boxC.innerHTML = ''; if (loc) boxC.appendChild(O.Views.contencao(loc, p)); };
+        w.appendChild(h('h4', {}, 'Dados para a classe de perigo à água (Anexo F)'));
+        w.appendChild(h('div', { class: 'opts' },
+          U.flag(p, 'cpa.semToxAguda', 'A FDS não traz dados de toxicidade aguda oral e dérmica', 'Soma 4 pontos de precaução (F.2.3.1).', drawC),
+          U.flag(p, 'cpa.semAmbiental', 'A FDS não traz informações ecológicas (Seção 12)', 'Soma 8 pontos de precaução (F.2.3.2).', drawC),
+          U.flag(p, 'cpa.biodegradavel', 'Facilmente biodegradável e sem potencial de bioacumulação (comprovado)', 'Reduz 2 pontos da precaução ambiental.', drawC)));
+        drawC(); w.appendChild(boxC);
         w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'comp.limite', { label: 'Quantidade máxima armazenada', ph: 'Ex.: 200 L' }), U.input(p, 'comp.tempMax', { label: 'Temperatura máxima de armazenamento (Seção 7)', ph: 'Ex.: 35 °C' })));
         w.appendChild(U.alert('', 'Base', 'ABNT NBR 17160:2024: classe de armazenamento (Anexo D) e matriz de incompatibilidade (Figura 1), mais os grupos de reatividade da Seção 10 da FDS. A norma lembra que a classificação não é a única base: avalie combustão, gases, corrosivos e instáveis formados.'));
         return w;
@@ -26167,6 +26243,23 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       res.conjuntas.forEach((j) => c.appendChild(U.alert('warn', j.titulo.split(' |')[0] + ' | armazenamento conjunto das classes ' + j.classes.join(', ') + ': ' + Math.round(j.qtd) + ' kg (' + j.faixa + ')', j.texto)));
       res.obs7.forEach((o) => c.appendChild(U.alert('warn', 'Observação 7 | ' + o.a + ' com ' + o.b, Math.round(o.qtd) + ' kg acima de 1 t: consultar o responsável técnico.')));
     }
+    return c;
+  };
+
+
+  V.contencao = (l, extra) => {
+    const c = h('div', { class: 'card' }, h('h3', {}, 'Contenção da água de extinção (NBR 17160, Anexo F) ', U.disc('GA')));
+    const r = E.contencaoLocal(l, S.produtos(), extra);
+    c.appendChild(h('p', { class: 'small' }, 'Estimativa do volume de água contaminada a reter em caso de incêndio. Anexo informativo: o corpo de bombeiros e a licença ambiental podem exigir valor diferente.'));
+    if (r.semDados.length) c.appendChild(U.alert('warn', 'Sem frases H', r.semDados.join('; ') + ': itens sem frases H não entram na classe de perigo à água.'));
+    if (r.linhas.length) c.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Produto', 'Pontos', 'Classe de perigo à água', 'Composição dos pontos'].map((x) => h('th', {}, x)))), h('tbody', {}, r.linhas.map((x) => h('tr', {}, h('td', {}, x.nome), h('td', {}, String(x.pontos)), h('td', {}, 'CPA ' + x.cpa), h('td', {}, x.detalhe.join('; ') || '—')))))));
+    if (!r.vol) c.appendChild(U.alert('', 'Falta a área do setor', 'Informe a área do setor de armazenamento (m²) e a categoria de segurança no cadastro do local para calcular o volume.'));
+    else {
+      const f = (n) => (Math.round(n * 10) / 10).toLocaleString('pt-BR');
+      c.appendChild(h('div', { class: 'grid g4', style: 'margin-top:8px' }, h('div', { class: 'kpi' }, h('b', {}, 'CPA ' + r.cpa), h('span', {}, 'Classe do local (maior entre os produtos)')), h('div', { class: 'kpi' }, h('b', {}, f(r.vol.base) + ' m³'), h('span', {}, 'Tabela F.1, ' + (r.catK || 'K1') + ', ' + f(r.areaM2) + ' m²')), h('div', { class: 'kpi warn' }, h('b', {}, f(r.vol.total) + ' m³'), h('span', {}, r.vol.fator !== 1 ? 'Com fator ' + String(r.vol.fator).replace('.', ',') + ' (CPA ' + r.cpa + ')' : 'Água de extinção estimada')), h('div', { class: 'kpi crit' }, h('b', {}, f(r.total) + ' m³'), h('span', {}, 'Volume a reter' + (r.material ? ' (inclui ' + f(r.material) + ' m³ de material)' : ' (some o volume de material que pode vazar)')))));
+      if (!r.catK) c.appendChild(h('p', { class: 'small' }, 'Categoria de segurança não informada: considerada K1/K2 (mais conservador).'));
+    }
+    c.appendChild(h('p', { class: 'small' }, O.NBR17160.F1_NOTA));
     return c;
   };
 
@@ -26486,6 +26579,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       card.appendChild(h('div', { class: 'row' }, h('h3', {}, l.nome, ' ', U.badge('info', l.tipo)), h('span', { class: 'spacer' }), h('button', { class: 'btn danger sm', onclick: async () => { if (await U.confirm('Excluir local', 'O local "' + l.nome + '" será removido.', 'Excluir')) { S.removerLocal(l.id); O.route(); } } }, 'Excluir')));
       const holder = { l };
       card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.nome', { label: 'Nome', onInput: () => S.salvarLocal(l) }), U.input(holder, 'l.espacoM', { type: 'number', label: 'Distância livre disponível entre ácidos e bases (m)', hint: 'A NBR 17160 exige 5 m (ou segregação física) entre corrosivos ácidos e básicos.', onInput: () => S.salvarLocal(l) })));
+      card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.areaM2', { type: 'number', label: 'Área do setor de armazenamento (m²)', hint: 'Usada no cálculo da água de extinção (Anexo F).', onInput: () => S.salvarLocal(l) }),
+        U.select(holder, 'l.catK', O.NBR17160.CATK, { label: 'Categoria de segurança contra incêndio (Anexo F, F.2.1)', empty: 'Não informada (usa K1/K2)', onChange: () => S.salvarLocal(l) })));
+      card.appendChild(U.input(holder, 'l.volMaterialM3', { type: 'number', label: 'Volume de material que pode vazar (m³), opcional', hint: 'Somado ao da água de extinção (F.1 a).', onInput: () => S.salvarLocal(l) }));
       card.appendChild(U.input(holder, 'l.descricao', { rows: 2, label: 'Descrição, contenção e condições do local', onInput: () => S.salvarLocal(l) }));
       card.appendChild(h('h4', {}, 'Itens armazenados'));
       const linked = aud.itens.filter((i) => i.origem === 'homologado');
@@ -26511,6 +26607,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         const ps0 = { nome: l.nome, id: 'inv' };
         card.appendChild(h('div', { class: 'row', style: 'margin-bottom:8px' }, V.docBotoes(ps0, { id: 'inventario', nome: 'Inventário de produtos perigosos', fn: () => D.inventarioLocal(l, S.produtos()) }, true)));
         card.appendChild(V.gatilhos(gat, 'Situação do local'));
+        card.appendChild(V.contencao(l));
       } else card.appendChild(h('p', { class: 'muted' }, 'Cadastre itens ou vincule produtos homologados ao local para montar o inventário.'));
       root.appendChild(card);
     });

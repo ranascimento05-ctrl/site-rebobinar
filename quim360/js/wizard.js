@@ -507,6 +507,13 @@
         const drawQ = () => { boxQ.innerHTML = ''; if (loc && p.comp.qtdKg !== '' && p.comp.qtdKg != null) boxQ.appendChild(O.Views.gatilhos(E.gatilhosLocal(loc, S.produtos(), p), 'Quantidades-limite em ' + loc.nome)); };
         w.appendChild(U.input(p, 'comp.qtdKg', { type: 'number', label: 'Quantidade a armazenar no local (kg; gases em L)', hint: 'Massa líquida. Inflamáveis: volume nominal da embalagem (6.2.8). Com ela, o app soma o que já está no local e aponta as seções da NBR 17160 que passam a valer.', onInput: drawQ }));
         drawQ(); w.appendChild(boxQ);
+        const boxC = h('div'); const drawC = () => { boxC.innerHTML = ''; if (loc) boxC.appendChild(O.Views.contencao(loc, p)); };
+        w.appendChild(h('h4', {}, 'Dados para a classe de perigo à água (Anexo F)'));
+        w.appendChild(h('div', { class: 'opts' },
+          U.flag(p, 'cpa.semToxAguda', 'A FDS não traz dados de toxicidade aguda oral e dérmica', 'Soma 4 pontos de precaução (F.2.3.1).', drawC),
+          U.flag(p, 'cpa.semAmbiental', 'A FDS não traz informações ecológicas (Seção 12)', 'Soma 8 pontos de precaução (F.2.3.2).', drawC),
+          U.flag(p, 'cpa.biodegradavel', 'Facilmente biodegradável e sem potencial de bioacumulação (comprovado)', 'Reduz 2 pontos da precaução ambiental.', drawC)));
+        drawC(); w.appendChild(boxC);
         w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'comp.limite', { label: 'Quantidade máxima armazenada', ph: 'Ex.: 200 L' }), U.input(p, 'comp.tempMax', { label: 'Temperatura máxima de armazenamento (Seção 7)', ph: 'Ex.: 35 °C' })));
         w.appendChild(U.alert('', 'Base', 'ABNT NBR 17160:2024: classe de armazenamento (Anexo D) e matriz de incompatibilidade (Figura 1), mais os grupos de reatividade da Seção 10 da FDS. A norma lembra que a classificação não é a única base: avalie combustão, gases, corrosivos e instáveis formados.'));
         return w;

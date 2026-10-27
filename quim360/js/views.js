@@ -24,6 +24,23 @@
     return c;
   };
 
+
+  V.contencao = (l, extra) => {
+    const c = h('div', { class: 'card' }, h('h3', {}, 'Contenção da água de extinção (NBR 17160, Anexo F) ', U.disc('GA')));
+    const r = E.contencaoLocal(l, S.produtos(), extra);
+    c.appendChild(h('p', { class: 'small' }, 'Estimativa do volume de água contaminada a reter em caso de incêndio. Anexo informativo: o corpo de bombeiros e a licença ambiental podem exigir valor diferente.'));
+    if (r.semDados.length) c.appendChild(U.alert('warn', 'Sem frases H', r.semDados.join('; ') + ': itens sem frases H não entram na classe de perigo à água.'));
+    if (r.linhas.length) c.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Produto', 'Pontos', 'Classe de perigo à água', 'Composição dos pontos'].map((x) => h('th', {}, x)))), h('tbody', {}, r.linhas.map((x) => h('tr', {}, h('td', {}, x.nome), h('td', {}, String(x.pontos)), h('td', {}, 'CPA ' + x.cpa), h('td', {}, x.detalhe.join('; ') || '—')))))));
+    if (!r.vol) c.appendChild(U.alert('', 'Falta a área do setor', 'Informe a área do setor de armazenamento (m²) e a categoria de segurança no cadastro do local para calcular o volume.'));
+    else {
+      const f = (n) => (Math.round(n * 10) / 10).toLocaleString('pt-BR');
+      c.appendChild(h('div', { class: 'grid g4', style: 'margin-top:8px' }, h('div', { class: 'kpi' }, h('b', {}, 'CPA ' + r.cpa), h('span', {}, 'Classe do local (maior entre os produtos)')), h('div', { class: 'kpi' }, h('b', {}, f(r.vol.base) + ' m³'), h('span', {}, 'Tabela F.1, ' + (r.catK || 'K1') + ', ' + f(r.areaM2) + ' m²')), h('div', { class: 'kpi warn' }, h('b', {}, f(r.vol.total) + ' m³'), h('span', {}, r.vol.fator !== 1 ? 'Com fator ' + String(r.vol.fator).replace('.', ',') + ' (CPA ' + r.cpa + ')' : 'Água de extinção estimada')), h('div', { class: 'kpi crit' }, h('b', {}, f(r.total) + ' m³'), h('span', {}, 'Volume a reter' + (r.material ? ' (inclui ' + f(r.material) + ' m³ de material)' : ' (some o volume de material que pode vazar)')))));
+      if (!r.catK) c.appendChild(h('p', { class: 'small' }, 'Categoria de segurança não informada: considerada K1/K2 (mais conservador).'));
+    }
+    c.appendChild(h('p', { class: 'small' }, O.NBR17160.F1_NOTA));
+    return c;
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -340,6 +357,9 @@
       card.appendChild(h('div', { class: 'row' }, h('h3', {}, l.nome, ' ', U.badge('info', l.tipo)), h('span', { class: 'spacer' }), h('button', { class: 'btn danger sm', onclick: async () => { if (await U.confirm('Excluir local', 'O local "' + l.nome + '" será removido.', 'Excluir')) { S.removerLocal(l.id); O.route(); } } }, 'Excluir')));
       const holder = { l };
       card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.nome', { label: 'Nome', onInput: () => S.salvarLocal(l) }), U.input(holder, 'l.espacoM', { type: 'number', label: 'Distância livre disponível entre ácidos e bases (m)', hint: 'A NBR 17160 exige 5 m (ou segregação física) entre corrosivos ácidos e básicos.', onInput: () => S.salvarLocal(l) })));
+      card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.areaM2', { type: 'number', label: 'Área do setor de armazenamento (m²)', hint: 'Usada no cálculo da água de extinção (Anexo F).', onInput: () => S.salvarLocal(l) }),
+        U.select(holder, 'l.catK', O.NBR17160.CATK, { label: 'Categoria de segurança contra incêndio (Anexo F, F.2.1)', empty: 'Não informada (usa K1/K2)', onChange: () => S.salvarLocal(l) })));
+      card.appendChild(U.input(holder, 'l.volMaterialM3', { type: 'number', label: 'Volume de material que pode vazar (m³), opcional', hint: 'Somado ao da água de extinção (F.1 a).', onInput: () => S.salvarLocal(l) }));
       card.appendChild(U.input(holder, 'l.descricao', { rows: 2, label: 'Descrição, contenção e condições do local', onInput: () => S.salvarLocal(l) }));
       card.appendChild(h('h4', {}, 'Itens armazenados'));
       const linked = aud.itens.filter((i) => i.origem === 'homologado');
@@ -365,6 +385,7 @@
         const ps0 = { nome: l.nome, id: 'inv' };
         card.appendChild(h('div', { class: 'row', style: 'margin-bottom:8px' }, V.docBotoes(ps0, { id: 'inventario', nome: 'Inventário de produtos perigosos', fn: () => D.inventarioLocal(l, S.produtos()) }, true)));
         card.appendChild(V.gatilhos(gat, 'Situação do local'));
+        card.appendChild(V.contencao(l));
       } else card.appendChild(h('p', { class: 'muted' }, 'Cadastre itens ou vincule produtos homologados ao local para montar o inventário.'));
       root.appendChild(card);
     });
