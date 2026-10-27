@@ -134,6 +134,7 @@
 
     B.push({ t: 'h1', text: '8 Compatibilidade química e segregação no armazenamento' });
     B.push({ t: 'kv', rows: [
+      ['Classe de armazenamento (NBR 17160)', E.classeArm(p).id + ' | ' + O.NBR17160.nome(E.classeArm(p).id) + ' | ' + E.classeArm(p).motivo],
       ['Incompatibilidades declaradas (Seções 7 e 10)', p.comp.incompDeclaradas === true ? (p.comp.incompativeis || []).map(nomeG).join(', ') + (p.comp.incompTexto ? '. ' + p.comp.incompTexto : '') : p.comp.incompDeclaradas === false ? 'Nenhuma declarada' : '—'],
       ['Local avaliado', loc ? loc.nome + ' (' + loc.tipo + ')' : '—'],
       ['Resultado para o local', p.comp.localOk === 'sim' ? 'Compatível' : p.comp.localOk === 'conflito' ? 'Conflito de segregação' : p.comp.localOk === 'insuficiente' ? 'Informação insuficiente na FDS' : '—'],
@@ -144,8 +145,8 @@
     if (loc) {
       const cp = E.compatibilidade(p, loc, produtos);
       if (cp.pares.length || cp.grupos.length) {
-        const rows = cp.pares.map((x) => [x.com, x.par.join(' / '), x.codigo === '-' ? x.texto : x.codigo + ': ' + x.texto, cp.grupos.filter((g) => g.com === x.com).map((g) => g.a + ' x ' + g.b + ': ' + g.efeito).join('; ') || '—']);
-        B.push({ t: 'table', head: ['Item no local', 'Classes', 'Segregação (IMDG / NR-29)', 'Reatividade (FDS)'], widths: [24, 12, 28, 36], rows });
+        const rows = cp.pares.map((x) => [x.com, x.par.join(' / '), (x.codigo === 'R' ? 'Proibido' : x.codigo === 'G' ? 'Permitido' : x.codigo ? 'Restrição ' + x.codigo : '—') + '. ' + x.texto, cp.grupos.filter((g) => g.com === x.com).map((g) => g.a + ' x ' + g.b + ': ' + g.efeito).join('; ') || '—']);
+        B.push({ t: 'table', head: ['Item no local', 'Classes', 'Segregação (NBR 17160)', 'Reatividade (FDS)'], widths: [24, 12, 28, 36], rows });
       }
     }
 
@@ -163,7 +164,7 @@
     if (['homologado', 'condicionado'].includes(p.status)) B.push({ t: 'qr', text: linkRegistro(p), cap: 'Cadastro próprio na lista de homologados' + (p.dec.sharepoint ? ' (SharePoint)' : '') });
     B.push({ t: 'h2', text: 'Base técnico-legal consultada' });
     B.push({ t: 'list', items: T.BASE_LEGAL.map((b) => b.sigla + ': ' + b.titulo) });
-    B.push({ t: 'p', small: true, text: 'Matriz de segregação, triagem CMR e PFC e sugestões de controle são apoio à decisão. A decisão formal depende da FDS vigente do fornecedor, do Código IMDG e da avaliação do responsável técnico.' });
+    B.push({ t: 'p', small: true, text: 'A classe e a matriz de armazenamento seguem a ABNT NBR 17160:2024. A triagem CMR e PFC e as sugestões de controle são apoio à decisão. A decisão formal depende da FDS vigente do fornecedor, do Código IMDG e da avaliação do responsável técnico.' });
     B.push({ t: 'sign', rows: [[cfg().responsavel, cfg().registro || 'Responsável técnico']] });
     return B;
   }
@@ -327,6 +328,7 @@
   function planoAcao(p, produtos) {
     const av = E.avaliar(p, produtos);
     const ok = ['homologado', 'condicionado'].includes(p.status);
+    const loc = localDe(p);
     const lim = cfg().anosValidadeFDS;
     const linhas = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
     const A = [];
@@ -352,6 +354,10 @@
       (p.comp.controles || []).filter((x) => x !== 'nenhum').forEach((x) => add('Armazenamento: ' + ctrlNome(x), 'Etapa 11.3 | PSM', 'Gestor do local', 'Antes do primeiro recebimento'));
       if (p.comp.limite) add('Fixar e controlar o estoque máximo de ' + p.comp.limite, 'Etapa 11.3 | PSM', 'Gestor do local', 'Antes do primeiro recebimento');
       if (p.comp.tempMax) add('Garantir temperatura de armazenamento até ' + p.comp.tempMax, 'Seção 7 da FDS | PSM', 'Gestor do local', 'Antes do primeiro recebimento');
+      if (loc) {
+        const cpx = E.compatibilidade(p, loc, produtos);
+        cpx.pares.filter((x) => x.codigo && !['R', 'G'].includes(x.codigo)).forEach((x) => add('NBR 17160, restrição ' + x.codigo + ' com ' + x.com + ': ' + O.NBR17160.OBS[x.codigo], 'NBR 17160 | Figura 1', 'Gestor do local', 'Antes do primeiro recebimento'));
+      }
       if (p.comp.localOk === 'conflito') add('Implantar a segregação física ou o local alternativo: ' + (p.comp.observacoes || 'conforme matriz'), 'Etapa 11.2 | PSM', 'Gestor do local', 'Antes do primeiro recebimento', 'Pendente');
       const n20 = E.nr20(p);
       if (n20.aplica) add('NR-20: verificar a classificação da instalação, as áreas classificadas, o aterramento e o prontuário (' + n20.categoria + ')', 'NR-20 | PSM', 'Segurança de processo', 'Antes do primeiro recebimento');

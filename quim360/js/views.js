@@ -111,7 +111,7 @@
         h('div', { class: 'row', style: 'justify-content:space-between' }, h('span', {}, k === 'nr' ? 'Não regulado para transporte' : 'Classe ' + k + ' | ' + T.classeNome(k)), h('b', {}, porClasse[k] + (porClasse[k] === 1 ? ' produto' : ' produtos'))),
         h('div', { style: 'background:#0b1222;border-radius:6px;height:12px;margin-top:3px' }, h('div', { style: 'height:100%;border-radius:6px;background:var(--sky);width:' + (porClasse[k] / mx * 100) + '%' })))).concat([h('p', { class: 'small' }, 'Total: ' + totalHom + (totalHom === 1 ? ' produto homologado' : ' produtos homologados') + '.')]) : h('p', { class: 'muted' }, 'Sem produtos homologados.')));
     g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Reprovados por critério interno'), rej.length ? h('table', { class: 't' }, h('tbody', {}, rej.slice(0, 8).map((p) => h('tr', {}, h('td', {}, h('a', { href: '#/produto/' + p.id }, p.nome)), h('td', {}, E.triagem(p).criticos.map((c) => c.tipo).filter((x, i, a) => a.indexOf(x) === i).join(', ') || 'outro motivo'))))) : h('p', { class: 'muted' }, 'Nenhum produto reprovado.')));
-    g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Locais de armazenamento ', U.disc('PSM')), S.locais().length ? S.locais().map((l) => { const a = E.auditoriaLocal(l, ps); const crit = a.pares.filter((x) => x.motivos.length || ['2', '3', '4'].includes(x.codigo)).length; return h('div', { class: 'row', style: 'margin:6px 0' }, h('a', { href: '#/locais' }, l.nome), h('span', { class: 'muted' }, a.itens.length + ' itens'), crit ? U.badge('warn', crit + ' par(es) a revisar') : U.badge('ok', 'sem pares críticos')); }) : h('p', { class: 'muted' }, 'Cadastre os locais em "Locais".')));
+    g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Locais de armazenamento ', U.disc('PSM')), S.locais().length ? S.locais().map((l) => { const a = E.auditoriaLocal(l, ps); const crit = a.pares.filter((x) => x.nivel === 'incompativel' || x.nivel === 'restricao').length; return h('div', { class: 'row', style: 'margin:6px 0' }, h('a', { href: '#/locais' }, l.nome), h('span', { class: 'muted' }, a.itens.length + ' itens'), crit ? U.badge('warn', crit + ' par(es) a revisar') : U.badge('ok', 'sem restrições')); }) : h('p', { class: 'muted' }, 'Cadastre os locais em "Locais".')));
     root.appendChild(g);
     if (!ps.length) root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Primeiros passos'), h('p', {}, 'Comece por uma análise de FDS ou inicie uma homologação. Para ver o fluxo completo, carregue os dados de demonstração.'), h('button', { class: 'btn ghost', onclick: () => { O.Demo.criar(); location.hash = '#/painel'; O.route(); } }, 'Carregar dados de demonstração')));
   };
@@ -163,7 +163,7 @@
     } else if (tab === 'compat') {
       const outros = E.homologados(S.produtos()).filter((x) => x.id !== p.id);
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática da matriz de segregação ', U.disc('PSM')),
-        h('p', { class: 'small' }, 'Este produto contra cada produto homologado: matriz de segregação por classe (NR-29 e IMDG) mais reatividade pela Seção 10 da FDS. Classes: ' + (E.classesDoProduto(p).join(' e ') || 'não informada') + '.'),
+        h('p', { class: 'small' }, 'Este produto contra cada produto homologado: matriz de incompatibilidade da ABNT NBR 17160:2024 mais reatividade pela Seção 10 da FDS. Classe de armazenamento deste produto: ' + E.classeArm(p).id + ' (' + E.classeArm(p).motivo + ').'),
         V.resumoCompat(p, outros), V.tabelaCompat(p, outros)));
     } else if (tab === 'docs') {
       root.appendChild(V.pacote(p));
@@ -178,21 +178,21 @@
   const kv = (rows) => h('table', { class: 't' }, h('tbody', {}, rows.map((r) => h('tr', {}, h('th', {}, r[0]), h('td', {}, r[1] || '—')))));
 
   // ------------------------------------------------------------ compatibilidade entre produtos
-  const NIV_CLASS = { incompativel: 'cI', segregar: 'c3', longe: 'c1', verificar: 'cX', livre: 'c-' };
+  const NIV_CLASS = { incompativel: 'cI', restricao: 'c2', verificar: 'cX', livre: 'c-' };
   V.tabelaCompat = (p, outros) => {
     if (!outros.length) return h('div', { class: 'empty' }, 'Não há outros produtos homologados para comparar.');
     const rows = outros.map((q) => ({ q, r: E.compatPar(p, q) }));
-    const ordem = { incompativel: 0, segregar: 1, verificar: 2, longe: 3, livre: 4 };
+    const ordem = { incompativel: 0, restricao: 1, verificar: 2, livre: 3 };
     rows.sort((a, b) => ordem[a.r.nivel] - ordem[b.r.nivel]);
-    return h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Produto homologado', 'Classes', 'Matriz', 'Resultado', 'Local', 'Orientação'].map((x) => h('th', {}, x)))),
-      h('tbody', {}, rows.map(({ q, r }) => { const lq = S.local(q.ctx.localId); const lp = S.local(p.ctx.localId); return h('tr', {}, h('td', {}, h('a', { href: '#/produto/' + q.id + '/compat' }, q.nome), h('div', { class: 'small' }, q.dec.numero || '')), h('td', {}, (r.par || ['—']).join(' x ')), h('td', {}, r.codigo || '—'), h('td', {}, h('span', { class: 'pc ' + NIV_CLASS[r.nivel] }, E.NIVEL[r.nivel])), h('td', {}, (lq ? lq.name || lq.nome : '—') + (lq && lp && lq.id === lp.id ? ' (mesmo local)' : '')), h('td', {}, r.acao, r.motivos.length ? h('ul', { class: 'small', style: 'margin:4px 0 0 16px;padding:0' }, r.motivos.map((m) => h('li', {}, m))) : null)); }))));
+    return h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Produto homologado', 'Classes de armazenamento', 'NBR 17160', 'Resultado', 'Local', 'Orientação'].map((x) => h('th', {}, x)))),
+      h('tbody', {}, rows.map(({ q, r }) => { const lq = S.local(q.ctx.localId); const lp = S.local(p.ctx.localId); return h('tr', {}, h('td', {}, h('a', { href: '#/produto/' + q.id + '/compat' }, q.nome), h('div', { class: 'small' }, q.dec.numero || '')), h('td', {}, (r.par || ['—']).join(' x ')), h('td', {}, r.codigo === 'R' ? 'Proibido' : r.codigo === 'G' ? 'Permitido' : r.codigo ? 'Restrição ' + r.codigo : '—'), h('td', {}, h('span', { class: 'pc ' + NIV_CLASS[r.nivel] }, E.NIVEL[r.nivel])), h('td', {}, (lq ? lq.name || lq.nome : '—') + (lq && lp && lq.id === lp.id ? ' (mesmo local)' : '')), h('td', {}, r.acao, r.motivos.length ? h('ul', { class: 'small', style: 'margin:4px 0 0 16px;padding:0' }, r.motivos.map((m) => h('li', {}, m))) : null)); }))));
   };
   V.resumoCompat = (p, outros) => {
     const rs = outros.map((q) => ({ q, r: E.compatPar(p, q) }));
-    const livres = rs.filter((x) => x.r.nivel === 'livre' || x.r.nivel === 'longe').map((x) => x.q.nome);
+    const livres = rs.filter((x) => x.r.nivel === 'livre').map((x) => x.q.nome);
     const nao = rs.filter((x) => x.r.nivel === 'incompativel').map((x) => x.q.nome);
-    const seg = rs.filter((x) => x.r.nivel === 'segregar').map((x) => x.q.nome);
-    return h('div', {}, nao.length ? U.alert('crit', 'Não armazenar junto de', nao) : null, seg.length ? U.alert('warn', 'Armazenar segregado de', seg) : null, livres.length ? U.alert('ok', 'Pode compartilhar o local com', livres) : null);
+    const seg = rs.filter((x) => x.r.nivel === 'restricao').map((x) => x.q.nome + ' (restrição ' + x.r.codigo + ')');
+    return h('div', {}, nao.length ? U.alert('crit', 'Armazenamento conjunto proibido com', nao) : null, seg.length ? U.alert('warn', 'Permitido com restrição (NBR 17160)', seg) : null, livres.length ? U.alert('ok', 'Pode compartilhar o setor de armazém com', livres) : null);
   };
   V.gradeCompat = (lista) => {
     const tb = h('table', { class: 'mx', 'aria-label': 'Compatibilidade entre produtos homologados' });
@@ -201,7 +201,7 @@
     lista.forEach((a) => body.appendChild(h('tr', {}, h('th', { style: 'text-align:right;white-space:nowrap', title: a.nome }, a.nome.length > 26 ? a.nome.slice(0, 25) + '…' : a.nome), lista.map((b) => {
       if (a.id === b.id) return h('td', { class: 'c0' }, '—');
       const r = E.compatPar(a, b);
-      return h('td', { class: 'x' + NIV_CLASS[r.nivel], title: a.nome + ' x ' + b.nome + ': ' + E.NIVEL[r.nivel] + '. ' + r.acao, style: 'cursor:help' }, { incompativel: 'X', segregar: r.codigo || 'S', longe: '1', verificar: '?', livre: 'OK' }[r.nivel]);
+      return h('td', { class: 'x' + NIV_CLASS[r.nivel], title: a.nome + ' x ' + b.nome + ': ' + E.NIVEL[r.nivel] + '. ' + r.acao, style: 'cursor:help' }, { incompativel: 'X', restricao: r.codigo || 'R', verificar: '?', livre: 'OK' }[r.nivel]);
     }))));
     tb.appendChild(body); return tb;
   };
@@ -248,65 +248,101 @@
       const card = h('div', { class: 'card' });
       card.appendChild(h('div', { class: 'row' }, h('h3', {}, l.nome, ' ', U.badge('info', l.tipo)), h('span', { class: 'spacer' }), h('button', { class: 'btn danger sm', onclick: async () => { if (await U.confirm('Excluir local', 'O local "' + l.nome + '" será removido.', 'Excluir')) { S.removerLocal(l.id); O.route(); } } }, 'Excluir')));
       const holder = { l };
-      card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.nome', { label: 'Nome', onInput: () => S.salvarLocal(l) }), U.input(holder, 'l.espacoM', { type: 'number', label: 'Distância livre disponível para segregação (m)', hint: '6 m atende "separado de"; 24 m atende o nível 4.', onInput: () => S.salvarLocal(l) })));
+      card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.nome', { label: 'Nome', onInput: () => S.salvarLocal(l) }), U.input(holder, 'l.espacoM', { type: 'number', label: 'Distância livre disponível entre ácidos e bases (m)', hint: 'A NBR 17160 exige 5 m (ou segregação física) entre corrosivos ácidos e básicos.', onInput: () => S.salvarLocal(l) })));
       card.appendChild(U.input(holder, 'l.descricao', { rows: 2, label: 'Descrição, contenção e condições do local', onInput: () => S.salvarLocal(l) }));
       card.appendChild(h('h4', {}, 'Itens armazenados'));
       const linked = aud.itens.filter((i) => i.origem === 'homologado');
       if (linked.length) card.appendChild(h('p', { class: 'small' }, 'Vinculados por homologação: ' + linked.map((i) => i.nome).join('; ')));
       const tb = h('tbody');
-      (l.itens || []).forEach((it, i) => tb.appendChild(h('tr', {}, h('td', {}, it.nome), h('td', {}, it.classe + (it.subrisco ? ' / ' + it.subrisco : '')), h('td', {}, (it.grupos || []).map(nomeG).join(', ') || '—'), h('td', {}, (it.incompativeis || []).map(nomeG).join(', ') || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.itens.splice(i, 1); S.salvarLocal(l); O.route(); } }, 'Remover')))));
-      if ((l.itens || []).length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item', 'Classe', 'Grupos', 'Incompatível com', ''].map((x) => h('th', {}, x)))), tb)));
-      const novo = { nome: '', classe: '', subrisco: '', grupos: [], incompativeis: [] };
+      (l.itens || []).forEach((it, i) => tb.appendChild(h('tr', {}, h('td', {}, it.nome), h('td', {}, E.armDoItem(it) + (it.classeArm ? '' : ' (aprox.)')), h('td', {}, (it.grupos || []).map(nomeG).join(', ') || '—'), h('td', {}, (it.incompativeis || []).map(nomeG).join(', ') || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.itens.splice(i, 1); S.salvarLocal(l); O.route(); } }, 'Remover')))));
+      if ((l.itens || []).length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item', 'Classe de armazenamento', 'Grupos', 'Incompatível com', ''].map((x) => h('th', {}, x)))), tb)));
+      const novo = { nome: '', classeArm: '', grupos: [], incompativeis: [] };
       card.appendChild(h('details', {}, h('summary', {}, 'Adicionar item armazenado'), U.input({ n: novo }, 'n.nome', { label: 'Nome do produto' }),
-        h('div', { class: 'grid g2' }, U.select({ n: novo }, 'n.classe', T.CLASSES.map((c) => [c[0], c[0] + ' ' + c[1]]), { label: 'Classe de risco' }), U.input({ n: novo }, 'n.subrisco', { label: 'Risco subsidiário (opcional)' })),
+        U.select({ n: novo }, 'n.classeArm', O.NBR17160.CLASSES.filter((c) => c[0] !== '9').map((c) => [c[0], c[0] + ' | ' + c[1]]), { label: 'Classe de armazenamento (NBR 17160, Tabela 2)' }),
         h('p', { class: 'q' }, 'Grupo de reatividade do item'), U.checks({ n: novo }, 'n.grupos', T.RG.filter((r) => r[0] !== 'ignicao').map((r) => ({ v: r[0], label: r[1] }))),
         h('p', { class: 'q' }, 'Incompatível com (FDS do item)'), U.checks({ n: novo }, 'n.incompativeis', T.RG.map((r) => ({ v: r[0], label: r[1] }))),
-        h('button', { class: 'btn', onclick: () => { if (!novo.nome.trim() || !novo.classe) { U.toast('Informe nome e classe.'); return; } l.itens = l.itens || []; l.itens.push({ ...novo, nome: novo.nome.trim() }); S.salvarLocal(l); O.route(); } }, 'Adicionar')));
-      const crit = aud.pares.filter((x) => x.motivos.length || ['2', '3', '4', 'X'].includes(x.codigo));
-      card.appendChild(h('h4', { style: 'margin-top:12px' }, 'Auditoria de segregação do local ', U.disc('PSM')));
+        h('button', { class: 'btn', onclick: () => { if (!novo.nome.trim() || !novo.classeArm) { U.toast('Informe o nome e a classe de armazenamento.'); return; } l.itens = l.itens || []; l.itens.push({ ...novo, nome: novo.nome.trim() }); S.salvarLocal(l); O.route(); } }, 'Adicionar')));
+      const crit = aud.pares;
+      card.appendChild(h('h4', { style: 'margin-top:12px' }, 'Auditoria de segregação do local (NBR 17160) ', U.disc('PSM')));
       if (aud.itens.length < 2) card.appendChild(h('p', { class: 'muted' }, 'Cadastre ao menos dois itens para auditar pares.'));
-      else if (!crit.length) card.appendChild(U.alert('ok', null, 'Nenhum par exige segregação pela matriz ou por reatividade.'));
-      else card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Par', 'Classes', 'Código', 'Observação'].map((x) => h('th', {}, x)))), h('tbody', {}, crit.map((x) => { const need = x.codigo && T.SEG_LEGEND[x.codigo] ? T.SEG_LEGEND[x.codigo].metros : null; const ok = !need || (Number(l.espacoM) || 0) >= need; return h('tr', {}, h('td', {}, x.a + ' x ' + x.b), h('td', {}, x.par ? x.par.join(' x ') : '—'), h('td', {}, x.codigo || '—'), h('td', {}, [x.codigo && T.SEG_LEGEND[x.codigo] ? T.SEG_LEGEND[x.codigo].nome + (need && !ok ? ' (exige ' + need + ' m, o local tem ' + (l.espacoM || 0) + ' m)' : '') : '', ...x.motivos].filter(Boolean).join('. '))); })))));
+      else if (!crit.length) card.appendChild(U.alert('ok', null, 'Todos os pares são permitidos pela matriz e sem reatividade declarada.'));
+      else card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Par', 'Classes', 'Resultado', 'Observação'].map((x) => h('th', {}, x)))), h('tbody', {}, crit.map((x) => { const falta5 = x.codigo === '8' && (Number(l.espacoM) || 0) < 5; return h('tr', {}, h('td', {}, x.a + ' x ' + x.b), h('td', {}, x.par.join(' x ')), h('td', {}, h('span', { class: 'pc ' + NIV_CLASS[x.nivel] }, E.NIVEL[x.nivel])), h('td', {}, [x.texto, falta5 ? 'O local tem ' + (l.espacoM || 0) + ' m: faltam 5 m ou segregação física.' : '', ...x.motivos].filter(Boolean).join(' '))); })))));
       root.appendChild(card);
     });
   };
 
   // ------------------------------------------------------------ matriz
+  const NBR_COR = { R: 'r', G: 'g' };
   V.matriz = (root) => {
-    root.appendChild(head('Matriz de segregação', 'Anexo da NR-29 e Código IMDG, aplicada ao armazenamento'));
-    const info = h('div', { class: 'alert' }, h('b', {}, 'Toque em uma célula'), 'Mostra a regra entre as duas classes.');
-    const tb = h('table', { class: 'mx', 'aria-label': 'Matriz de segregação' });
-    tb.appendChild(h('thead', {}, h('tr', {}, h('th', {}), T.CLASSES.map((c) => h('th', { class: 'col', title: c[1] }, c[0])))));
+    const NB = O.NBR17160;
+    root.appendChild(head('Matriz de incompatibilidade', 'ABNT NBR 17160:2024 | armazenamento conjunto de produtos químicos embalados e fracionados'));
+    root.appendChild(U.alert('', 'Quando se aplica', 'Armazéns, salas, contêineres e armários com produtos embalados (até 3 000 L). A norma não se aplica a tanques e embalagens estacionárias, a produtos em processo ou em uso, a fracionamento e manutenção, a explosivos, nitrato de amônio, peróxidos orgânicos, radioativos e infectantes, nem a produtos com legislação própria de armazenamento. Ela não substitui a legislação.'));
+    const info = h('div', { class: 'alert' }, h('b', {}, 'Toque em uma célula'), 'Mostra a regra entre as duas classes de armazenamento.');
+    const tb = h('table', { class: 'mx nm', 'aria-label': 'Matriz de incompatibilidade da NBR 17160' });
+    tb.appendChild(h('thead', {}, h('tr', {}, h('th', {}), NB.ORDEM.map((c) => h('th', { class: 'col', title: NB.nome(c) }, c)))));
     const body = h('tbody');
-    T.CLASSES.forEach((a) => body.appendChild(h('tr', {}, h('th', { title: a[1], style: 'text-align:right' }, a[0]), T.CLASSES.map((b) => { const code = T.seg(a[0], b[0]); const td = h('td', { class: 'c' + code, tabindex: 0, 'aria-label': a[0] + ' com ' + b[0] + ': ' + T.SEG_LEGEND[code].nome }, code); const sel = () => { tb.querySelectorAll('.hl').forEach((x) => x.classList.remove('hl')); td.classList.add('hl'); info.innerHTML = ''; info.className = 'alert ' + (code === '1' ? '' : 'warn'); info.appendChild(h('b', {}, a[0] + ' ' + a[1] + ' com ' + b[0] + ' ' + b[1] + ': ' + code + ' ' + T.SEG_LEGEND[code].nome)); info.appendChild(document.createTextNode(T.SEG_LEGEND[code].texto)); }; td.addEventListener('click', sel); td.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sel(); } }); return td; }))));
+    NB.ORDEM.forEach((a) => body.appendChild(h('tr', {}, h('th', { title: NB.nome(a), style: 'text-align:right' }, a), NB.ORDEM.map((b) => {
+      const code = NB.par(a, b); const cls = NBR_COR[code] || 'y';
+      const td = h('td', { class: cls, tabindex: 0, 'aria-label': a + ' com ' + b + ': ' + (code === 'R' ? 'proibido' : code === 'G' ? 'permitido' : 'restrição ' + code) }, code === 'R' || code === 'G' ? '' : code);
+      const sel = () => { tb.querySelectorAll('.hl').forEach((x) => x.classList.remove('hl')); td.classList.add('hl'); info.innerHTML = ''; info.className = 'alert ' + (code === 'R' ? 'crit' : code === 'G' ? 'ok' : 'warn'); info.appendChild(h('b', {}, a + ' ' + NB.nome(a) + ' com ' + b + ' ' + NB.nome(b))); info.appendChild(document.createTextNode(code === 'R' ? 'Armazenamento conjunto proibido.' : code === 'G' ? 'Armazenamento conjunto permitido.' : 'Permitido com restrição ' + code + '. ' + NB.OBS[code])); };
+      td.addEventListener('click', sel); td.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sel(); } });
+      return td;
+    }))));
     tb.appendChild(body);
     root.appendChild(h('div', { class: 'card scroll' }, tb));
     root.appendChild(info);
-    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Legenda'), Object.keys(T.SEG_LEGEND).map((k) => h('div', { class: 'leg' }, h('span', { class: 'code c' + k }, k), h('div', {}, h('b', {}, T.SEG_LEGEND[k].nome), h('div', { class: 'small' }, T.SEG_LEGEND[k].texto)))), h('p', { class: 'small' }, 'Classes 1 (explosivos), 6.2 (infectantes) e 7 (radioativos) ficam fora da matriz: armazenamento proibido ou restrito em área comum.')));
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Legenda e observações'),
+      h('div', { class: 'leg' }, h('span', { class: 'code nm-r' }, ''), h('div', {}, h('b', {}, 'Armazenamento conjunto proibido'))),
+      h('div', { class: 'leg' }, h('span', { class: 'code nm-g' }, ''), h('div', {}, h('b', {}, 'Armazenamento conjunto permitido'))),
+      h('div', { class: 'leg' }, h('span', { class: 'code nm-y' }, '1 a 8'), h('div', {}, h('b', {}, 'Permitido com restrição'), h('div', { class: 'small' }, 'Cumprir a observação de mesmo número.'))),
+      h('table', { class: 't', style: 'margin-top:8px' }, h('tbody', {}, Object.keys(NB.OBS).map((k) => h('tr', {}, h('th', { style: 'width:36px' }, k), h('td', {}, NB.OBS[k])))))));
+    root.appendChild(h('div', { class: 'grid g2' },
+      [NB.TABELA3, NB.TABELA4].map((t) => h('div', { class: 'card' }, h('h4', {}, t.titulo), h('table', { class: 't' }, h('tbody', {}, t.linhas.map((l) => h('tr', {}, h('th', { style: 'width:80px' }, l[0]), h('td', {}, l[1])))))))));
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Regras gerais do armazenamento conjunto'), h('ul', {}, NB.REGRAS.map((r) => h('li', {}, r)))));
+    root.appendChild(h('details', { class: 'card' }, h('summary', {}, 'As 25 classes de armazenamento (Tabela 2) e o critério de cada uma'),
+      h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Classe', 'Descrição', 'Critério'].map((x) => h('th', {}, x)))), h('tbody', {}, NB.CLASSES.map((c) => h('tr', {}, h('td', {}, c[0]), h('td', {}, c[1]), h('td', {}, c[2]))))))));
     // aplicação prática: produtos homologados
     const hom = E.homologados(S.produtos());
     const prat = h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática: produtos homologados ', U.disc('PSM')));
     if (hom.length < 2) prat.appendChild(h('p', { class: 'muted' }, 'Homologue ao menos 2 produtos para ver a compatibilidade entre eles. Dica: carregue a demonstração em Configurações.'));
     else {
-      const sel = h('select', { 'aria-label': 'Produto' }, hom.map((p) => h('option', { value: p.id }, p.nome)));
+      const sel = h('select', { 'aria-label': 'Produto' }, hom.map((p) => h('option', { value: p.id }, p.nome + ' | classe ' + E.classeArm(p).id)));
       const out = h('div');
       const show = () => { out.innerHTML = ''; const p = S.produto(sel.value); const outros = hom.filter((x) => x.id !== p.id); out.appendChild(V.resumoCompat(p, outros)); out.appendChild(V.tabelaCompat(p, outros)); };
       sel.addEventListener('change', show);
       prat.appendChild(h('label', { class: 'f' }, h('span', {}, 'Produto'), sel)); prat.appendChild(out); show();
       prat.appendChild(h('h4', { style: 'margin-top:14px' }, 'Grade de todos contra todos'));
       prat.appendChild(h('div', { class: 'scroll' }, V.gradeCompat(hom)));
-      prat.appendChild(h('p', { class: 'small' }, 'X: incompatível (reatividade). Número: código da matriz (2, 3 ou 4 exigem distância). 1: longe de. ?: verificar a FDS. OK: compatível. Passe o mouse para ver a orientação.'));
+      prat.appendChild(h('p', { class: 'small' }, 'X: proibido (matriz ou reatividade). Número: restrição da NBR 17160 (ver observações). OK: permitido. ?: classe não definida. Passe o mouse para ver a orientação.'));
     }
     root.appendChild(prat);
     // verificador
-    const sa = h('select', {}, T.CLASSES.map((c) => h('option', { value: c[0] }, c[0] + ' ' + c[1])));
-    const sb = h('select', {}, T.CLASSES.map((c) => h('option', { value: c[0] }, c[0] + ' ' + c[1])));
+    const opts = () => NB.CLASSES.filter((c) => c[0] !== '9').map((c) => h('option', { value: c[0] }, c[0] + ' | ' + c[1]));
+    const sa = h('select', {}, opts()); const sb = h('select', {}, opts());
     const res = h('div');
-    const chk = () => { const code = T.seg(sa.value, sb.value); res.innerHTML = ''; res.appendChild(U.alert(code === '1' || code === 'X' ? '' : 'warn', code + ' ' + T.SEG_LEGEND[code].nome, T.SEG_LEGEND[code].texto)); };
+    const chk = () => { const code = NB.par(sa.value, sb.value); res.innerHTML = ''; res.appendChild(U.alert(code === 'R' ? 'crit' : code === 'G' ? 'ok' : 'warn', code === 'R' ? 'Armazenamento conjunto proibido' : code === 'G' ? 'Armazenamento conjunto permitido' : 'Permitido com restrição ' + code, code === 'R' || code === 'G' ? null : NB.OBS[code])); };
     sa.addEventListener('change', chk); sb.addEventListener('change', chk); chk();
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Verificador de par'), h('div', { class: 'grid g2' }, h('label', { class: 'f' }, h('span', {}, 'Classe A'), sa), h('label', { class: 'f' }, h('span', {}, 'Classe B'), sb)), res));
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Reatividade química pela FDS (Seção 10) ', U.disc('PSM')), h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Grupo A', 'Grupo B', 'Efeito'].map((x) => h('th', {}, x)))), h('tbody', {}, T.RG_RULES.map((r) => h('tr', {}, h('td', {}, nomeG(r[0])), h('td', {}, nomeG(r[1])), h('td', {}, r[2])))))),
-      U.alert('warn', 'Validação obrigatória', 'A matriz reproduz a base do acervo. Antes de decisão formal, confirme cada par na tabela 7.2.4 do Código IMDG e nas Seções 7 e 10 da FDS. Em caso de diferença, vale o IMDG e a FDS do fornecedor.')));
+      U.alert('warn', 'Complemento à matriz', 'A reatividade por grupo é um complemento técnico (a norma lembra, em 9.1.1.2, que a matriz não é a única base da incompatibilidade). Confirme sempre nas Seções 7 e 10 da FDS.')));
+
+    const nr = h('details', { class: 'card' }, h('summary', {}, 'Matriz NR-29 e IMDG: carga portuária e transporte marítimo (não é a base do armazenamento em armazéns)'));
+    const box = h('div', { style: 'margin-top:10px' });
+    nr.appendChild(box);
+    box.appendChild(h('p', { class: 'small' }, 'Segregação de cargas perigosas em navio e área portuária comum (Anexo da NR-29 e Código IMDG). Mantida como referência para operação portuária; confirme na tabela 7.2.4 do Código IMDG.'));
+    (() => {
+    const info = h('div', { class: 'alert' }, h('b', {}, 'Toque em uma célula'), 'Mostra a regra entre as duas classes.');
+    const tb = h('table', { class: 'mx', 'aria-label': 'Matriz NR-29 e IMDG' });
+    tb.appendChild(h('thead', {}, h('tr', {}, h('th', {}), T.CLASSES.map((c) => h('th', { class: 'col', title: c[1] }, c[0])))));
+    const body = h('tbody');
+    T.CLASSES.forEach((a) => body.appendChild(h('tr', {}, h('th', { title: a[1], style: 'text-align:right' }, a[0]), T.CLASSES.map((b) => { const code = T.seg(a[0], b[0]); const td = h('td', { class: 'c' + code, tabindex: 0, 'aria-label': a[0] + ' com ' + b[0] + ': ' + T.SEG_LEGEND[code].nome }, code); const sel = () => { tb.querySelectorAll('.hl').forEach((x) => x.classList.remove('hl')); td.classList.add('hl'); info.innerHTML = ''; info.className = 'alert ' + (code === '1' ? '' : 'warn'); info.appendChild(h('b', {}, a[0] + ' ' + a[1] + ' com ' + b[0] + ' ' + b[1] + ': ' + code + ' ' + T.SEG_LEGEND[code].nome)); info.appendChild(document.createTextNode(T.SEG_LEGEND[code].texto)); }; td.addEventListener('click', sel); td.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sel(); } }); return td; }))));
+    tb.appendChild(body);
+    box.appendChild(h('div', { class: 'card scroll' }, tb));
+    box.appendChild(info);
+    box.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Legenda'), Object.keys(T.SEG_LEGEND).map((k) => h('div', { class: 'leg' }, h('span', { class: 'code c' + k }, k), h('div', {}, h('b', {}, T.SEG_LEGEND[k].nome), h('div', { class: 'small' }, T.SEG_LEGEND[k].texto)))), h('p', { class: 'small' }, 'Classes 1 (explosivos), 6.2 (infectantes) e 7 (radioativos) ficam fora da matriz: armazenamento proibido ou restrito em área comum.')));
+
+    })();
+    root.appendChild(nr);
   };
 
   // ------------------------------------------------------------ base legal
@@ -372,14 +408,14 @@
           h('div', { class: 'row' }, h('a', { class: 'btn big', href: '#/nova' }, 'Homologar um produto'), h('a', { class: 'btn big sec', href: '#/fds' }, 'Analisar uma FDS'), h('a', { class: 'btn big ghost', href: '#/painel' }, 'Entrar no painel'))),
         h('div', { class: 'cv-logo' }, h('img', { src: L.src, alt: 'Orbit 360 | Consultoria em SSMA' }))),
       h('section', { class: 'cv-stats' },
-        [['16', 'seções da FDS lidas e conferidas pela NBR 14725'], ['15', 'etapas de homologação, sem pular confirmação'], ['12', 'classes na matriz de segregação, aplicada produto a produto'], ['5', 'documentos por produto, em Word e PDF']].map((s) => h('div', {}, h('b', {}, s[0]), h('span', {}, s[1])))),
+        [['16', 'seções da FDS lidas e conferidas pela NBR 14725'], ['15', 'etapas de homologação, sem pular confirmação'], ['25', 'classes de armazenamento da NBR 17160, aplicadas produto a produto'], ['5', 'documentos por produto, em Word e PDF']].map((s) => h('div', {}, h('b', {}, s[0]), h('span', {}, s[1])))),
       h('section', { class: 'cv-sec' },
         h('h2', {}, 'Como funciona'),
         h('div', { class: 'cv-steps' }, [['1', 'Envie a FDS', 'Texto, .txt ou .pdf. O app extrai frases H e P, CAS, ONU, classe, incompatibilidades e limites de exposição.'], ['2', 'A triagem roda sozinha', 'Cancerígeno, mutagênico, teratogênico e PFC reprovam de forma automática. O que a FDS responde é preenchido.'], ['3', 'Você informa o que falta', 'Uso, local de armazenamento, cobertura do PGR e pareceres. Conflito de segregação sempre para para você.'], ['4', 'Decisão e documentos', 'Decisão com justificativa, registro com QR Code e os cinco documentos prontos.']].map((s) => h('div', { class: 'cv-step' }, h('i', {}, s[0]), h('h3', {}, s[1]), h('p', {}, s[2]))))),
       h('section', { class: 'cv-sec' },
         h('h2', {}, 'Três disciplinas, uma análise'),
         h('div', { class: 'grid g3' },
-          pilar('PSM', 'Armazenamento e compatibilidade', ['Matriz de segregação NR-29 e IMDG', 'Reatividade pela Seção 10 da FDS', 'NR-20 para inflamáveis e combustíveis', 'Compatibilidade com cada produto homologado']),
+          pilar('PSM', 'Armazenamento e compatibilidade', ['Matriz de incompatibilidade da ABNT NBR 17160:2024', 'Reatividade pela Seção 10 da FDS', 'NR-20 para inflamáveis e combustíveis', 'Compatibilidade com cada produto homologado']),
           pilar('SST', 'Saúde e segurança do trabalho', ['Triagem CMR por frase H e CAS', 'Hierarquia de controle por produto', 'Interface com PGR e Higiene Ocupacional', 'Checklist de treinamento']),
           pilar('GA', 'Gestão ambiental', ['Perigo aquático e poluente marinho', 'Contenção e resposta a derramamento', 'Destinação de resíduos', 'Ficha de emergência e envelope NBR 7503']))),
       h('section', { class: 'cv-sec' },

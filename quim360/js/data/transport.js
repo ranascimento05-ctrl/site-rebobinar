@@ -167,13 +167,14 @@
   ];
 
   const BASE_LEGAL = [
+    { sigla: 'NBR 17160', titulo: 'ABNT NBR 17160:2024 Armazenamento seguro de produtos químicos', uso: 'Armazenamento de produtos químicos perigosos embalados: 25 classes de armazenamento (Anexo D), matriz de incompatibilidade para armazenamento conjunto (Figura 1), restrições por quantidade (Tabelas 3 e 4) e quantidades-limite (Tabela 1). Exemplar de uso licenciado: não redistribuir.', onde: 'Compatibilidade e segregação, classe de armazenamento, matriz' },
     { sigla: 'ANTT 5.947/21', titulo: 'Resolução ANTT nº 5.947/2021', uso: 'Transporte terrestre de produtos perigosos: número ONU, classe, grupo de embalagem, número de risco, ficha de emergência e envelope. Atualizada pelas instruções complementares.', onde: 'Classificação de transporte, ficha de emergência, envelope' },
-    { sigla: 'IMDG', titulo: 'Código Marítimo Internacional de Mercadorias Perigosas (IMO)', uso: 'Classes, grupos de embalagem, poluente marinho (marine pollutant), EmS e segregação em operação portuária e marítima.', onde: 'Classificação IMDG (etapa 10), matriz de segregação' },
+    { sigla: 'IMDG', titulo: 'Código Marítimo Internacional de Mercadorias Perigosas (IMO)', uso: 'Classes, grupos de embalagem, poluente marinho (marine pollutant), EmS e segregação em operação portuária e marítima.', onde: 'Classificação IMDG (etapa 10), transporte e carga portuária' },
     { sigla: 'NR-20', titulo: 'NR-20 Segurança e Saúde no Trabalho com Inflamáveis e Combustíveis', uso: 'Líquidos inflamáveis (ponto de fulgor até 60 °C), combustíveis (acima de 60 °C até 93 °C) e gases inflamáveis: classificação de instalação, áreas classificadas, prontuário e controle de ignição.', onde: 'Armazenamento e alerta NR-20 no relatório' },
     { sigla: 'ABIQUIM', titulo: 'Manual para Atendimento de Emergências com Produtos Perigosos (ABIQUIM)', uso: 'Estrutura de ação de emergência por número ONU: isolamento, fogo, derramamento, primeiros socorros. Pró-Química 0800 11 8270.', onde: 'Ficha de emergência' },
     { sigla: 'NBR 14725', titulo: 'ABNT NBR 14725:2023 (partes 1 a 4)', uso: 'Terminologia, classificação, rotulagem e FDS de 16 seções.', onde: 'Validação da FDS, rotulagem' },
     { sigla: 'GHS / ONU', titulo: 'Sistema Globalmente Harmonizado (Livro Púrpura)', uso: 'Categorias de perigo, pictogramas, palavras de advertência e frases H e P.', onde: 'Triagem CMR/PFC, rotulagem' },
-    { sigla: 'NR-29', titulo: 'NR-29 Segurança e Saúde no Trabalho Portuário', uso: 'Operação portuária com cargas perigosas e segregação (Anexo, base IMDG).', onde: 'Matriz de segregação' },
+    { sigla: 'NR-29', titulo: 'NR-29 Segurança e Saúde no Trabalho Portuário', uso: 'Operação portuária com cargas perigosas e segregação (Anexo, base IMDG).', onde: 'Matriz NR-29 e IMDG (carga portuária)' },
     { sigla: 'NBR 7500', titulo: 'ABNT NBR 7500', uso: 'Símbolos de risco e manuseio para transporte e armazenamento.', onde: 'Rótulos de risco e painel de segurança' },
     { sigla: 'NBR 7503', titulo: 'ABNT NBR 7503', uso: 'Ficha de emergência e envelope para o transporte terrestre de produtos perigosos.', onde: 'Ficha de emergência e envelope' },
     { sigla: 'NR-26', titulo: 'NR-26 Sinalização de Segurança', uso: 'Rotulagem preventiva e FDS no local de trabalho conforme GHS.', onde: 'Controles de armazenamento' },

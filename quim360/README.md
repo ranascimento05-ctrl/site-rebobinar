@@ -14,16 +14,16 @@ Abrir `quim360/index.html` por um servidor estático (ex.: `python3 -m http.serv
 - **Assistente de homologação** (contexto de uso e armazenamento + 15 etapas), uma confirmação por etapa: identificação, finalidade, lista de homologados, similaridade (read-across), validação e data/idioma da FDS, triagem GHS, impactos ocupacionais e ambientais (avaliações separadas), interface com o PGR, classificação IMDG, compatibilidade e segregação, pareceres e gatilho do PGR, decisão, plano de ação e saída.
 - **Rejeição automática**: cancerígeno, mutagênico, teratogênico e PFC/PFAS, por frases H, CAS da lista de alerta e marcação do analista. Marcar "Nenhum" não anula evidência encontrada.
 - **Via simplificada**: nunca dispensa FDS própria, triagem, IMDG, segregação no local real, pareceres e registro próprio. Divergência relevante a encerra.
-- **Matriz de segregação** (Anexo da NR-29 / IMDG) e grupos de reatividade da Seção 10, aplicados ao local de armazenamento e à auditoria do local.
+- **Armazenamento conjunto pela ABNT NBR 17160:2024**: classe de armazenamento atribuída pelo fluxograma do Anexo D (frases H, número ONU, classe e grupo de embalagem, combustível ou não), matriz de incompatibilidade da Figura 1 (proibido, permitido ou permitido com restrição 1 a 8), regra de 5 m entre ácidos e bases, Tabelas 3 e 4 e quantidades-limite da Tabela 1, aplicados ao local, à auditoria do local e a cada produto contra os homologados. A matriz NR-29 e IMDG fica como referência de carga portuária.
 - **Documentos em Word (.docx) e PDF** (arquivos gerados direto, mais pacote .zip com tudo): relatório de homologação, plano de ação, ficha de emergência, rotulagem (GHS e rótulos de risco), envelope de transporte e checklist de treinamento. O envelope segue a estrutura da ABNT NBR 7503 (face do envelope e ficha de emergência), a validar contra o texto licenciado da norma.
 
 ## Base técnico-legal
 
-Resolução ANTT 5.947/21 e IMDG; NR-20; Manual ABIQUIM; ABNT NBR 14725 e GHS; NR-29 e ABNT NBR 7500; NBR 7503; NR-26; NR-01 e NR-15.
+Resolução ANTT 5.947/21 e IMDG; ABNT NBR 17160:2024; NR-20; Manual ABIQUIM; ABNT NBR 14725 e GHS; NR-29 e ABNT NBR 7500; NBR 7503; NR-26; NR-01 e NR-15.
 
 ## Limites
 
-- A matriz de segregação reproduz a base do acervo. Confirme cada par na tabela 7.2.4 do Código IMDG antes de decisão formal.
+- O conteúdo da NBR 17160 foi transcrito de exemplar licenciado: uso interno, não redistribuir. A norma vigente prevalece. A classe de armazenamento e o campo "combustível" dependem da FDS e do julgamento do analista.
 - A lista de alerta CMR/PFAS por CAS é de triagem e não exaustiva.
 - Pictogramas e rótulos são vetoriais simplificados: use a arte oficial na impressão final.
 - Distâncias de isolamento na ficha são valores genéricos por classe: confirme no Manual ABIQUIM pelo número ONU.

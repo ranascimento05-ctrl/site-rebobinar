@@ -26,6 +26,8 @@
     });
     p.imdg.naoRegulado = !c.onu && !c.classeRisco;
     p.comp.incompativeis = c.incompativeis || [];
+    const est = ((res.secoes[9] || '').match(/estado f[ií]sico\s*[:\-]?\s*([^\n.;]{0,40})/i) || [])[1] || '';
+    p.comp.estado = /s[oó]lid|p[oó]\b|granul|pastilha|pasta|flocos/i.test(est) ? 'solido' : /l[ií]quid|solu[cç][aã]o|emuls/i.test(est) ? 'liquido' : (p.comp.estado || '');
     p.comp.grupos = E.gruposSugeridos(p);
     if (c.limitesExposicao) p.hig.tlvAgentes = p.hig.tlvAgentes || c.limitesExposicao;
     if (c.tempMax && !p.comp.tempMax) p.comp.tempMax = c.tempMax;
@@ -408,14 +410,21 @@
         if (p.comp.incompDeclaradas) { w.appendChild(h('p', { class: 'q' }, 'Incompatível com:')); w.appendChild(U.checks(p, 'comp.incompativeis', T.RG.map((r) => ({ v: r[0], label: r[1] })))); w.appendChild(U.input(p, 'comp.incompTexto', { rows: 2, label: 'Texto da FDS (opcional)' })); }
         w.appendChild(h('p', { class: 'q' }, 'Este produto é, ele mesmo, do grupo:'));
         w.appendChild(U.checks(p, 'comp.grupos', T.RG.filter((r) => r[0] !== 'ignicao').map((r) => ({ v: r[0], label: r[1] }))));
-        w.appendChild(U.q('11.2', 'O local informado é compatível com o produto, considerando o que já está armazenado e a segregação por classe (GHS/IMDG)?'));
+        const ca = E.classeArm(p), cmb = E.combustivel(p);
+        w.appendChild(h('div', { class: 'card' }, h('h4', {}, 'Classe de armazenamento (NBR 17160, Anexo D) ', U.disc('PSM')),
+          h('p', {}, h('b', {}, ca.id + ' | ' + O.NBR17160.nome(ca.id)), ' | critério: ' + ca.motivo + '.'),
+          U.alert(cmb.incerto ? 'warn' : '', 'Combustível: ' + (cmb.valor ? 'sim' : 'não'), cmb.origem + (cmb.incerto ? '. Confirme abaixo.' : '.')),
+          h('p', { class: 'small' }, 'A classe segue o primeiro perigo aplicável no fluxograma da norma. Combustível define as classes 6.1A a 6.1D, 8A, 8B e 10 a 13.'),
+          U.radio(p, 'comp.combustivel', [{ v: true, label: 'Combustível' }, { v: false, label: 'Não combustível' }], { uid: 'cb', onChange: api.rerender }),
+          U.select(p, 'comp.classeArm', O.NBR17160.CLASSES.map((c) => [c[0], c[0] + ' | ' + c[1]]), { label: 'Substituir a classe sugerida (opcional)', empty: 'Usar a classe sugerida', onChange: api.rerender })));
+        w.appendChild(U.q('11.2', 'O local informado é compatível com o produto, considerando o que já está armazenado e a matriz de incompatibilidade da ABNT NBR 17160?'));
         if (!loc) w.appendChild(U.alert('crit', null, 'Nenhum local de armazenamento foi selecionado no contexto.'));
         else {
           const cp = E.compatibilidade(p, loc, S.produtos());
           const tone = cp.status === 'conflito' ? 'crit' : cp.status === 'com_medidas' ? 'warn' : 'ok';
           const box = h('div', { class: 'alert ' + tone }, h('b', {}, 'Local: ' + loc.nome + ' (' + loc.tipo + ') | ' + cp.itens + ' item(ns) armazenado(s) | distância livre ' + (loc.espacoM || 0) + ' m ', U.disc('PSM')),
             cp.itens === 0 ? 'Local sem itens cadastrados: não há conflito a verificar. Cadastre os itens existentes em "Locais" para uma verificação real.' : cp.mensagens.join(' ') || 'Sem conflito pelas regras da matriz e dos grupos de reatividade.');
-          if (cp.pares.length) box.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item no local', 'Classes', 'Código', 'Regra'].map((x) => h('th', {}, x)))), h('tbody', {}, cp.pares.map((x) => h('tr', {}, h('td', {}, x.com), h('td', {}, x.par.join(' x ')), h('td', {}, x.codigo), h('td', {}, x.texto)))))));
+          if (cp.pares.length) box.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item no local', 'Classes', 'Resultado', 'Regra'].map((x) => h('th', {}, x)))), h('tbody', {}, cp.pares.map((x) => h('tr', {}, h('td', {}, x.com), h('td', {}, x.par.join(' x ')), h('td', {}, x.codigo === 'R' ? 'Proibido' : x.codigo === 'G' ? 'Permitido' : x.codigo ? 'Restrição ' + x.codigo : '—'), h('td', {}, x.texto + (x.aprox ? ' (classe do item aproximada: confirme)' : ''))))))));
           if (cp.grupos.length) box.appendChild(h('ul', {}, cp.grupos.map((g) => h('li', {}, g.com + ': ' + g.a + ' x ' + g.b + '. ' + g.efeito))));
           w.appendChild(box);
           w.appendChild(h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: () => { p.comp.localOk = cp.status === 'conflito' ? 'conflito' : 'sim'; U.salvarJa(p); api.rerender(); } }, 'Usar resultado da análise')));
@@ -432,8 +441,13 @@
         const sg = E.sugestoes(p);
         if (sg.controlesArm.length) w.appendChild(h('div', { class: 'sug' }, h('b', {}, 'Sugeridos pela FDS e pela classe: '), sg.controlesArm.map((k) => (T.CONTROLES_ARM.find((c) => c[0] === k) || [0, k])[1]).join('; '), ' ', h('button', { class: 'btn sm sec', onclick: () => { p.comp.controles = sg.controlesArm.slice(); U.salvarJa(p); api.rerender(); } }, 'Aplicar')));
         w.appendChild(U.checks(p, 'comp.controles', T.CONTROLES_ARM.map((c) => ({ v: c[0], label: c[1] })), { exclusive: 'nenhum' }));
+        const lims = O.NBR17160.LIMITES.filter((l) => (p.ghs.h || []).some((c) => l.re.test(c)));
+        if (lims.length) {
+          const tab = h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Perigo', 'Limite fora de armazém', 'Acima do limite'].map((x) => h('th', {}, x)))), h('tbody', {}, lims.map((l) => h('tr', {}, h('td', {}, l.rotulo), h('td', {}, l.limite), h('td', {}, l.acima)))));
+          w.appendChild(h('div', { class: 'sug' }, h('h4', {}, 'Quantidades-limite da NBR 17160 (Tabela 1)'), h('p', { class: 'small' }, 'Quantidade agregada permitida fora de armazéns e seções da norma que passam a valer acima do limite.'), tab, h('p', { class: 'small' }, 'Também vale: ' + O.NBR17160.LIMITE_GERAL.rotulo + ', ' + O.NBR17160.LIMITE_GERAL.limite + '.')));
+        }
         w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'comp.limite', { label: 'Quantidade máxima armazenada', ph: 'Ex.: 200 L' }), U.input(p, 'comp.tempMax', { label: 'Temperatura máxima de armazenamento (Seção 7)', ph: 'Ex.: 35 °C' })));
-        w.appendChild(U.alert('', 'Base', 'Matriz de segregação (Anexo da NR-29 e Código IMDG) mais os grupos de reatividade da Seção 10. O código "X" exige verificação específica na FDS. Confirme cada par na tabela 7.2.4 do Código IMDG antes de decisão formal.'));
+        w.appendChild(U.alert('', 'Base', 'ABNT NBR 17160:2024: classe de armazenamento (Anexo D) e matriz de incompatibilidade (Figura 1), mais os grupos de reatividade da Seção 10 da FDS. A norma lembra que a classificação não é a única base: avalie combustão, gases, corrosivos e instáveis formados.'));
         return w;
       },
       validar: (p) => {

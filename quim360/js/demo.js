@@ -17,11 +17,11 @@
     criar() {
       const pq = S.novoLocal('Contêiner de PQ 01 (demonstração)', 'Contêiner de PQ');
       pq.espacoM = 0; pq.descricao = 'Contêiner com bacia de contenção e ventilação natural.';
-      pq.itens = [{ nome: 'Ácido clorídrico 33 % (demonstração)', classe: '8', subrisco: '', grupos: ['acido'], incompativeis: ['base', 'cianeto_sulfeto', 'hipoclorito', 'metais'] }];
+      pq.itens = [{ nome: 'Ácido clorídrico 33 % (demonstração)', classeArm: '8B', grupos: ['acido'], incompativeis: ['base', 'cianeto_sulfeto', 'hipoclorito', 'metais'] }];
       S.salvarLocal(pq);
       const of = S.novoLocal('Oficina mecânica (demonstração)', 'Oficina');
       of.espacoM = 8; of.descricao = 'Armário de inflamáveis aterrado e área ventilada.';
-      of.itens = [{ nome: 'Tinta alquídica (demonstração)', classe: '3', subrisco: '', grupos: ['organico_combustivel'], incompativeis: ['oxidante'] }];
+      of.itens = [{ nome: 'Tinta alquídica (demonstração)', classeArm: '3', grupos: ['organico_combustivel'], incompativeis: ['oxidante'] }];
       S.salvarLocal(of);
 
       const a = produtoBase('solvente', of.id);

@@ -185,6 +185,11 @@ input:focus,select:focus,textarea:focus,.btn:focus-visible,.opt:focus-within{out
 @media(max-width:860px){.cv-hero{grid-template-columns:1fr;padding:32px 16px 24px}.cv-hero h1{font-size:32px}.cv-logo{order:-1}.cv-nav{padding:12px 16px}.cv-nav a{display:none}.cv-sec{padding:32px 16px 0}.cv-stats>div{border-right:0;border-bottom:1px solid var(--line)}}
 .brand img{border-radius:8px}
 
+/* matriz NBR 17160 */
+.mx.nm td{width:30px;height:28px;font-size:11px;padding:0}
+.mx.nm td.r{background:#b91c1c;color:#fff}.mx.nm td.g{background:#4d7c0f;color:#fff}.mx.nm td.y{background:#facc15;color:#1f2937}
+.code.nm-r{background:#b91c1c}.code.nm-g{background:#4d7c0f}.code.nm-y{background:#facc15;color:#1f2937;font-size:11px}
+
 </style>
 <style id="doc-css"></style>
 </head>
@@ -23073,13 +23078,14 @@ var vfs = {
   ];
 
   const BASE_LEGAL = [
+    { sigla: 'NBR 17160', titulo: 'ABNT NBR 17160:2024 Armazenamento seguro de produtos químicos', uso: 'Armazenamento de produtos químicos perigosos embalados: 25 classes de armazenamento (Anexo D), matriz de incompatibilidade para armazenamento conjunto (Figura 1), restrições por quantidade (Tabelas 3 e 4) e quantidades-limite (Tabela 1). Exemplar de uso licenciado: não redistribuir.', onde: 'Compatibilidade e segregação, classe de armazenamento, matriz' },
     { sigla: 'ANTT 5.947/21', titulo: 'Resolução ANTT nº 5.947/2021', uso: 'Transporte terrestre de produtos perigosos: número ONU, classe, grupo de embalagem, número de risco, ficha de emergência e envelope. Atualizada pelas instruções complementares.', onde: 'Classificação de transporte, ficha de emergência, envelope' },
-    { sigla: 'IMDG', titulo: 'Código Marítimo Internacional de Mercadorias Perigosas (IMO)', uso: 'Classes, grupos de embalagem, poluente marinho (marine pollutant), EmS e segregação em operação portuária e marítima.', onde: 'Classificação IMDG (etapa 10), matriz de segregação' },
+    { sigla: 'IMDG', titulo: 'Código Marítimo Internacional de Mercadorias Perigosas (IMO)', uso: 'Classes, grupos de embalagem, poluente marinho (marine pollutant), EmS e segregação em operação portuária e marítima.', onde: 'Classificação IMDG (etapa 10), transporte e carga portuária' },
     { sigla: 'NR-20', titulo: 'NR-20 Segurança e Saúde no Trabalho com Inflamáveis e Combustíveis', uso: 'Líquidos inflamáveis (ponto de fulgor até 60 °C), combustíveis (acima de 60 °C até 93 °C) e gases inflamáveis: classificação de instalação, áreas classificadas, prontuário e controle de ignição.', onde: 'Armazenamento e alerta NR-20 no relatório' },
     { sigla: 'ABIQUIM', titulo: 'Manual para Atendimento de Emergências com Produtos Perigosos (ABIQUIM)', uso: 'Estrutura de ação de emergência por número ONU: isolamento, fogo, derramamento, primeiros socorros. Pró-Química 0800 11 8270.', onde: 'Ficha de emergência' },
     { sigla: 'NBR 14725', titulo: 'ABNT NBR 14725:2023 (partes 1 a 4)', uso: 'Terminologia, classificação, rotulagem e FDS de 16 seções.', onde: 'Validação da FDS, rotulagem' },
     { sigla: 'GHS / ONU', titulo: 'Sistema Globalmente Harmonizado (Livro Púrpura)', uso: 'Categorias de perigo, pictogramas, palavras de advertência e frases H e P.', onde: 'Triagem CMR/PFC, rotulagem' },
-    { sigla: 'NR-29', titulo: 'NR-29 Segurança e Saúde no Trabalho Portuário', uso: 'Operação portuária com cargas perigosas e segregação (Anexo, base IMDG).', onde: 'Matriz de segregação' },
+    { sigla: 'NR-29', titulo: 'NR-29 Segurança e Saúde no Trabalho Portuário', uso: 'Operação portuária com cargas perigosas e segregação (Anexo, base IMDG).', onde: 'Matriz NR-29 e IMDG (carga portuária)' },
     { sigla: 'NBR 7500', titulo: 'ABNT NBR 7500', uso: 'Símbolos de risco e manuseio para transporte e armazenamento.', onde: 'Rótulos de risco e painel de segurança' },
     { sigla: 'NBR 7503', titulo: 'ABNT NBR 7503', uso: 'Ficha de emergência e envelope para o transporte terrestre de produtos perigosos.', onde: 'Ficha de emergência e envelope' },
     { sigla: 'NR-26', titulo: 'NR-26 Sinalização de Segurança', uso: 'Rotulagem preventiva e FDS no local de trabalho conforme GHS.', onde: 'Controles de armazenamento' },
@@ -23095,6 +23101,140 @@ var vfs = {
       if (!MATRIX[a] || !MATRIX[b]) return null;
       return MATRIX[a][b];
     },
+  };
+})(window.O360 = window.O360 || {});
+
+</script>
+<script>
+/* ABNT NBR 17160:2024 | Armazenamento seguro de produtos químicos (embalados e fracionados).
+   Conteúdo transcrito da Tabela 2, da Figura 1 (matriz de incompatibilidade), das observações da Figura 1,
+   das Tabelas 3 e 4, do Anexo D (classificação) e da Tabela 1 (quantidades-limite). Os textos das observações
+   estão resumidos. Uso interno do licenciado da norma: não redistribuir. A norma vigente prevalece sobre este resumo. */
+(function (O) {
+  // 25 classes de armazenamento (Tabela 2). A norma usa 24 na matriz: a classe 9 (não perigoso) não consta nela.
+  const CLASSES = [
+    ['1', 'Substâncias explosivas', 'Subclasses 1.1 a 1.4, H200 a H205 ou rótulo classe 1'],
+    ['2A', 'Gases (exceto aerossol)', 'UN1051, UN1052 ou H220, H221, H270, H280, H281'],
+    ['2B', 'Aerossol ou aplicadores de aerossol', 'UN1057, UN1950 ou H222, H223'],
+    ['3', 'Líquidos inflamáveis', 'H224, H225, H226'],
+    ['4.1A', 'Outros produtos potencialmente explosivos', 'Explosivos dos GE I e II ou H240, H241'],
+    ['4.1B', 'Sólidos inflamáveis', 'H228'],
+    ['4.2', 'Pirofóricas ou sujeitas a autoaquecimento', 'H250, H251, H252'],
+    ['4.3', 'Emitem gases inflamáveis em contato com a água', 'H260, H261'],
+    ['5.1A', 'Substâncias altamente oxidantes', 'H271'],
+    ['5.1B', 'Substâncias oxidantes', 'H272'],
+    ['5.1C', 'Nitrato de amônio ou misturas com nitrato de amônio', 'UN1942, UN2067, UN2071, UN2426, UN3375'],
+    ['5.2', 'Peróxidos orgânicos ou autorreagentes', 'H242'],
+    ['6.1A', 'Toxicidade aguda GE I e II, combustíveis', 'H300, H310, H330'],
+    ['6.1B', 'Toxicidade aguda GE I e II, não combustíveis', 'H300, H310, H330'],
+    ['6.1C', 'Toxicidade aguda GE III ou efeitos crônicos, combustíveis', 'H301, H311, H331, H340, H350, H360, H370, H372'],
+    ['6.1D', 'Toxicidade aguda GE III ou efeitos crônicos, não combustíveis', 'H301, H311, H331, H340, H350, H360, H370, H372'],
+    ['6.2', 'Substâncias infectantes', 'Subclasse 6.2'],
+    ['7', 'Material radioativo', 'Classe 7'],
+    ['8A', 'Corrosivas, combustíveis', 'H290, H314'],
+    ['8B', 'Corrosivas, não combustíveis', 'H290, H314'],
+    ['9', 'Materiais não perigosos (transporte e GHS)', 'sem classificação'],
+    ['10', 'Líquidos combustíveis não enquadrados em outra classe', 'demais perigos e frases H'],
+    ['11', 'Sólidos combustíveis não enquadrados em outra classe', 'demais perigos e frases H'],
+    ['12', 'Líquidos não combustíveis não enquadrados em outra classe', 'demais perigos e frases H'],
+    ['13', 'Sólidos não combustíveis não enquadrados em outra classe', 'demais perigos e frases H'],
+  ];
+  // ordem das linhas da matriz (Figura 1), de cima para baixo
+  const ORDEM = ['1', '2A', '2B', '3', '4.1A', '4.1B', '4.2', '4.3', '5.1A', '5.1B', '5.1C', '5.2', '6.1A', '6.1B', '6.1C', '6.1D', '6.2', '7', '8A', '8B', '10', '11', '12', '13'];
+  // R = armazenamento conjunto proibido | G = permitido | 1 a 8 = permitido com restrição (ver OBS)
+  const LINHAS = {
+    '1': '1,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R',
+    '2A': 'R,3,2,R,R,R,R,R,R,R,1,R,R,R,R,R,R,R,2,G,R,2,G,G',
+    '2B': 'R,2,G,G,R,R,R,R,R,R,1,R,G,G,G,G,R,R,G,G,G,G,G,G',
+    '3': 'R,R,G,G,R,R,R,R,R,4,R,R,G,R,G,6,R,R,G,G,G,5,G,G',
+    '4.1A': 'R,R,R,R,1,1,R,R,R,R,R,1,R,R,R,R,R,R,1,1,1,1,1,1',
+    '4.1B': 'R,R,R,R,1,G,6,6,R,4,R,1,4,R,G,6,R,R,G,G,G,G,G,G',
+    '4.2': 'R,R,R,R,R,6,G,6,R,R,R,R,R,R,6,6,R,R,6,6,6,6,G,G',
+    '4.3': 'R,R,R,R,R,6,6,G,R,R,R,R,R,R,6,6,R,R,6,6,6,6,6,G',
+    '5.1A': 'R,R,R,R,R,R,R,R,G,G,R,R,R,R,R,R,R,R,R,R,R,R,G,G',
+    '5.1B': 'R,R,R,4,R,4,R,R,G,G,1,R,4,4,6,6,R,R,7,G,7,7,G,G',
+    '5.1C': 'R,1,1,R,R,R,R,R,R,1,1,R,R,R,R,R,R,R,1,1,1,1,1,1',
+    '5.2': 'R,R,R,R,1,1,R,R,R,R,R,G,R,R,R,R,R,R,R,R,1,1,G,G',
+    '6.1A': 'R,R,G,G,R,4,R,R,R,4,R,R,G,G,G,G,R,R,G,G,G,5,G,G',
+    '6.1B': 'R,R,G,R,R,R,R,R,R,4,R,R,G,G,G,G,R,R,G,G,G,5,G,G',
+    '6.1C': 'R,R,G,G,R,G,6,6,R,6,R,R,G,G,G,G,R,R,G,G,G,G,G,G',
+    '6.1D': 'R,R,G,6,R,6,6,6,R,6,R,R,G,G,G,G,R,R,G,G,G,G,G,G',
+    '6.2': 'R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,G,R,R,R,R,R,R,R',
+    '7': 'R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,1,R,R,R,R,R,R',
+    '8A': 'R,2,G,G,1,G,6,6,R,7,1,R,G,G,G,G,R,R,8,8,G,G,G,G',
+    '8B': 'R,G,G,G,1,G,6,6,R,G,1,R,G,G,G,G,R,R,8,8,G,G,G,G',
+    '10': 'R,R,G,G,1,G,6,6,R,7,1,1,G,G,G,G,R,R,G,G,G,G,G,G',
+    '11': 'R,2,G,5,1,G,6,6,R,7,1,1,5,5,G,G,R,R,G,G,G,G,G,G',
+    '12': 'R,G,G,G,1,G,G,6,G,G,1,G,G,G,G,G,R,R,G,G,G,G,G,G',
+    '13': 'R,G,G,G,1,G,G,G,G,G,1,G,G,G,G,G,R,R,G,G,G,G,G,G',
+  };
+  const MATRIZ = {};
+  ORDEM.forEach((a) => { const v = LINHAS[a].split(','); MATRIZ[a] = {}; ORDEM.forEach((b, j) => { MATRIZ[a][b] = v[j]; }); });
+
+  const OBS = {
+    1: 'Um responsável técnico deve avaliar e autorizar formalmente o armazenamento conjunto. Verificar regulamentação específica.',
+    2: 'Gases pressurizados: no máximo 50 recipientes (no máximo 25 de gás inflamável, oxidante ou tóxico), separados por parede de material não combustível com pelo menos 2 m de altura, mantendo 5 m entre a parede e os materiais combustíveis.',
+    3: 'Cilindros de gás pressurizado no mesmo armazém: até 150 cilindros ou 15 contêineres pressurizados de gases inflamáveis, oxidantes ou tóxicos (H331); gases inertes em qualquer quantidade; mais de 15 cilindros de gases altamente tóxicos (H330) em local separado; 2 m entre inflamáveis e oxidantes; sem restrição ao ar livre.',
+    4: 'Permitido conforme a quantidade total: Tabela 3 (classes 3, 5.1B, 6.1A e 6.1B) ou Tabela 4 (classes 4.1B e 6.1A).',
+    5: 'Materiais que propagam incêndio com rapidez (papel, têxteis, madeira, aparas, feno, palha, papelão) não podem ficar na área de armazenamento, salvo se fizerem parte da unitização da carga de inflamáveis.',
+    6: 'Só podem ficar juntos se a interação indesejada não originar um novo risco.',
+    7: 'Oxidantes com materiais combustíveis: até 1 t no total sem limitação; acima de 1 t, consultar responsável técnico. Seguir também a observação 5.',
+    8: 'Só é permitido com segregação por distanciamento mínimo de 5 m entre os corrosivos ácidos e os corrosivos básicos (alcalinos), combustíveis ou não.',
+  };
+
+  const TABELA3 = { titulo: 'Tabela 3 | Armazenamento conjunto entre as classes 3, 5.1B, 6.1A e 6.1B', linhas: [
+    ['Até 1 t', 'Sem restrições.'],
+    ['Até 20 t', 'Sem restrições se o armazém tiver sistema automático de extinção de incêndio, ou sistema automático de alarme de incêndio com extinção não automática e brigada de incêndio no local.'],
+  ] };
+  const TABELA4 = { titulo: 'Tabela 4 | Armazenamento conjunto entre as classes 4.1B e 6.1A', linhas: [
+    ['Até 1 t', 'Sem restrições.'],
+    ['Até 20 t', 'Sem restrições se, em armazéns, houver sistema automático de alarme de incêndio. Ao ar livre: detecção e alarme com monitoramento de hora em hora e evidência de funcionamento do sistema automático.'],
+    ['Até 50 t', 'Sem restrições se houver alarme automático de incêndio e brigada que chegue ao local em até 10 min.'],
+    ['Até 100 t', 'Sem restrições se houver extinção automática, ou alarme automático com extinção não automática e brigada no local.'],
+  ] };
+
+  // regras gerais do armazenamento conjunto (9.1.1.3 e 9.1.1.4)
+  const REGRAS = [
+    'Cada produto recebe uma única classe de armazenamento, definida pelo primeiro perigo aplicável no fluxograma do Anexo D. Os riscos principal e subsidiário do transporte são considerados.',
+    'A matriz não basta sozinha: a incompatibilidade também depende de combustão, calor, gases inflamáveis, tóxicos ou asfixiantes, substâncias corrosivas ou instáveis formadas (9.1.1.1).',
+    'Corrosivos ácidos e básicos (alcalinos), combustíveis ou não: segregação física ou distância mínima de 5 m.',
+    'Avaliar a reatividade do produto com a água, inclusive a água de extinção de incêndio.',
+    'Mesmo setor de armazém só com agentes extintores adequados a todos os produtos e com condições de armazenamento iguais ou semelhantes (temperatura, ventilação).',
+    'Alimentos, cosméticos, medicamentos e produtos de consumo humano ou animal: avaliar conforme regulamentação específica.',
+    'Aerossóis: áreas separadas e protegidas por grades, para evitar a projeção das embalagens pelo armazém.',
+    'Barreiras de produtos não combustíveis entre incompatíveis devem ser das classes 12 e 13.',
+  ];
+
+  // Tabela 1: quantidade-limite (kg) permitida fora de armazéns e seções aplicáveis acima do limite
+  const LIMITES = [
+    { re: /^H(300|301|310|311|330|331)$/, rotulo: 'Toxicidade aguda, categorias 1 a 3', limite: '50 kg', acima: 'Seções 7 e 10 acima de 200 kg' },
+    { re: /^H(340|350|360)/, rotulo: 'Mutagênico, cancerígeno ou tóxico à reprodução, categoria 1A ou 1B', limite: '50 kg', acima: 'Seção 7 acima de 200 kg' },
+    { re: /^H(370|372)$/, rotulo: 'Toxicidade para órgãos-alvo, categoria 1', limite: '50 kg', acima: 'Seção 7 acima de 200 kg' },
+    { re: /^H(224|225)$/, rotulo: 'Líquido inflamável, categoria 1 ou 2', limite: '20 kg (no máximo 10 kg extremamente inflamável)', acima: 'Seções 7, 8 e 14 acima de 200 kg; Anexos B, C e E' },
+    { re: /^H226$/, rotulo: 'Líquido inflamável, categoria 3', limite: '100 kg', acima: 'Seções 7, 8 e 14 acima de 1 000 kg; Anexos B, C e E' },
+    { re: /^H228$/, rotulo: 'Sólido inflamável', limite: 'sem quantidade indicada na tabela', acima: 'Seção 8 acima de 200 kg' },
+    { re: /^H250$/, rotulo: 'Pirofórico', limite: 'sem quantidade indicada na tabela', acima: 'Seções 7 e 8 acima de 200 kg' },
+    { re: /^H(251|252)$/, rotulo: 'Sujeito a autoaquecimento', limite: 'sem quantidade indicada na tabela', acima: 'Seção 8 acima de 200 kg' },
+    { re: /^H242$/, rotulo: 'Autorreativo', limite: 'sem quantidade indicada na tabela', acima: 'Seção 8 acima de 200 kg' },
+    { re: /^H271$/, rotulo: 'Oxidante líquido, categoria 1, 2 ou 3 (H271)', limite: '1 kg', acima: 'Seções 7 e 11 acima de 5 kg' },
+    { re: /^H272$/, rotulo: 'Oxidante sólido (H272)', limite: '50 kg', acima: 'Seções 7 e 11 acima de 200 kg' },
+    { re: /^H(280|281)$/, rotulo: 'Gás sob pressão', limite: '2,5 L', acima: 'Seção 12 acima de 2,5 L' },
+    { re: /^H(220|221)$/, rotulo: 'Gás inflamável / aerossol inflamável', limite: '2,5 L (gás) ou 20 kg (aerossol)', acima: 'Seções 7, 8 e 12; Seção 13 e Anexo B para aerossóis' },
+    { re: /^H(222|223)$/, rotulo: 'Aerossol', limite: '20 kg', acima: 'Seção 8 e Seção 13 acima de 200 kg; Anexo B' },
+    { re: /^H270$/, rotulo: 'Gás oxidante', limite: '2,5 L', acima: 'Seção 7 acima de 200 kg e Seção 12 acima de 2,5 L' },
+    { re: /^H(260|261)$/, rotulo: 'Emite gás inflamável em contato com a água', limite: '200 kg', acima: 'Seção 8 acima de 200 kg' },
+    { re: /^H227$/, rotulo: 'Líquido inflamável, categoria 4 (classe de armazenamento 10)', limite: '1 000 kg', acima: 'Seção 8 acima de 1 000 kg' },
+    { re: /^H(290|314)$/, rotulo: 'Corrosivo', limite: '1 000 kg', acima: 'Seção 7 acima de 200 kg' },
+  ];
+  const LIMITE_GERAL = { rotulo: 'Produtos perigosos não especificados', limite: '1 000 kg', acima: 'Seção 6.3 acima de 1 000 kg; armazenamento conjunto (Seção 9) acima de 200 kg' };
+
+  const BY = {}; CLASSES.forEach((c) => { BY[c[0]] = { id: c[0], nome: c[1], criterio: c[2] }; });
+
+  O.NBR17160 = {
+    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, BY,
+    nome(id) { return BY[id] ? BY[id].nome : ''; },
+    // 'R' | 'G' | '1'..'8' | null (classe fora da matriz, por exemplo 9)
+    par(a, b) { return MATRIZ[a] && MATRIZ[a][b] !== undefined ? MATRIZ[a][b] : null; },
   };
 })(window.O360 = window.O360 || {});
 
@@ -23235,7 +23375,7 @@ var vfs = {
       amb: { risco: null, contencao: '', residuos: '', derramamento: '' },
       hig: { tlv: null, parecerExigidoOk: false, pgr: '', dosimetria: null, justificativa: '', tlvAgentes: '' },
       imdg: { onu: '', nome: '', classe: '', subrisco: '', pg: '', numeroRisco: '', ems: '', poluente: false, pontoFulgor: '', incompativelOperacao: false, naoRegulado: false },
-      comp: { incompDeclaradas: null, grupos: [], incompativeis: [], incompTexto: '', localOk: '', solucao: '', controles: [], limite: '', tempMax: '', observacoes: '' },
+      comp: { classeArm: '', combustivel: null, estado: '', incompDeclaradas: null, grupos: [], incompativeis: [], incompTexto: '', localOk: '', solucao: '', controles: [], limite: '', tempMax: '', observacoes: '' },
       par: { tem: null, descricao: '', pgrIndicador: '', pgrPrazo: '', pgrResponsavel: '' },
       dec: { valor: '', justificativa: '', data: '', numero: '', sharepoint: '' },
       trein: { gerar: null },
@@ -23308,101 +23448,142 @@ var vfs = {
     return r;
   }
 
-  // ---------- Compatibilidade ----------
+  // ---------- Compatibilidade (ABNT NBR 17160:2024) ----------
   function classesDoProduto(p) {
     const c = [];
     if (p.imdg.classe) c.push(p.imdg.classe);
     if (p.imdg.subrisco) p.imdg.subrisco.split(/[,;\s]+/).filter(Boolean).forEach((s) => c.push(s));
     return c;
   }
+  const N = () => O.NBR17160;
 
-  const rank = { '4': 4, '3': 3, '2': 2, '1': 1, 'X': 0.5, '-': 0 };
-  function maiorCodigo(clsA, clsB) {
-    let best = null; let par = null;
-    clsA.forEach((a) => clsB.forEach((b) => {
-      let code = T.seg(a, b);
-      if (code == null) return;
-      if (a === b) code = '-';
-      if (best == null || rank[code] > rank[best]) { best = code; par = [a, b]; }
-    }));
-    return { codigo: best, par };
+  // "combustível" no sentido da NBR 17160 (9.1.1.3 h): tem ponto de fulgor ou comprovadamente queima
+  function combustivel(p) {
+    if (typeof p.comp.combustivel === 'boolean') return { valor: p.comp.combustivel, incerto: false, origem: 'definido pelo analista' };
+    const h = p.ghs.h || [];
+    const pf = p.imdg.pontoFulgor === '' || p.imdg.pontoFulgor == null ? null : parseFloat(p.imdg.pontoFulgor);
+    if (h.some((c) => /^H22[0-8]$/.test(c))) return { valor: true, incerto: false, origem: 'frase H de inflamabilidade' };
+    if (pf != null && !isNaN(pf)) return { valor: true, incerto: false, origem: 'ponto de fulgor de ' + pf + ' °C' };
+    const ph = parseFloat(String(p.fds.ph || '').replace(',', '.'));
+    if (!isNaN(ph)) return { valor: false, incerto: false, origem: 'produto aquoso (pH informado) sem ponto de fulgor' };
+    return { valor: true, incerto: true, origem: 'informação ausente: assumido combustível por segurança' };
   }
 
+  // Anexo D | fluxograma de atribuição da classe de armazenamento: vale o primeiro perigo aplicável
+  function classeArm(p) {
+    if (p.comp.classeArm) return { id: p.comp.classeArm, motivo: 'definida pelo analista', manual: true };
+    const h = p.ghs.h || [];
+    const has = (re) => h.some((c) => re.test(c));
+    const cl = classesDoProduto(p);
+    const onu = String(p.imdg.onu || '');
+    const pg = p.imdg.pg;
+    const comb = combustivel(p).valor;
+    const R = (id, motivo) => ({ id, motivo });
+    if (has(/^H20[0-5]$/) || cl.includes('1')) return R('1', 'explosivo (H200 a H205 ou classe 1)');
+    if (cl.includes('6.2')) return R('6.2', 'substância infectante');
+    if (cl.includes('7')) return R('7', 'material radioativo');
+    if (has(/^H22[23]$/) || ['1950', '1057'].includes(onu)) return R('2B', 'aerossol (H222, H223 ou ONU 1950/1057)');
+    if (has(/^H(220|221|270|280|281)$/) || cl.some((c) => /^2\./.test(c)) || ['1051', '1052'].includes(onu)) return R('2A', 'gás (H220, H221, H270, H280, H281 ou classe 2)');
+    if (has(/^H24[01]$/)) return R('4.1A', 'potencialmente explosivo (H240, H241)');
+    if (has(/^H242$/) || cl.includes('5.2')) return R('5.2', 'peróxido orgânico ou autorreativo (H242 ou classe 5.2)');
+    if (has(/^H25[012]$/) || cl.includes('4.2')) return R('4.2', 'pirofórico ou autoaquecimento (H250 a H252 ou classe 4.2)');
+    if (has(/^H26[01]$/) || cl.includes('4.3')) return R('4.3', 'emite gás inflamável com água (H260, H261 ou classe 4.3)');
+    if (has(/^H228$/) || cl.includes('4.1')) return R('4.1B', 'sólido inflamável (H228 ou classe 4.1)');
+    if (['1942', '2067', '2071', '2426', '3375'].includes(onu)) return R('5.1C', 'nitrato de amônio (ONU ' + onu + ')');
+    if (has(/^H271$/) || (cl.includes('5.1') && pg === 'I')) return R('5.1A', 'fortemente oxidante (H271 ou classe 5.1, grupo I)');
+    if (has(/^H272$/) || cl.includes('5.1')) return R('5.1B', 'oxidante (H272 ou classe 5.1)');
+    if (has(/^H22[456]$/) || cl.includes('3')) return R('3', 'líquido inflamável (H224 a H226 ou classe 3)');
+    if (has(/^H(300|310|330)$/) || (cl.includes('6.1') && (pg === 'I' || pg === 'II' || !pg && !has(/^H(301|311|331)$/)))) return R(comb ? '6.1A' : '6.1B', 'toxicidade aguda GE I ou II, ' + (comb ? 'combustível' : 'não combustível'));
+    if (has(/^H(301|311|331|340|350|360|370|372)/) || cl.includes('6.1')) return R(comb ? '6.1C' : '6.1D', 'toxicidade aguda GE III ou efeito crônico, ' + (comb ? 'combustível' : 'não combustível'));
+    const soMetais = has(/^H290$/) && !has(/^H314$/);
+    if ((has(/^H314$/) || cl.includes('8')) && !soMetais) return R(comb ? '8A' : '8B', 'corrosivo, ' + (comb ? 'combustível' : 'não combustível'));
+    // classes 10 a 13: opcionais, para o que não cai em nenhuma outra
+    const semPerigo = !h.length && !cl.length;
+    if (semPerigo && (p.imdg.naoRegulado || !p.imdg.onu)) return R('9', 'sem perigo GHS nem de transporte');
+    const solido = p.comp.estado === 'solido';
+    if (has(/^H227$/)) return R('10', 'líquido combustível (H227)');
+    return R(solido ? (comb ? '11' : '13') : (comb ? '10' : '12'), (solido ? 'sólido' : 'líquido') + (comb ? ' combustível' : ' não combustível') + ' sem classe de perigo própria');
+  }
+
+  // converte o cadastro antigo de item de local (classe de transporte) em classe de armazenamento aproximada
+  const LEGADO = { '1': '1', '2.1': '2A', '2.2': '2A', '2.3': '2A', '3': '3', '4.1': '4.1B', '4.2': '4.2', '4.3': '4.3', '5.1': '5.1B', '5.2': '5.2', '6': '6.1B', '6.1': '6.1B', '8': '8B', '8a': '8B', '8b': '8B', '9': '9' };
+  function armDoItem(i) { return i.classeArm || LEGADO[String(i.classe)] || ''; }
+
   function itensDoLocal(local, produtos, excluirId) {
-    const itens = (local.itens || []).map((i) => ({ nome: i.nome, classes: [i.classe, ...(i.subrisco ? i.subrisco.split(/[,;\s]+/).filter(Boolean) : [])].filter(Boolean), grupos: i.grupos || [], incompativeis: i.incompativeis || [], origem: 'manual' }));
+    const itens = (local.itens || []).map((i) => ({ nome: i.nome, arm: armDoItem(i), aprox: !i.classeArm, grupos: i.grupos || [], incompativeis: i.incompativeis || [], origem: 'manual' }));
     (produtos || []).forEach((q) => {
       if (q.id === excluirId) return;
       if (q.ctx && q.ctx.localId === local.id && ['homologado', 'condicionado'].includes(q.status)) {
-        itens.push({ nome: q.nome, classes: classesDoProduto(q), grupos: q.comp.grupos || [], incompativeis: q.comp.incompativeis || [], origem: 'homologado', pid: q.id });
+        itens.push({ nome: q.nome, arm: classeArm(q).id, grupos: q.comp.grupos || [], incompativeis: q.comp.incompativeis || [], origem: 'homologado', pid: q.id });
       }
     });
     return itens;
   }
 
+  // avalia um par de itens {nome, arm, grupos, incompativeis}
+  function avaliaPar(A, B) {
+    const nomeG = (k) => (T.RG.find((x) => x[0] === k) || [k, k])[1];
+    const code = N().par(A.arm, B.arm);
+    const ambos8 = /^8/.test(A.arm) && /^8/.test(B.arm);
+    const motivos = [];
+    const ga = A.grupos || [], gb = B.grupos || [];
+    T.RG_RULES.forEach(([x, y, ef]) => {
+      if ((ga.includes(x) && gb.includes(y)) || (ga.includes(y) && gb.includes(x))) {
+        // ácido x base entre corrosivos: a NBR 17160 permite com 5 m ou segregação física (observação 8)
+        if (ambos8 && ((x === 'acido' && y === 'base') || (x === 'base' && y === 'acido'))) return;
+        motivos.push(nomeG(x) + ' x ' + nomeG(y) + ': ' + ef);
+      }
+    });
+    (A.incompativeis || []).forEach((k) => { if (gb.includes(k) && k !== 'ignicao' && !(ambos8 && (k === 'acido' || k === 'base'))) motivos.push('FDS de ' + A.nome + ' declara incompatibilidade com ' + nomeG(k)); });
+    (B.incompativeis || []).forEach((k) => { if (ga.includes(k) && k !== 'ignicao' && !(ambos8 && (k === 'acido' || k === 'base'))) motivos.push('FDS de ' + B.nome + ' declara incompatibilidade com ' + nomeG(k)); });
+    let nivel; let texto;
+    if (code === 'R') { nivel = 'incompativel'; texto = 'Armazenamento conjunto proibido (NBR 17160, Figura 1).'; }
+    else if (code === 'G') { nivel = 'livre'; texto = 'Armazenamento conjunto permitido (NBR 17160, Figura 1).'; }
+    else if (code === null) { nivel = (A.arm === '9' || B.arm === '9') ? 'livre' : 'verificar'; texto = nivel === 'livre' ? 'Produto sem perigo (classe 9): sem restrição pela matriz.' : 'Classe de armazenamento não definida: verificar.'; }
+    else { nivel = 'restricao'; texto = 'Permitido com restrição ' + code + ': ' + N().OBS[code]; }
+    if (motivos.length) { nivel = 'incompativel'; texto = (code === 'G' ? 'A matriz permite, mas há reatividade declarada. ' : '') + texto; }
+    return { codigo: code, par: [A.arm, B.arm], motivos, nivel, texto, metros: code === '8' ? 5 : null };
+  }
+
   function compatibilidade(p, local, produtos) {
-    const res = { local: local ? local.nome : '', pares: [], grupos: [], itens: 0, status: 'sem_local', exigeM: 0, mensagens: [] };
+    const res = { local: local ? local.nome : '', pares: [], grupos: [], itens: 0, status: 'sem_local', exigeM: 0, mensagens: [], classe: null };
     if (!local) return res;
-    const mine = classesDoProduto(p);
+    const ca = classeArm(p); res.classe = ca;
+    const mine = { nome: p.nome, arm: ca.id, grupos: p.comp.grupos || [], incompativeis: p.comp.incompativeis || [] };
     const itens = itensDoLocal(local, produtos, p.id);
     res.itens = itens.length;
     res.status = 'compativel';
     const espaco = Number(local.espacoM) || 0;
+    const sobe = (st) => { const ord = { compativel: 0, com_medidas: 1, conflito: 2 }; if (ord[st] > ord[res.status]) res.status = st; };
     itens.forEach((it) => {
-      if (mine.length && it.classes.length) {
-        const r = maiorCodigo(mine, it.classes);
-        if (r.codigo != null) {
-          const leg = T.SEG_LEGEND[r.codigo];
-          res.pares.push({ com: it.nome, par: r.par, codigo: r.codigo, texto: r.codigo === '-' ? 'Mesma classe: sem segregação pela matriz. Confirme a reatividade pela FDS.' : leg.nome });
-          if (r.codigo === '2' || r.codigo === '3' || r.codigo === '4') {
-            const need = leg.metros;
-            if (espaco < need) { res.status = 'conflito'; res.exigeM = Math.max(res.exigeM, need); }
-            else if (res.status !== 'conflito') res.status = 'com_medidas';
-          } else if ((r.codigo === '1' || r.codigo === 'X') && res.status === 'compativel') res.status = 'com_medidas';
-        }
-      }
-      // grupos de reatividade: pares da tabela de regras e incompatibilidades declaradas na FDS (Seção 10)
-      const nomeG = (k) => (T.RG.find((r) => r[0] === k) || [k, k])[1];
-      const mg = p.comp.grupos || [];
-      mg.forEach((ta) => (it.grupos || []).forEach((tb) => {
-        T.RG_RULES.forEach(([a, b, efeito]) => {
-          if ((a === ta && b === tb) || (a === tb && b === ta)) { res.grupos.push({ com: it.nome, a: nomeG(ta), b: nomeG(tb), efeito }); res.status = 'conflito'; }
-        });
-      }));
-      (p.comp.incompativeis || []).forEach((k) => { if ((it.grupos || []).includes(k) && k !== 'ignicao') { res.grupos.push({ com: it.nome, a: 'FDS do produto', b: nomeG(k), efeito: 'A FDS do produto declara incompatibilidade com este grupo' }); res.status = 'conflito'; } });
-      (it.incompativeis || []).forEach((k) => { if (mg.includes(k) && k !== 'ignicao') { res.grupos.push({ com: it.nome, a: 'FDS do item armazenado', b: nomeG(k), efeito: 'A FDS do item armazenado declara incompatibilidade com o grupo deste produto' }); res.status = 'conflito'; } });
+      const r = avaliaPar(mine, it);
+      res.pares.push({ com: it.nome, par: r.par, codigo: r.codigo, texto: r.texto, aprox: it.aprox });
+      if (r.nivel === 'incompativel') sobe('conflito');
+      else if (r.nivel === 'restricao') {
+        if (r.codigo === '8') { if (espaco < 5) { sobe('conflito'); res.exigeM = Math.max(res.exigeM, 5); } else sobe('com_medidas'); }
+        else sobe('com_medidas');
+      } else if (r.nivel === 'verificar') sobe('com_medidas');
+      r.motivos.forEach((m) => res.grupos.push({ com: it.nome, a: 'Reatividade', b: '', efeito: m }));
     });
-    // conflito entre os próprios grupos declarados do produto não é avaliado; incompatibilidade com o ambiente depende do local
     if (res.status === 'conflito') res.mensagens.push('Há conflito de segregação. Defina local alternativo ou segregação física (bacias separadas, armários distintos, distanciamento).');
-    if (res.status === 'com_medidas') res.mensagens.push('Compatível com medidas: separar fisicamente (bacia ou armário próprio) e verificar as Seções 7 e 10 da FDS.');
+    if (res.status === 'com_medidas') res.mensagens.push('Permitido com restrições da NBR 17160: confira as observações de cada par e as condições das Seções 7 e 10 da FDS.');
     return res;
   }
 
   // ---------- Compatibilidade entre dois produtos (aplicação prática da matriz) ----------
   function compatPar(a, b) {
-    const ca = classesDoProduto(a), cb = classesDoProduto(b);
-    const r = maiorCodigo(ca, cb);
-    const nomeG = (k) => (T.RG.find((x) => x[0] === k) || [k, k])[1];
-    const motivos = [];
-    const ga = a.comp.grupos || [], gb = b.comp.grupos || [];
-    T.RG_RULES.forEach(([x, y, ef]) => { if ((ga.includes(x) && gb.includes(y)) || (ga.includes(y) && gb.includes(x))) motivos.push(nomeG(x) + ' x ' + nomeG(y) + ': ' + ef); });
-    (a.comp.incompativeis || []).forEach((k) => { if (gb.includes(k) && k !== 'ignicao') motivos.push('FDS de ' + a.nome + ' declara incompatibilidade com ' + nomeG(k)); });
-    (b.comp.incompativeis || []).forEach((k) => { if (ga.includes(k) && k !== 'ignicao') motivos.push('FDS de ' + b.nome + ' declara incompatibilidade com ' + nomeG(k)); });
-    let nivel = 'livre';
-    if (motivos.length) nivel = 'incompativel';
-    else if (['2', '3', '4'].includes(r.codigo)) nivel = 'segregar';
-    else if (r.codigo === '1') nivel = 'longe';
-    else if (r.codigo === 'X' || r.codigo == null) nivel = 'verificar';
-    const metros = r.codigo && T.SEG_LEGEND[r.codigo] ? T.SEG_LEGEND[r.codigo].metros : null;
+    const A = { nome: a.nome, arm: classeArm(a).id, grupos: a.comp.grupos || [], incompativeis: a.comp.incompativeis || [] };
+    const B = { nome: b.nome, arm: classeArm(b).id, grupos: b.comp.grupos || [], incompativeis: b.comp.incompativeis || [] };
+    const r = avaliaPar(A, B);
     const acao = {
-      incompativel: 'Não armazenar no mesmo local nem na mesma bacia de contenção.',
-      segregar: 'Armazenar separados' + (metros ? ' (mínimo ' + metros + ' m) ' : ' ') + 'e sem remonte.',
-      longe: 'Pode ocupar a mesma área com bacias ou armários distintos.',
-      verificar: 'Sem regra geral na matriz: verificar as Seções 7 e 10 das duas FDS.',
-      livre: 'Pode compartilhar o local. Confirme a reatividade nas FDS.',
-    }[nivel];
-    return { codigo: r.codigo, par: r.par, motivos, nivel, metros, acao };
+      incompativel: 'Não armazenar no mesmo setor de armazém, contêiner, armário ou bacia de contenção.',
+      restricao: r.codigo ? 'Permitido com restrição ' + r.codigo + '. ' + N().OBS[r.codigo] : 'Permitido com restrições.',
+      verificar: 'Classe de armazenamento não definida: verificar as Seções 7 e 10 das duas FDS.',
+      livre: 'Pode compartilhar o setor de armazém. Confirme a reatividade nas FDS e o disposto em 9.1.1.4 da norma.',
+    }[r.nivel];
+    return { codigo: r.codigo, par: r.par, motivos: r.motivos, nivel: r.nivel, metros: r.metros, acao };
   }
-  const NIVEL = { incompativel: 'Incompatível', segregar: 'Segregar', longe: 'Longe de', verificar: 'Verificar', livre: 'Compatível' };
+  const NIVEL = { incompativel: 'Proibido', restricao: 'Com restrição', verificar: 'Verificar', livre: 'Permitido' };
   function homologados(produtos) { return (produtos || []).filter((x) => ['homologado', 'condicionado'].includes(x.status)); }
 
   // ---------- Sugestões prontas (hierarquia de controles) ----------
@@ -23478,13 +23659,8 @@ var vfs = {
     const itens = itensDoLocal(local, produtos, null);
     const out = [];
     for (let i = 0; i < itens.length; i++) for (let j = i + 1; j < itens.length; j++) {
-      const A = itens[i], B = itens[j];
-      const r = maiorCodigo(A.classes, B.classes);
-      const motivos = [];
-      T.RG_RULES.forEach(([a, b, ef]) => { if ((A.grupos.includes(a) && B.grupos.includes(b)) || (A.grupos.includes(b) && B.grupos.includes(a))) motivos.push(ef); });
-      (A.incompativeis || []).forEach((k) => { if (B.grupos.includes(k) && k !== 'ignicao') motivos.push('FDS de ' + A.nome + ' declara incompatibilidade com o grupo de ' + B.nome); });
-      (B.incompativeis || []).forEach((k) => { if (A.grupos.includes(k) && k !== 'ignicao') motivos.push('FDS de ' + B.nome + ' declara incompatibilidade com o grupo de ' + A.nome); });
-      if ((r.codigo && !['-'].includes(r.codigo) && r.codigo !== 'X') || r.codigo === 'X' || motivos.length) out.push({ a: A.nome, b: B.nome, codigo: r.codigo, par: r.par, motivos });
+      const r = avaliaPar(itens[i], itens[j]);
+      if (r.nivel !== 'livre') out.push({ a: itens[i].nome, b: itens[j].nome, codigo: r.codigo, par: r.par, motivos: r.motivos, nivel: r.nivel, texto: r.texto, metros: r.metros });
     }
     return { itens, pares: out };
   }
@@ -23543,7 +23719,7 @@ var vfs = {
     return r;
   }
 
-  O.Engine = { novoProduto, triagem, nr20, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { novoProduto, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});
 
 </script>
@@ -24235,6 +24411,7 @@ var vfs = {
 
     B.push({ t: 'h1', text: '8 Compatibilidade química e segregação no armazenamento' });
     B.push({ t: 'kv', rows: [
+      ['Classe de armazenamento (NBR 17160)', E.classeArm(p).id + ' | ' + O.NBR17160.nome(E.classeArm(p).id) + ' | ' + E.classeArm(p).motivo],
       ['Incompatibilidades declaradas (Seções 7 e 10)', p.comp.incompDeclaradas === true ? (p.comp.incompativeis || []).map(nomeG).join(', ') + (p.comp.incompTexto ? '. ' + p.comp.incompTexto : '') : p.comp.incompDeclaradas === false ? 'Nenhuma declarada' : '—'],
       ['Local avaliado', loc ? loc.nome + ' (' + loc.tipo + ')' : '—'],
       ['Resultado para o local', p.comp.localOk === 'sim' ? 'Compatível' : p.comp.localOk === 'conflito' ? 'Conflito de segregação' : p.comp.localOk === 'insuficiente' ? 'Informação insuficiente na FDS' : '—'],
@@ -24245,8 +24422,8 @@ var vfs = {
     if (loc) {
       const cp = E.compatibilidade(p, loc, produtos);
       if (cp.pares.length || cp.grupos.length) {
-        const rows = cp.pares.map((x) => [x.com, x.par.join(' / '), x.codigo === '-' ? x.texto : x.codigo + ': ' + x.texto, cp.grupos.filter((g) => g.com === x.com).map((g) => g.a + ' x ' + g.b + ': ' + g.efeito).join('; ') || '—']);
-        B.push({ t: 'table', head: ['Item no local', 'Classes', 'Segregação (IMDG / NR-29)', 'Reatividade (FDS)'], widths: [24, 12, 28, 36], rows });
+        const rows = cp.pares.map((x) => [x.com, x.par.join(' / '), (x.codigo === 'R' ? 'Proibido' : x.codigo === 'G' ? 'Permitido' : x.codigo ? 'Restrição ' + x.codigo : '—') + '. ' + x.texto, cp.grupos.filter((g) => g.com === x.com).map((g) => g.a + ' x ' + g.b + ': ' + g.efeito).join('; ') || '—']);
+        B.push({ t: 'table', head: ['Item no local', 'Classes', 'Segregação (NBR 17160)', 'Reatividade (FDS)'], widths: [24, 12, 28, 36], rows });
       }
     }
 
@@ -24264,7 +24441,7 @@ var vfs = {
     if (['homologado', 'condicionado'].includes(p.status)) B.push({ t: 'qr', text: linkRegistro(p), cap: 'Cadastro próprio na lista de homologados' + (p.dec.sharepoint ? ' (SharePoint)' : '') });
     B.push({ t: 'h2', text: 'Base técnico-legal consultada' });
     B.push({ t: 'list', items: T.BASE_LEGAL.map((b) => b.sigla + ': ' + b.titulo) });
-    B.push({ t: 'p', small: true, text: 'Matriz de segregação, triagem CMR e PFC e sugestões de controle são apoio à decisão. A decisão formal depende da FDS vigente do fornecedor, do Código IMDG e da avaliação do responsável técnico.' });
+    B.push({ t: 'p', small: true, text: 'A classe e a matriz de armazenamento seguem a ABNT NBR 17160:2024. A triagem CMR e PFC e as sugestões de controle são apoio à decisão. A decisão formal depende da FDS vigente do fornecedor, do Código IMDG e da avaliação do responsável técnico.' });
     B.push({ t: 'sign', rows: [[cfg().responsavel, cfg().registro || 'Responsável técnico']] });
     return B;
   }
@@ -24428,6 +24605,7 @@ var vfs = {
   function planoAcao(p, produtos) {
     const av = E.avaliar(p, produtos);
     const ok = ['homologado', 'condicionado'].includes(p.status);
+    const loc = localDe(p);
     const lim = cfg().anosValidadeFDS;
     const linhas = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
     const A = [];
@@ -24453,6 +24631,10 @@ var vfs = {
       (p.comp.controles || []).filter((x) => x !== 'nenhum').forEach((x) => add('Armazenamento: ' + ctrlNome(x), 'Etapa 11.3 | PSM', 'Gestor do local', 'Antes do primeiro recebimento'));
       if (p.comp.limite) add('Fixar e controlar o estoque máximo de ' + p.comp.limite, 'Etapa 11.3 | PSM', 'Gestor do local', 'Antes do primeiro recebimento');
       if (p.comp.tempMax) add('Garantir temperatura de armazenamento até ' + p.comp.tempMax, 'Seção 7 da FDS | PSM', 'Gestor do local', 'Antes do primeiro recebimento');
+      if (loc) {
+        const cpx = E.compatibilidade(p, loc, produtos);
+        cpx.pares.filter((x) => x.codigo && !['R', 'G'].includes(x.codigo)).forEach((x) => add('NBR 17160, restrição ' + x.codigo + ' com ' + x.com + ': ' + O.NBR17160.OBS[x.codigo], 'NBR 17160 | Figura 1', 'Gestor do local', 'Antes do primeiro recebimento'));
+      }
       if (p.comp.localOk === 'conflito') add('Implantar a segregação física ou o local alternativo: ' + (p.comp.observacoes || 'conforme matriz'), 'Etapa 11.2 | PSM', 'Gestor do local', 'Antes do primeiro recebimento', 'Pendente');
       const n20 = E.nr20(p);
       if (n20.aplica) add('NR-20: verificar a classificação da instalação, as áreas classificadas, o aterramento e o prontuário (' + n20.categoria + ')', 'NR-20 | PSM', 'Segurança de processo', 'Antes do primeiro recebimento');
@@ -24989,6 +25171,8 @@ var vfs = {
     });
     p.imdg.naoRegulado = !c.onu && !c.classeRisco;
     p.comp.incompativeis = c.incompativeis || [];
+    const est = ((res.secoes[9] || '').match(/estado f[ií]sico\s*[:\-]?\s*([^\n.;]{0,40})/i) || [])[1] || '';
+    p.comp.estado = /s[oó]lid|p[oó]\b|granul|pastilha|pasta|flocos/i.test(est) ? 'solido' : /l[ií]quid|solu[cç][aã]o|emuls/i.test(est) ? 'liquido' : (p.comp.estado || '');
     p.comp.grupos = E.gruposSugeridos(p);
     if (c.limitesExposicao) p.hig.tlvAgentes = p.hig.tlvAgentes || c.limitesExposicao;
     if (c.tempMax && !p.comp.tempMax) p.comp.tempMax = c.tempMax;
@@ -25371,14 +25555,21 @@ var vfs = {
         if (p.comp.incompDeclaradas) { w.appendChild(h('p', { class: 'q' }, 'Incompatível com:')); w.appendChild(U.checks(p, 'comp.incompativeis', T.RG.map((r) => ({ v: r[0], label: r[1] })))); w.appendChild(U.input(p, 'comp.incompTexto', { rows: 2, label: 'Texto da FDS (opcional)' })); }
         w.appendChild(h('p', { class: 'q' }, 'Este produto é, ele mesmo, do grupo:'));
         w.appendChild(U.checks(p, 'comp.grupos', T.RG.filter((r) => r[0] !== 'ignicao').map((r) => ({ v: r[0], label: r[1] }))));
-        w.appendChild(U.q('11.2', 'O local informado é compatível com o produto, considerando o que já está armazenado e a segregação por classe (GHS/IMDG)?'));
+        const ca = E.classeArm(p), cmb = E.combustivel(p);
+        w.appendChild(h('div', { class: 'card' }, h('h4', {}, 'Classe de armazenamento (NBR 17160, Anexo D) ', U.disc('PSM')),
+          h('p', {}, h('b', {}, ca.id + ' | ' + O.NBR17160.nome(ca.id)), ' | critério: ' + ca.motivo + '.'),
+          U.alert(cmb.incerto ? 'warn' : '', 'Combustível: ' + (cmb.valor ? 'sim' : 'não'), cmb.origem + (cmb.incerto ? '. Confirme abaixo.' : '.')),
+          h('p', { class: 'small' }, 'A classe segue o primeiro perigo aplicável no fluxograma da norma. Combustível define as classes 6.1A a 6.1D, 8A, 8B e 10 a 13.'),
+          U.radio(p, 'comp.combustivel', [{ v: true, label: 'Combustível' }, { v: false, label: 'Não combustível' }], { uid: 'cb', onChange: api.rerender }),
+          U.select(p, 'comp.classeArm', O.NBR17160.CLASSES.map((c) => [c[0], c[0] + ' | ' + c[1]]), { label: 'Substituir a classe sugerida (opcional)', empty: 'Usar a classe sugerida', onChange: api.rerender })));
+        w.appendChild(U.q('11.2', 'O local informado é compatível com o produto, considerando o que já está armazenado e a matriz de incompatibilidade da ABNT NBR 17160?'));
         if (!loc) w.appendChild(U.alert('crit', null, 'Nenhum local de armazenamento foi selecionado no contexto.'));
         else {
           const cp = E.compatibilidade(p, loc, S.produtos());
           const tone = cp.status === 'conflito' ? 'crit' : cp.status === 'com_medidas' ? 'warn' : 'ok';
           const box = h('div', { class: 'alert ' + tone }, h('b', {}, 'Local: ' + loc.nome + ' (' + loc.tipo + ') | ' + cp.itens + ' item(ns) armazenado(s) | distância livre ' + (loc.espacoM || 0) + ' m ', U.disc('PSM')),
             cp.itens === 0 ? 'Local sem itens cadastrados: não há conflito a verificar. Cadastre os itens existentes em "Locais" para uma verificação real.' : cp.mensagens.join(' ') || 'Sem conflito pelas regras da matriz e dos grupos de reatividade.');
-          if (cp.pares.length) box.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item no local', 'Classes', 'Código', 'Regra'].map((x) => h('th', {}, x)))), h('tbody', {}, cp.pares.map((x) => h('tr', {}, h('td', {}, x.com), h('td', {}, x.par.join(' x ')), h('td', {}, x.codigo), h('td', {}, x.texto)))))));
+          if (cp.pares.length) box.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item no local', 'Classes', 'Resultado', 'Regra'].map((x) => h('th', {}, x)))), h('tbody', {}, cp.pares.map((x) => h('tr', {}, h('td', {}, x.com), h('td', {}, x.par.join(' x ')), h('td', {}, x.codigo === 'R' ? 'Proibido' : x.codigo === 'G' ? 'Permitido' : x.codigo ? 'Restrição ' + x.codigo : '—'), h('td', {}, x.texto + (x.aprox ? ' (classe do item aproximada: confirme)' : ''))))))));
           if (cp.grupos.length) box.appendChild(h('ul', {}, cp.grupos.map((g) => h('li', {}, g.com + ': ' + g.a + ' x ' + g.b + '. ' + g.efeito))));
           w.appendChild(box);
           w.appendChild(h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: () => { p.comp.localOk = cp.status === 'conflito' ? 'conflito' : 'sim'; U.salvarJa(p); api.rerender(); } }, 'Usar resultado da análise')));
@@ -25395,8 +25586,13 @@ var vfs = {
         const sg = E.sugestoes(p);
         if (sg.controlesArm.length) w.appendChild(h('div', { class: 'sug' }, h('b', {}, 'Sugeridos pela FDS e pela classe: '), sg.controlesArm.map((k) => (T.CONTROLES_ARM.find((c) => c[0] === k) || [0, k])[1]).join('; '), ' ', h('button', { class: 'btn sm sec', onclick: () => { p.comp.controles = sg.controlesArm.slice(); U.salvarJa(p); api.rerender(); } }, 'Aplicar')));
         w.appendChild(U.checks(p, 'comp.controles', T.CONTROLES_ARM.map((c) => ({ v: c[0], label: c[1] })), { exclusive: 'nenhum' }));
+        const lims = O.NBR17160.LIMITES.filter((l) => (p.ghs.h || []).some((c) => l.re.test(c)));
+        if (lims.length) {
+          const tab = h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Perigo', 'Limite fora de armazém', 'Acima do limite'].map((x) => h('th', {}, x)))), h('tbody', {}, lims.map((l) => h('tr', {}, h('td', {}, l.rotulo), h('td', {}, l.limite), h('td', {}, l.acima)))));
+          w.appendChild(h('div', { class: 'sug' }, h('h4', {}, 'Quantidades-limite da NBR 17160 (Tabela 1)'), h('p', { class: 'small' }, 'Quantidade agregada permitida fora de armazéns e seções da norma que passam a valer acima do limite.'), tab, h('p', { class: 'small' }, 'Também vale: ' + O.NBR17160.LIMITE_GERAL.rotulo + ', ' + O.NBR17160.LIMITE_GERAL.limite + '.')));
+        }
         w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'comp.limite', { label: 'Quantidade máxima armazenada', ph: 'Ex.: 200 L' }), U.input(p, 'comp.tempMax', { label: 'Temperatura máxima de armazenamento (Seção 7)', ph: 'Ex.: 35 °C' })));
-        w.appendChild(U.alert('', 'Base', 'Matriz de segregação (Anexo da NR-29 e Código IMDG) mais os grupos de reatividade da Seção 10. O código "X" exige verificação específica na FDS. Confirme cada par na tabela 7.2.4 do Código IMDG antes de decisão formal.'));
+        w.appendChild(U.alert('', 'Base', 'ABNT NBR 17160:2024: classe de armazenamento (Anexo D) e matriz de incompatibilidade (Figura 1), mais os grupos de reatividade da Seção 10 da FDS. A norma lembra que a classificação não é a única base: avalie combustão, gases, corrosivos e instáveis formados.'));
         return w;
       },
       validar: (p) => {
@@ -25709,7 +25905,7 @@ var vfs = {
         h('div', { class: 'row', style: 'justify-content:space-between' }, h('span', {}, k === 'nr' ? 'Não regulado para transporte' : 'Classe ' + k + ' | ' + T.classeNome(k)), h('b', {}, porClasse[k] + (porClasse[k] === 1 ? ' produto' : ' produtos'))),
         h('div', { style: 'background:#0b1222;border-radius:6px;height:12px;margin-top:3px' }, h('div', { style: 'height:100%;border-radius:6px;background:var(--sky);width:' + (porClasse[k] / mx * 100) + '%' })))).concat([h('p', { class: 'small' }, 'Total: ' + totalHom + (totalHom === 1 ? ' produto homologado' : ' produtos homologados') + '.')]) : h('p', { class: 'muted' }, 'Sem produtos homologados.')));
     g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Reprovados por critério interno'), rej.length ? h('table', { class: 't' }, h('tbody', {}, rej.slice(0, 8).map((p) => h('tr', {}, h('td', {}, h('a', { href: '#/produto/' + p.id }, p.nome)), h('td', {}, E.triagem(p).criticos.map((c) => c.tipo).filter((x, i, a) => a.indexOf(x) === i).join(', ') || 'outro motivo'))))) : h('p', { class: 'muted' }, 'Nenhum produto reprovado.')));
-    g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Locais de armazenamento ', U.disc('PSM')), S.locais().length ? S.locais().map((l) => { const a = E.auditoriaLocal(l, ps); const crit = a.pares.filter((x) => x.motivos.length || ['2', '3', '4'].includes(x.codigo)).length; return h('div', { class: 'row', style: 'margin:6px 0' }, h('a', { href: '#/locais' }, l.nome), h('span', { class: 'muted' }, a.itens.length + ' itens'), crit ? U.badge('warn', crit + ' par(es) a revisar') : U.badge('ok', 'sem pares críticos')); }) : h('p', { class: 'muted' }, 'Cadastre os locais em "Locais".')));
+    g.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Locais de armazenamento ', U.disc('PSM')), S.locais().length ? S.locais().map((l) => { const a = E.auditoriaLocal(l, ps); const crit = a.pares.filter((x) => x.nivel === 'incompativel' || x.nivel === 'restricao').length; return h('div', { class: 'row', style: 'margin:6px 0' }, h('a', { href: '#/locais' }, l.nome), h('span', { class: 'muted' }, a.itens.length + ' itens'), crit ? U.badge('warn', crit + ' par(es) a revisar') : U.badge('ok', 'sem restrições')); }) : h('p', { class: 'muted' }, 'Cadastre os locais em "Locais".')));
     root.appendChild(g);
     if (!ps.length) root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Primeiros passos'), h('p', {}, 'Comece por uma análise de FDS ou inicie uma homologação. Para ver o fluxo completo, carregue os dados de demonstração.'), h('button', { class: 'btn ghost', onclick: () => { O.Demo.criar(); location.hash = '#/painel'; O.route(); } }, 'Carregar dados de demonstração')));
   };
@@ -25761,7 +25957,7 @@ var vfs = {
     } else if (tab === 'compat') {
       const outros = E.homologados(S.produtos()).filter((x) => x.id !== p.id);
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática da matriz de segregação ', U.disc('PSM')),
-        h('p', { class: 'small' }, 'Este produto contra cada produto homologado: matriz de segregação por classe (NR-29 e IMDG) mais reatividade pela Seção 10 da FDS. Classes: ' + (E.classesDoProduto(p).join(' e ') || 'não informada') + '.'),
+        h('p', { class: 'small' }, 'Este produto contra cada produto homologado: matriz de incompatibilidade da ABNT NBR 17160:2024 mais reatividade pela Seção 10 da FDS. Classe de armazenamento deste produto: ' + E.classeArm(p).id + ' (' + E.classeArm(p).motivo + ').'),
         V.resumoCompat(p, outros), V.tabelaCompat(p, outros)));
     } else if (tab === 'docs') {
       root.appendChild(V.pacote(p));
@@ -25776,21 +25972,21 @@ var vfs = {
   const kv = (rows) => h('table', { class: 't' }, h('tbody', {}, rows.map((r) => h('tr', {}, h('th', {}, r[0]), h('td', {}, r[1] || '—')))));
 
   // ------------------------------------------------------------ compatibilidade entre produtos
-  const NIV_CLASS = { incompativel: 'cI', segregar: 'c3', longe: 'c1', verificar: 'cX', livre: 'c-' };
+  const NIV_CLASS = { incompativel: 'cI', restricao: 'c2', verificar: 'cX', livre: 'c-' };
   V.tabelaCompat = (p, outros) => {
     if (!outros.length) return h('div', { class: 'empty' }, 'Não há outros produtos homologados para comparar.');
     const rows = outros.map((q) => ({ q, r: E.compatPar(p, q) }));
-    const ordem = { incompativel: 0, segregar: 1, verificar: 2, longe: 3, livre: 4 };
+    const ordem = { incompativel: 0, restricao: 1, verificar: 2, livre: 3 };
     rows.sort((a, b) => ordem[a.r.nivel] - ordem[b.r.nivel]);
-    return h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Produto homologado', 'Classes', 'Matriz', 'Resultado', 'Local', 'Orientação'].map((x) => h('th', {}, x)))),
-      h('tbody', {}, rows.map(({ q, r }) => { const lq = S.local(q.ctx.localId); const lp = S.local(p.ctx.localId); return h('tr', {}, h('td', {}, h('a', { href: '#/produto/' + q.id + '/compat' }, q.nome), h('div', { class: 'small' }, q.dec.numero || '')), h('td', {}, (r.par || ['—']).join(' x ')), h('td', {}, r.codigo || '—'), h('td', {}, h('span', { class: 'pc ' + NIV_CLASS[r.nivel] }, E.NIVEL[r.nivel])), h('td', {}, (lq ? lq.name || lq.nome : '—') + (lq && lp && lq.id === lp.id ? ' (mesmo local)' : '')), h('td', {}, r.acao, r.motivos.length ? h('ul', { class: 'small', style: 'margin:4px 0 0 16px;padding:0' }, r.motivos.map((m) => h('li', {}, m))) : null)); }))));
+    return h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Produto homologado', 'Classes de armazenamento', 'NBR 17160', 'Resultado', 'Local', 'Orientação'].map((x) => h('th', {}, x)))),
+      h('tbody', {}, rows.map(({ q, r }) => { const lq = S.local(q.ctx.localId); const lp = S.local(p.ctx.localId); return h('tr', {}, h('td', {}, h('a', { href: '#/produto/' + q.id + '/compat' }, q.nome), h('div', { class: 'small' }, q.dec.numero || '')), h('td', {}, (r.par || ['—']).join(' x ')), h('td', {}, r.codigo === 'R' ? 'Proibido' : r.codigo === 'G' ? 'Permitido' : r.codigo ? 'Restrição ' + r.codigo : '—'), h('td', {}, h('span', { class: 'pc ' + NIV_CLASS[r.nivel] }, E.NIVEL[r.nivel])), h('td', {}, (lq ? lq.name || lq.nome : '—') + (lq && lp && lq.id === lp.id ? ' (mesmo local)' : '')), h('td', {}, r.acao, r.motivos.length ? h('ul', { class: 'small', style: 'margin:4px 0 0 16px;padding:0' }, r.motivos.map((m) => h('li', {}, m))) : null)); }))));
   };
   V.resumoCompat = (p, outros) => {
     const rs = outros.map((q) => ({ q, r: E.compatPar(p, q) }));
-    const livres = rs.filter((x) => x.r.nivel === 'livre' || x.r.nivel === 'longe').map((x) => x.q.nome);
+    const livres = rs.filter((x) => x.r.nivel === 'livre').map((x) => x.q.nome);
     const nao = rs.filter((x) => x.r.nivel === 'incompativel').map((x) => x.q.nome);
-    const seg = rs.filter((x) => x.r.nivel === 'segregar').map((x) => x.q.nome);
-    return h('div', {}, nao.length ? U.alert('crit', 'Não armazenar junto de', nao) : null, seg.length ? U.alert('warn', 'Armazenar segregado de', seg) : null, livres.length ? U.alert('ok', 'Pode compartilhar o local com', livres) : null);
+    const seg = rs.filter((x) => x.r.nivel === 'restricao').map((x) => x.q.nome + ' (restrição ' + x.r.codigo + ')');
+    return h('div', {}, nao.length ? U.alert('crit', 'Armazenamento conjunto proibido com', nao) : null, seg.length ? U.alert('warn', 'Permitido com restrição (NBR 17160)', seg) : null, livres.length ? U.alert('ok', 'Pode compartilhar o setor de armazém com', livres) : null);
   };
   V.gradeCompat = (lista) => {
     const tb = h('table', { class: 'mx', 'aria-label': 'Compatibilidade entre produtos homologados' });
@@ -25799,7 +25995,7 @@ var vfs = {
     lista.forEach((a) => body.appendChild(h('tr', {}, h('th', { style: 'text-align:right;white-space:nowrap', title: a.nome }, a.nome.length > 26 ? a.nome.slice(0, 25) + '…' : a.nome), lista.map((b) => {
       if (a.id === b.id) return h('td', { class: 'c0' }, '—');
       const r = E.compatPar(a, b);
-      return h('td', { class: 'x' + NIV_CLASS[r.nivel], title: a.nome + ' x ' + b.nome + ': ' + E.NIVEL[r.nivel] + '. ' + r.acao, style: 'cursor:help' }, { incompativel: 'X', segregar: r.codigo || 'S', longe: '1', verificar: '?', livre: 'OK' }[r.nivel]);
+      return h('td', { class: 'x' + NIV_CLASS[r.nivel], title: a.nome + ' x ' + b.nome + ': ' + E.NIVEL[r.nivel] + '. ' + r.acao, style: 'cursor:help' }, { incompativel: 'X', restricao: r.codigo || 'R', verificar: '?', livre: 'OK' }[r.nivel]);
     }))));
     tb.appendChild(body); return tb;
   };
@@ -25846,65 +26042,101 @@ var vfs = {
       const card = h('div', { class: 'card' });
       card.appendChild(h('div', { class: 'row' }, h('h3', {}, l.nome, ' ', U.badge('info', l.tipo)), h('span', { class: 'spacer' }), h('button', { class: 'btn danger sm', onclick: async () => { if (await U.confirm('Excluir local', 'O local "' + l.nome + '" será removido.', 'Excluir')) { S.removerLocal(l.id); O.route(); } } }, 'Excluir')));
       const holder = { l };
-      card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.nome', { label: 'Nome', onInput: () => S.salvarLocal(l) }), U.input(holder, 'l.espacoM', { type: 'number', label: 'Distância livre disponível para segregação (m)', hint: '6 m atende "separado de"; 24 m atende o nível 4.', onInput: () => S.salvarLocal(l) })));
+      card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.nome', { label: 'Nome', onInput: () => S.salvarLocal(l) }), U.input(holder, 'l.espacoM', { type: 'number', label: 'Distância livre disponível entre ácidos e bases (m)', hint: 'A NBR 17160 exige 5 m (ou segregação física) entre corrosivos ácidos e básicos.', onInput: () => S.salvarLocal(l) })));
       card.appendChild(U.input(holder, 'l.descricao', { rows: 2, label: 'Descrição, contenção e condições do local', onInput: () => S.salvarLocal(l) }));
       card.appendChild(h('h4', {}, 'Itens armazenados'));
       const linked = aud.itens.filter((i) => i.origem === 'homologado');
       if (linked.length) card.appendChild(h('p', { class: 'small' }, 'Vinculados por homologação: ' + linked.map((i) => i.nome).join('; ')));
       const tb = h('tbody');
-      (l.itens || []).forEach((it, i) => tb.appendChild(h('tr', {}, h('td', {}, it.nome), h('td', {}, it.classe + (it.subrisco ? ' / ' + it.subrisco : '')), h('td', {}, (it.grupos || []).map(nomeG).join(', ') || '—'), h('td', {}, (it.incompativeis || []).map(nomeG).join(', ') || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.itens.splice(i, 1); S.salvarLocal(l); O.route(); } }, 'Remover')))));
-      if ((l.itens || []).length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item', 'Classe', 'Grupos', 'Incompatível com', ''].map((x) => h('th', {}, x)))), tb)));
-      const novo = { nome: '', classe: '', subrisco: '', grupos: [], incompativeis: [] };
+      (l.itens || []).forEach((it, i) => tb.appendChild(h('tr', {}, h('td', {}, it.nome), h('td', {}, E.armDoItem(it) + (it.classeArm ? '' : ' (aprox.)')), h('td', {}, (it.grupos || []).map(nomeG).join(', ') || '—'), h('td', {}, (it.incompativeis || []).map(nomeG).join(', ') || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.itens.splice(i, 1); S.salvarLocal(l); O.route(); } }, 'Remover')))));
+      if ((l.itens || []).length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item', 'Classe de armazenamento', 'Grupos', 'Incompatível com', ''].map((x) => h('th', {}, x)))), tb)));
+      const novo = { nome: '', classeArm: '', grupos: [], incompativeis: [] };
       card.appendChild(h('details', {}, h('summary', {}, 'Adicionar item armazenado'), U.input({ n: novo }, 'n.nome', { label: 'Nome do produto' }),
-        h('div', { class: 'grid g2' }, U.select({ n: novo }, 'n.classe', T.CLASSES.map((c) => [c[0], c[0] + ' ' + c[1]]), { label: 'Classe de risco' }), U.input({ n: novo }, 'n.subrisco', { label: 'Risco subsidiário (opcional)' })),
+        U.select({ n: novo }, 'n.classeArm', O.NBR17160.CLASSES.filter((c) => c[0] !== '9').map((c) => [c[0], c[0] + ' | ' + c[1]]), { label: 'Classe de armazenamento (NBR 17160, Tabela 2)' }),
         h('p', { class: 'q' }, 'Grupo de reatividade do item'), U.checks({ n: novo }, 'n.grupos', T.RG.filter((r) => r[0] !== 'ignicao').map((r) => ({ v: r[0], label: r[1] }))),
         h('p', { class: 'q' }, 'Incompatível com (FDS do item)'), U.checks({ n: novo }, 'n.incompativeis', T.RG.map((r) => ({ v: r[0], label: r[1] }))),
-        h('button', { class: 'btn', onclick: () => { if (!novo.nome.trim() || !novo.classe) { U.toast('Informe nome e classe.'); return; } l.itens = l.itens || []; l.itens.push({ ...novo, nome: novo.nome.trim() }); S.salvarLocal(l); O.route(); } }, 'Adicionar')));
-      const crit = aud.pares.filter((x) => x.motivos.length || ['2', '3', '4', 'X'].includes(x.codigo));
-      card.appendChild(h('h4', { style: 'margin-top:12px' }, 'Auditoria de segregação do local ', U.disc('PSM')));
+        h('button', { class: 'btn', onclick: () => { if (!novo.nome.trim() || !novo.classeArm) { U.toast('Informe o nome e a classe de armazenamento.'); return; } l.itens = l.itens || []; l.itens.push({ ...novo, nome: novo.nome.trim() }); S.salvarLocal(l); O.route(); } }, 'Adicionar')));
+      const crit = aud.pares;
+      card.appendChild(h('h4', { style: 'margin-top:12px' }, 'Auditoria de segregação do local (NBR 17160) ', U.disc('PSM')));
       if (aud.itens.length < 2) card.appendChild(h('p', { class: 'muted' }, 'Cadastre ao menos dois itens para auditar pares.'));
-      else if (!crit.length) card.appendChild(U.alert('ok', null, 'Nenhum par exige segregação pela matriz ou por reatividade.'));
-      else card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Par', 'Classes', 'Código', 'Observação'].map((x) => h('th', {}, x)))), h('tbody', {}, crit.map((x) => { const need = x.codigo && T.SEG_LEGEND[x.codigo] ? T.SEG_LEGEND[x.codigo].metros : null; const ok = !need || (Number(l.espacoM) || 0) >= need; return h('tr', {}, h('td', {}, x.a + ' x ' + x.b), h('td', {}, x.par ? x.par.join(' x ') : '—'), h('td', {}, x.codigo || '—'), h('td', {}, [x.codigo && T.SEG_LEGEND[x.codigo] ? T.SEG_LEGEND[x.codigo].nome + (need && !ok ? ' (exige ' + need + ' m, o local tem ' + (l.espacoM || 0) + ' m)' : '') : '', ...x.motivos].filter(Boolean).join('. '))); })))));
+      else if (!crit.length) card.appendChild(U.alert('ok', null, 'Todos os pares são permitidos pela matriz e sem reatividade declarada.'));
+      else card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Par', 'Classes', 'Resultado', 'Observação'].map((x) => h('th', {}, x)))), h('tbody', {}, crit.map((x) => { const falta5 = x.codigo === '8' && (Number(l.espacoM) || 0) < 5; return h('tr', {}, h('td', {}, x.a + ' x ' + x.b), h('td', {}, x.par.join(' x ')), h('td', {}, h('span', { class: 'pc ' + NIV_CLASS[x.nivel] }, E.NIVEL[x.nivel])), h('td', {}, [x.texto, falta5 ? 'O local tem ' + (l.espacoM || 0) + ' m: faltam 5 m ou segregação física.' : '', ...x.motivos].filter(Boolean).join(' '))); })))));
       root.appendChild(card);
     });
   };
 
   // ------------------------------------------------------------ matriz
+  const NBR_COR = { R: 'r', G: 'g' };
   V.matriz = (root) => {
-    root.appendChild(head('Matriz de segregação', 'Anexo da NR-29 e Código IMDG, aplicada ao armazenamento'));
-    const info = h('div', { class: 'alert' }, h('b', {}, 'Toque em uma célula'), 'Mostra a regra entre as duas classes.');
-    const tb = h('table', { class: 'mx', 'aria-label': 'Matriz de segregação' });
-    tb.appendChild(h('thead', {}, h('tr', {}, h('th', {}), T.CLASSES.map((c) => h('th', { class: 'col', title: c[1] }, c[0])))));
+    const NB = O.NBR17160;
+    root.appendChild(head('Matriz de incompatibilidade', 'ABNT NBR 17160:2024 | armazenamento conjunto de produtos químicos embalados e fracionados'));
+    root.appendChild(U.alert('', 'Quando se aplica', 'Armazéns, salas, contêineres e armários com produtos embalados (até 3 000 L). A norma não se aplica a tanques e embalagens estacionárias, a produtos em processo ou em uso, a fracionamento e manutenção, a explosivos, nitrato de amônio, peróxidos orgânicos, radioativos e infectantes, nem a produtos com legislação própria de armazenamento. Ela não substitui a legislação.'));
+    const info = h('div', { class: 'alert' }, h('b', {}, 'Toque em uma célula'), 'Mostra a regra entre as duas classes de armazenamento.');
+    const tb = h('table', { class: 'mx nm', 'aria-label': 'Matriz de incompatibilidade da NBR 17160' });
+    tb.appendChild(h('thead', {}, h('tr', {}, h('th', {}), NB.ORDEM.map((c) => h('th', { class: 'col', title: NB.nome(c) }, c)))));
     const body = h('tbody');
-    T.CLASSES.forEach((a) => body.appendChild(h('tr', {}, h('th', { title: a[1], style: 'text-align:right' }, a[0]), T.CLASSES.map((b) => { const code = T.seg(a[0], b[0]); const td = h('td', { class: 'c' + code, tabindex: 0, 'aria-label': a[0] + ' com ' + b[0] + ': ' + T.SEG_LEGEND[code].nome }, code); const sel = () => { tb.querySelectorAll('.hl').forEach((x) => x.classList.remove('hl')); td.classList.add('hl'); info.innerHTML = ''; info.className = 'alert ' + (code === '1' ? '' : 'warn'); info.appendChild(h('b', {}, a[0] + ' ' + a[1] + ' com ' + b[0] + ' ' + b[1] + ': ' + code + ' ' + T.SEG_LEGEND[code].nome)); info.appendChild(document.createTextNode(T.SEG_LEGEND[code].texto)); }; td.addEventListener('click', sel); td.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sel(); } }); return td; }))));
+    NB.ORDEM.forEach((a) => body.appendChild(h('tr', {}, h('th', { title: NB.nome(a), style: 'text-align:right' }, a), NB.ORDEM.map((b) => {
+      const code = NB.par(a, b); const cls = NBR_COR[code] || 'y';
+      const td = h('td', { class: cls, tabindex: 0, 'aria-label': a + ' com ' + b + ': ' + (code === 'R' ? 'proibido' : code === 'G' ? 'permitido' : 'restrição ' + code) }, code === 'R' || code === 'G' ? '' : code);
+      const sel = () => { tb.querySelectorAll('.hl').forEach((x) => x.classList.remove('hl')); td.classList.add('hl'); info.innerHTML = ''; info.className = 'alert ' + (code === 'R' ? 'crit' : code === 'G' ? 'ok' : 'warn'); info.appendChild(h('b', {}, a + ' ' + NB.nome(a) + ' com ' + b + ' ' + NB.nome(b))); info.appendChild(document.createTextNode(code === 'R' ? 'Armazenamento conjunto proibido.' : code === 'G' ? 'Armazenamento conjunto permitido.' : 'Permitido com restrição ' + code + '. ' + NB.OBS[code])); };
+      td.addEventListener('click', sel); td.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sel(); } });
+      return td;
+    }))));
     tb.appendChild(body);
     root.appendChild(h('div', { class: 'card scroll' }, tb));
     root.appendChild(info);
-    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Legenda'), Object.keys(T.SEG_LEGEND).map((k) => h('div', { class: 'leg' }, h('span', { class: 'code c' + k }, k), h('div', {}, h('b', {}, T.SEG_LEGEND[k].nome), h('div', { class: 'small' }, T.SEG_LEGEND[k].texto)))), h('p', { class: 'small' }, 'Classes 1 (explosivos), 6.2 (infectantes) e 7 (radioativos) ficam fora da matriz: armazenamento proibido ou restrito em área comum.')));
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Legenda e observações'),
+      h('div', { class: 'leg' }, h('span', { class: 'code nm-r' }, ''), h('div', {}, h('b', {}, 'Armazenamento conjunto proibido'))),
+      h('div', { class: 'leg' }, h('span', { class: 'code nm-g' }, ''), h('div', {}, h('b', {}, 'Armazenamento conjunto permitido'))),
+      h('div', { class: 'leg' }, h('span', { class: 'code nm-y' }, '1 a 8'), h('div', {}, h('b', {}, 'Permitido com restrição'), h('div', { class: 'small' }, 'Cumprir a observação de mesmo número.'))),
+      h('table', { class: 't', style: 'margin-top:8px' }, h('tbody', {}, Object.keys(NB.OBS).map((k) => h('tr', {}, h('th', { style: 'width:36px' }, k), h('td', {}, NB.OBS[k])))))));
+    root.appendChild(h('div', { class: 'grid g2' },
+      [NB.TABELA3, NB.TABELA4].map((t) => h('div', { class: 'card' }, h('h4', {}, t.titulo), h('table', { class: 't' }, h('tbody', {}, t.linhas.map((l) => h('tr', {}, h('th', { style: 'width:80px' }, l[0]), h('td', {}, l[1])))))))));
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Regras gerais do armazenamento conjunto'), h('ul', {}, NB.REGRAS.map((r) => h('li', {}, r)))));
+    root.appendChild(h('details', { class: 'card' }, h('summary', {}, 'As 25 classes de armazenamento (Tabela 2) e o critério de cada uma'),
+      h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Classe', 'Descrição', 'Critério'].map((x) => h('th', {}, x)))), h('tbody', {}, NB.CLASSES.map((c) => h('tr', {}, h('td', {}, c[0]), h('td', {}, c[1]), h('td', {}, c[2]))))))));
     // aplicação prática: produtos homologados
     const hom = E.homologados(S.produtos());
     const prat = h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática: produtos homologados ', U.disc('PSM')));
     if (hom.length < 2) prat.appendChild(h('p', { class: 'muted' }, 'Homologue ao menos 2 produtos para ver a compatibilidade entre eles. Dica: carregue a demonstração em Configurações.'));
     else {
-      const sel = h('select', { 'aria-label': 'Produto' }, hom.map((p) => h('option', { value: p.id }, p.nome)));
+      const sel = h('select', { 'aria-label': 'Produto' }, hom.map((p) => h('option', { value: p.id }, p.nome + ' | classe ' + E.classeArm(p).id)));
       const out = h('div');
       const show = () => { out.innerHTML = ''; const p = S.produto(sel.value); const outros = hom.filter((x) => x.id !== p.id); out.appendChild(V.resumoCompat(p, outros)); out.appendChild(V.tabelaCompat(p, outros)); };
       sel.addEventListener('change', show);
       prat.appendChild(h('label', { class: 'f' }, h('span', {}, 'Produto'), sel)); prat.appendChild(out); show();
       prat.appendChild(h('h4', { style: 'margin-top:14px' }, 'Grade de todos contra todos'));
       prat.appendChild(h('div', { class: 'scroll' }, V.gradeCompat(hom)));
-      prat.appendChild(h('p', { class: 'small' }, 'X: incompatível (reatividade). Número: código da matriz (2, 3 ou 4 exigem distância). 1: longe de. ?: verificar a FDS. OK: compatível. Passe o mouse para ver a orientação.'));
+      prat.appendChild(h('p', { class: 'small' }, 'X: proibido (matriz ou reatividade). Número: restrição da NBR 17160 (ver observações). OK: permitido. ?: classe não definida. Passe o mouse para ver a orientação.'));
     }
     root.appendChild(prat);
     // verificador
-    const sa = h('select', {}, T.CLASSES.map((c) => h('option', { value: c[0] }, c[0] + ' ' + c[1])));
-    const sb = h('select', {}, T.CLASSES.map((c) => h('option', { value: c[0] }, c[0] + ' ' + c[1])));
+    const opts = () => NB.CLASSES.filter((c) => c[0] !== '9').map((c) => h('option', { value: c[0] }, c[0] + ' | ' + c[1]));
+    const sa = h('select', {}, opts()); const sb = h('select', {}, opts());
     const res = h('div');
-    const chk = () => { const code = T.seg(sa.value, sb.value); res.innerHTML = ''; res.appendChild(U.alert(code === '1' || code === 'X' ? '' : 'warn', code + ' ' + T.SEG_LEGEND[code].nome, T.SEG_LEGEND[code].texto)); };
+    const chk = () => { const code = NB.par(sa.value, sb.value); res.innerHTML = ''; res.appendChild(U.alert(code === 'R' ? 'crit' : code === 'G' ? 'ok' : 'warn', code === 'R' ? 'Armazenamento conjunto proibido' : code === 'G' ? 'Armazenamento conjunto permitido' : 'Permitido com restrição ' + code, code === 'R' || code === 'G' ? null : NB.OBS[code])); };
     sa.addEventListener('change', chk); sb.addEventListener('change', chk); chk();
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Verificador de par'), h('div', { class: 'grid g2' }, h('label', { class: 'f' }, h('span', {}, 'Classe A'), sa), h('label', { class: 'f' }, h('span', {}, 'Classe B'), sb)), res));
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Reatividade química pela FDS (Seção 10) ', U.disc('PSM')), h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Grupo A', 'Grupo B', 'Efeito'].map((x) => h('th', {}, x)))), h('tbody', {}, T.RG_RULES.map((r) => h('tr', {}, h('td', {}, nomeG(r[0])), h('td', {}, nomeG(r[1])), h('td', {}, r[2])))))),
-      U.alert('warn', 'Validação obrigatória', 'A matriz reproduz a base do acervo. Antes de decisão formal, confirme cada par na tabela 7.2.4 do Código IMDG e nas Seções 7 e 10 da FDS. Em caso de diferença, vale o IMDG e a FDS do fornecedor.')));
+      U.alert('warn', 'Complemento à matriz', 'A reatividade por grupo é um complemento técnico (a norma lembra, em 9.1.1.2, que a matriz não é a única base da incompatibilidade). Confirme sempre nas Seções 7 e 10 da FDS.')));
+
+    const nr = h('details', { class: 'card' }, h('summary', {}, 'Matriz NR-29 e IMDG: carga portuária e transporte marítimo (não é a base do armazenamento em armazéns)'));
+    const box = h('div', { style: 'margin-top:10px' });
+    nr.appendChild(box);
+    box.appendChild(h('p', { class: 'small' }, 'Segregação de cargas perigosas em navio e área portuária comum (Anexo da NR-29 e Código IMDG). Mantida como referência para operação portuária; confirme na tabela 7.2.4 do Código IMDG.'));
+    (() => {
+    const info = h('div', { class: 'alert' }, h('b', {}, 'Toque em uma célula'), 'Mostra a regra entre as duas classes.');
+    const tb = h('table', { class: 'mx', 'aria-label': 'Matriz NR-29 e IMDG' });
+    tb.appendChild(h('thead', {}, h('tr', {}, h('th', {}), T.CLASSES.map((c) => h('th', { class: 'col', title: c[1] }, c[0])))));
+    const body = h('tbody');
+    T.CLASSES.forEach((a) => body.appendChild(h('tr', {}, h('th', { title: a[1], style: 'text-align:right' }, a[0]), T.CLASSES.map((b) => { const code = T.seg(a[0], b[0]); const td = h('td', { class: 'c' + code, tabindex: 0, 'aria-label': a[0] + ' com ' + b[0] + ': ' + T.SEG_LEGEND[code].nome }, code); const sel = () => { tb.querySelectorAll('.hl').forEach((x) => x.classList.remove('hl')); td.classList.add('hl'); info.innerHTML = ''; info.className = 'alert ' + (code === '1' ? '' : 'warn'); info.appendChild(h('b', {}, a[0] + ' ' + a[1] + ' com ' + b[0] + ' ' + b[1] + ': ' + code + ' ' + T.SEG_LEGEND[code].nome)); info.appendChild(document.createTextNode(T.SEG_LEGEND[code].texto)); }; td.addEventListener('click', sel); td.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sel(); } }); return td; }))));
+    tb.appendChild(body);
+    box.appendChild(h('div', { class: 'card scroll' }, tb));
+    box.appendChild(info);
+    box.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Legenda'), Object.keys(T.SEG_LEGEND).map((k) => h('div', { class: 'leg' }, h('span', { class: 'code c' + k }, k), h('div', {}, h('b', {}, T.SEG_LEGEND[k].nome), h('div', { class: 'small' }, T.SEG_LEGEND[k].texto)))), h('p', { class: 'small' }, 'Classes 1 (explosivos), 6.2 (infectantes) e 7 (radioativos) ficam fora da matriz: armazenamento proibido ou restrito em área comum.')));
+
+    })();
+    root.appendChild(nr);
   };
 
   // ------------------------------------------------------------ base legal
@@ -25970,14 +26202,14 @@ var vfs = {
           h('div', { class: 'row' }, h('a', { class: 'btn big', href: '#/nova' }, 'Homologar um produto'), h('a', { class: 'btn big sec', href: '#/fds' }, 'Analisar uma FDS'), h('a', { class: 'btn big ghost', href: '#/painel' }, 'Entrar no painel'))),
         h('div', { class: 'cv-logo' }, h('img', { src: L.src, alt: 'Orbit 360 | Consultoria em SSMA' }))),
       h('section', { class: 'cv-stats' },
-        [['16', 'seções da FDS lidas e conferidas pela NBR 14725'], ['15', 'etapas de homologação, sem pular confirmação'], ['12', 'classes na matriz de segregação, aplicada produto a produto'], ['5', 'documentos por produto, em Word e PDF']].map((s) => h('div', {}, h('b', {}, s[0]), h('span', {}, s[1])))),
+        [['16', 'seções da FDS lidas e conferidas pela NBR 14725'], ['15', 'etapas de homologação, sem pular confirmação'], ['25', 'classes de armazenamento da NBR 17160, aplicadas produto a produto'], ['5', 'documentos por produto, em Word e PDF']].map((s) => h('div', {}, h('b', {}, s[0]), h('span', {}, s[1])))),
       h('section', { class: 'cv-sec' },
         h('h2', {}, 'Como funciona'),
         h('div', { class: 'cv-steps' }, [['1', 'Envie a FDS', 'Texto, .txt ou .pdf. O app extrai frases H e P, CAS, ONU, classe, incompatibilidades e limites de exposição.'], ['2', 'A triagem roda sozinha', 'Cancerígeno, mutagênico, teratogênico e PFC reprovam de forma automática. O que a FDS responde é preenchido.'], ['3', 'Você informa o que falta', 'Uso, local de armazenamento, cobertura do PGR e pareceres. Conflito de segregação sempre para para você.'], ['4', 'Decisão e documentos', 'Decisão com justificativa, registro com QR Code e os cinco documentos prontos.']].map((s) => h('div', { class: 'cv-step' }, h('i', {}, s[0]), h('h3', {}, s[1]), h('p', {}, s[2]))))),
       h('section', { class: 'cv-sec' },
         h('h2', {}, 'Três disciplinas, uma análise'),
         h('div', { class: 'grid g3' },
-          pilar('PSM', 'Armazenamento e compatibilidade', ['Matriz de segregação NR-29 e IMDG', 'Reatividade pela Seção 10 da FDS', 'NR-20 para inflamáveis e combustíveis', 'Compatibilidade com cada produto homologado']),
+          pilar('PSM', 'Armazenamento e compatibilidade', ['Matriz de incompatibilidade da ABNT NBR 17160:2024', 'Reatividade pela Seção 10 da FDS', 'NR-20 para inflamáveis e combustíveis', 'Compatibilidade com cada produto homologado']),
           pilar('SST', 'Saúde e segurança do trabalho', ['Triagem CMR por frase H e CAS', 'Hierarquia de controle por produto', 'Interface com PGR e Higiene Ocupacional', 'Checklist de treinamento']),
           pilar('GA', 'Gestão ambiental', ['Perigo aquático e poluente marinho', 'Contenção e resposta a derramamento', 'Destinação de resíduos', 'Ficha de emergência e envelope NBR 7503']))),
       h('section', { class: 'cv-sec' },
@@ -26012,11 +26244,11 @@ var vfs = {
     criar() {
       const pq = S.novoLocal('Contêiner de PQ 01 (demonstração)', 'Contêiner de PQ');
       pq.espacoM = 0; pq.descricao = 'Contêiner com bacia de contenção e ventilação natural.';
-      pq.itens = [{ nome: 'Ácido clorídrico 33 % (demonstração)', classe: '8', subrisco: '', grupos: ['acido'], incompativeis: ['base', 'cianeto_sulfeto', 'hipoclorito', 'metais'] }];
+      pq.itens = [{ nome: 'Ácido clorídrico 33 % (demonstração)', classeArm: '8B', grupos: ['acido'], incompativeis: ['base', 'cianeto_sulfeto', 'hipoclorito', 'metais'] }];
       S.salvarLocal(pq);
       const of = S.novoLocal('Oficina mecânica (demonstração)', 'Oficina');
       of.espacoM = 8; of.descricao = 'Armário de inflamáveis aterrado e área ventilada.';
-      of.itens = [{ nome: 'Tinta alquídica (demonstração)', classe: '3', subrisco: '', grupos: ['organico_combustivel'], incompativeis: ['oxidante'] }];
+      of.itens = [{ nome: 'Tinta alquídica (demonstração)', classeArm: '3', grupos: ['organico_combustivel'], incompativeis: ['oxidante'] }];
       S.salvarLocal(of);
 
       const a = produtoBase('solvente', of.id);
