@@ -503,6 +503,10 @@
           const tab = h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Perigo', 'Limite fora de armazém', 'Acima do limite'].map((x) => h('th', {}, x)))), h('tbody', {}, lims.map((l) => h('tr', {}, h('td', {}, l.rotulo), h('td', {}, l.limite), h('td', {}, l.acima)))));
           w.appendChild(h('div', { class: 'sug' }, h('h4', {}, 'Quantidades-limite da NBR 17160 (Tabela 1)'), h('p', { class: 'small' }, 'Quantidade agregada permitida fora de armazéns e seções da norma que passam a valer acima do limite.'), tab, h('p', { class: 'small' }, 'Também vale: ' + O.NBR17160.LIMITE_GERAL.rotulo + ', ' + O.NBR17160.LIMITE_GERAL.limite + '.')));
         }
+        const boxQ = h('div');
+        const drawQ = () => { boxQ.innerHTML = ''; if (loc && p.comp.qtdKg !== '' && p.comp.qtdKg != null) boxQ.appendChild(O.Views.gatilhos(E.gatilhosLocal(loc, S.produtos(), p), 'Quantidades-limite em ' + loc.nome)); };
+        w.appendChild(U.input(p, 'comp.qtdKg', { type: 'number', label: 'Quantidade a armazenar no local (kg; gases em L)', hint: 'Massa líquida. Inflamáveis: volume nominal da embalagem (6.2.8). Com ela, o app soma o que já está no local e aponta as seções da NBR 17160 que passam a valer.', onInput: drawQ }));
+        drawQ(); w.appendChild(boxQ);
         w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'comp.limite', { label: 'Quantidade máxima armazenada', ph: 'Ex.: 200 L' }), U.input(p, 'comp.tempMax', { label: 'Temperatura máxima de armazenamento (Seção 7)', ph: 'Ex.: 35 °C' })));
         w.appendChild(U.alert('', 'Base', 'ABNT NBR 17160:2024: classe de armazenamento (Anexo D) e matriz de incompatibilidade (Figura 1), mais os grupos de reatividade da Seção 10 da FDS. A norma lembra que a classificação não é a única base: avalie combustão, gases, corrosivos e instáveis formados.'));
         return w;

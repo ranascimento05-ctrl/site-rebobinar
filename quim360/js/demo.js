@@ -17,11 +17,11 @@
     criar() {
       const pq = S.novoLocal('Contêiner de PQ 01 (demonstração)', 'Contêiner de PQ');
       pq.espacoM = 0; pq.descricao = 'Contêiner com bacia de contenção e ventilação natural.';
-      pq.itens = [{ nome: 'Ácido clorídrico 33 % (demonstração)', classeArm: '8B', grupos: ['acido'], incompativeis: ['base', 'cianeto_sulfeto', 'hipoclorito', 'metais'] }];
+      pq.itens = [{ nome: 'Ácido clorídrico 33 % (demonstração)', classeArm: '8B', qtdKg: 300, h: 'H290, H314', grupos: ['acido'], incompativeis: ['base', 'cianeto_sulfeto', 'hipoclorito', 'metais'] }];
       S.salvarLocal(pq);
       const of = S.novoLocal('Oficina mecânica (demonstração)', 'Oficina');
       of.espacoM = 8; of.descricao = 'Armário de inflamáveis aterrado e área ventilada.';
-      of.itens = [{ nome: 'Tinta alquídica (demonstração)', classeArm: '3', grupos: ['organico_combustivel'], incompativeis: ['oxidante'] }];
+      of.itens = [{ nome: 'Tinta alquídica (demonstração)', classeArm: '3', qtdKg: 80, h: 'H226', grupos: ['organico_combustivel'], incompativeis: ['oxidante'] }];
       S.salvarLocal(of);
 
       const a = produtoBase('solvente', of.id);
@@ -30,7 +30,7 @@
       a.amb = { risco: false, contencao: '', residuos: '', derramamento: '' };
       a.hig = { tlv: true, parecerExigidoOk: true, pgr: 'coberto', dosimetria: false, justificativa: 'Cobertura por avaliação quantitativa de solventes similares.', tlvAgentes: 'Acetato de etila, TLV-TWA 400 ppm' };
       a.imdg.incompativelOperacao = false;
-      a.comp.incompDeclaradas = true; a.comp.localOk = 'sim'; a.comp.controles = ['temp_vent', 'sinalizacao', 'bacia']; a.comp.limite = '200 L'; a.comp.tempMax = '35 °C';
+      a.comp.incompDeclaradas = true; a.comp.localOk = 'sim'; a.comp.controles = ['temp_vent', 'sinalizacao', 'bacia']; a.comp.limite = '200 L'; a.comp.qtdKg = 250; a.comp.tempMax = '35 °C';
       a.par = { tem: true, descricao: 'Parecer de Higiene Ocupacional (demonstração)', pgrIndicador: 'nao_requer', pgrPrazo: '', pgrResponsavel: '' };
       a.dec = { valor: 'sim', justificativa: 'Atende aos critérios internos. Homologado para limpeza de peças na oficina.', data: new Date().toISOString(), numero: S.proximoNumero(), sharepoint: '' };
       a.trein.gerar = true; a.status = 'homologado';
@@ -54,7 +54,7 @@
       c.ocup = { risco: true, subst: '', eng: 'Lava-olhos e chuveiro de emergência próximos.', adm: 'Treinamento prévio e sinalização GHS.', epi: 'Luvas de PVC ou neoprene, óculos de ampla visão, protetor facial e avental.' };
       c.amb = { risco: false, contencao: '', residuos: '', derramamento: '' };
       c.hig = { tlv: false, parecerExigidoOk: false, pgr: 'coberto', dosimetria: false, justificativa: 'Sem agente com limite NR-15 ou TLV.', tlvAgentes: '' };
-      c.comp.incompDeclaradas = true; c.comp.localOk = 'sim'; c.comp.controles = ['bacia', 'sinalizacao']; c.comp.limite = '100 L';
+      c.comp.incompDeclaradas = true; c.comp.localOk = 'sim'; c.comp.controles = ['bacia', 'sinalizacao']; c.comp.limite = '100 L'; c.comp.qtdKg = 120;
       c.par = { tem: false, descricao: '', pgrIndicador: 'nao_requer', pgrPrazo: '', pgrResponsavel: '' };
       c.dec = { valor: 'sim', justificativa: 'Atende aos critérios internos.', data: new Date().toISOString(), numero: S.proximoNumero(), sharepoint: '' };
       c.trein.gerar = true; c.status = 'homologado';
@@ -68,7 +68,7 @@
         q.ocup = { risco: true, subst: '', eng: 'Lava-olhos e chuveiro de emergência próximos.', adm: 'Treinamento prévio e sinalização GHS.', epi: 'Luvas de PVC ou neoprene, óculos de ampla visão, protetor facial e avental.' };
         q.amb = { risco: chave === 'hipoclorito', contencao: chave === 'hipoclorito' ? 'Bacia de contenção.' : '', residuos: chave === 'hipoclorito' ? 'Neutralizar e destinar conforme a legislação.' : '', derramamento: chave === 'hipoclorito' ? 'Kit de absorção; impedir chegada à drenagem.' : '' };
         q.hig = { tlv: false, parecerExigidoOk: false, pgr: 'coberto', dosimetria: false, justificativa: 'Sem agente com limite NR-15 ou TLV.', tlvAgentes: '' };
-        q.comp.incompDeclaradas = true; q.comp.localOk = 'sim'; q.comp.controles = ['bacia', 'sinalizacao']; q.comp.limite = '100 L';
+        q.comp.incompDeclaradas = true; q.comp.localOk = 'sim'; q.comp.controles = ['bacia', 'sinalizacao']; q.comp.limite = '100 L'; q.comp.qtdKg = 150;
         q.par = { tem: false, descricao: '', pgrIndicador: 'nao_requer', pgrPrazo: '', pgrResponsavel: '' };
         q.dec = { valor: 'sim', justificativa: justif, data: new Date().toISOString(), numero: S.proximoNumero(), sharepoint: '' };
         q.trein.gerar = true; q.status = 'homologado';

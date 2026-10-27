@@ -383,6 +383,12 @@
       if (p.comp.localOk === 'conflito') add('Implantar a segregação física ou o local alternativo: ' + (p.comp.observacoes || 'conforme matriz'), 'Etapa 11.2 | PSM', 'Gestor do local', 'Antes do primeiro recebimento', 'Pendente');
       const n20 = E.nr20(p);
       if (n20.aplica) add('NR-20: verificar a classificação da instalação, as áreas classificadas, o aterramento e o prontuário (' + n20.categoria + ')', 'NR-20 | PSM', 'Segurança de processo', 'Antes do primeiro recebimento');
+      if (loc && p.armazenamento !== 'granel') {
+        if (E.gatilhosLocal) {
+          if (p.comp.qtdKg === '' || p.comp.qtdKg == null) add('Informar a quantidade a armazenar em ' + loc.nome + ' para verificar as quantidades-limite da NBR 17160', 'NBR 17160 | Tabela 1', 'Responsável técnico', 'Antes do primeiro recebimento');
+          else E.gatilhosLocal(loc, produtos, p).exige.forEach((x) => add(x, 'NBR 17160 | Tabela 1 e Seções 6 a 14', 'Responsável técnico / Gestor do local', 'Antes do primeiro recebimento'));
+        }
+      }
       add('Rotular recipientes e frações conforme o GHS (NBR 14725) e a NR-26', 'Rotulagem', 'Gestor do local', 'Antes do primeiro uso');
       add('Disponibilizar a FDS em português no ponto de uso e no local de armazenamento', 'NR-26', 'Gestor do local', 'Antes do primeiro uso');
       if (p.trein.gerar !== false) add('Treinar a equipe com o checklist de treinamento e arquivar a lista de presença', 'Etapa 14 | SST', 'SST / Gestor da área', 'Antes do primeiro uso');
@@ -402,6 +408,26 @@
     return B;
   }
   function D_STATUS(p) { return STATUS[p.status] || STATUS.em_analise; }
+
+
+  // ---------------------------------------------------------------- Inventário do local (NBR 17160, 6.1.5)
+  const ST_TXT = { dentro: 'Dentro do limite', armazem: 'Exige armazém (6.3.1)', analise: 'Definir pela análise de risco', secoes: 'Seções adicionais' };
+  function inventarioLocal(local, produtos) {
+    const g = E.gatilhosLocal(local, produtos);
+    const pseudo = { nome: local.nome, dec: { numero: '' } };
+    const B = [capa('Inventário de produtos perigosos', 'QUIM 360 | Inventário e quantidades-limite | ABNT NBR 17160:2024', pseudo, [['Local', local.nome + ' (' + local.tipo + ')'], ['Itens', String(g.itens.length)], ['Massa líquida total', Math.round(g.total).toLocaleString('pt-BR') + ' kg']])];
+    B.push({ t: 'h1', text: '1 Inventário (6.1.5)' });
+    B.push({ t: 'table', head: ['Produto', 'Classificação', 'Classe de armazenamento', 'Quantidade', 'Setor'], widths: [28, 22, 18, 14, 18], rows: g.itens.length ? g.itens.map((i) => [i.nome, (i.h || []).join(', ') || 'sem frases H informadas', i.arm || 'não definida' + (i.aprox ? ' (aprox.)' : ''), i.qtd != null ? String(i.qtd).replace('.', ',') + ' kg' : 'não informada', local.nome]) : [['Sem itens', '', '', '', '']] });
+    if (g.semQtd.length) B.push({ t: 'callout', tone: 'warn', title: 'Quantidade não informada', text: g.semQtd.join('; ') + '. O inventário da NBR 17160 exige a quantidade de cada produto.' });
+    B.push({ t: 'h1', text: '2 Quantidades-limite (Tabela 1)' });
+    B.push({ t: 'p', small: true, text: 'Quantidade agregada por perigo: massa líquida em kg (gases em L; inflamáveis pelo volume nominal da embalagem, 6.2.8). Itens sem frase H usam a classe de armazenamento e são aproximados.' });
+    B.push({ t: 'table', head: ['Perigo', 'Quantidade', 'Limite fora de armazém', 'Situação', 'Passa a valer'], widths: [34, 12, 16, 18, 20], rows: g.cats.length ? g.cats.map((x) => [x.rotulo + (x.aprox ? ' (aprox.)' : '') + ' | ' + x.itens.join(', '), String(Math.round(x.qtd * 100) / 100).replace('.', ',') + ' ' + x.unidade, x.fora != null ? String(x.fora).replace('.', ',') + ' ' + x.unidade : 'não indicado', ST_TXT[x.status], x.status === 'secoes' ? x.secoes : x.status === 'analise' ? x.analise : '—']) : [['Sem dados', '', '', '', '']] });
+    if (g.exige.length) { B.push({ t: 'h1', text: '3 O que passa a valer neste local' }); B.push({ t: 'list', items: g.exige }); }
+    g.conjuntas.forEach((j) => B.push({ t: 'callout', tone: 'warn', title: j.titulo.split(' |')[0] + ' | classes ' + j.classes.join(', ') + ': ' + Math.round(j.qtd) + ' kg (' + j.faixa + ')', text: j.texto }));
+    B.push({ t: 'p', small: true, text: 'As seções 7 a 14 e os anexos exigidos devem ser atendidos conforme o texto da norma vigente. Este quadro orienta a análise e não substitui a decisão do responsável técnico.' });
+    B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico'], ['Gestor do local', '']] });
+    return B;
+  }
 
   // ---------------------------------------------------------------- Relatório da análise da FDS
   function analiseFds(p, produtos) {
@@ -522,5 +548,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

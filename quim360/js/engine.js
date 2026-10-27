@@ -30,7 +30,7 @@
       amb: { risco: null, contencao: '', residuos: '', derramamento: '' },
       hig: { tlv: null, parecerExigidoOk: false, pgr: '', dosimetria: null, justificativa: '', tlvAgentes: '' },
       imdg: { onu: '', nome: '', classe: '', subrisco: '', pg: '', numeroRisco: '', ems: '', poluente: false, pontoFulgor: '', incompativelOperacao: false, naoRegulado: false },
-      comp: { granel: [], classeArm: '', combustivel: null, estado: '', incompDeclaradas: null, grupos: [], incompativeis: [], incompTexto: '', localOk: '', solucao: '', controles: [], limite: '', tempMax: '', observacoes: '' },
+      comp: { granel: [], classeArm: '', combustivel: null, estado: '', incompDeclaradas: null, grupos: [], incompativeis: [], incompTexto: '', localOk: '', solucao: '', controles: [], limite: '', qtdKg: '', tempMax: '', observacoes: '' },
       par: { tem: null, descricao: '', pgrIndicador: '', pgrPrazo: '', pgrResponsavel: '' },
       dec: { valor: '', justificativa: '', data: '', numero: '', sharepoint: '' },
       trein: { gerar: null },
@@ -169,12 +169,14 @@
   const LEGADO = { '1': '1', '2.1': '2A', '2.2': '2A', '2.3': '2A', '3': '3', '4.1': '4.1B', '4.2': '4.2', '4.3': '4.3', '5.1': '5.1B', '5.2': '5.2', '6': '6.1B', '6.1': '6.1B', '8': '8B', '8a': '8B', '8b': '8B', '9': '9' };
   function armDoItem(i) { return i.classeArm || LEGADO[String(i.classe)] || ''; }
 
+  function numQtd(v) { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(n) && n >= 0 && String(v).trim() !== '' ? n : null; }
+
   function itensDoLocal(local, produtos, excluirId) {
-    const itens = (local.itens || []).map((i) => ({ nome: i.nome, arm: armDoItem(i), aprox: !i.classeArm, grupos: i.grupos || [], incompativeis: i.incompativeis || [], origem: 'manual' }));
+    const itens = (local.itens || []).map((i) => ({ nome: i.nome, arm: armDoItem(i), aprox: !i.classeArm, grupos: i.grupos || [], incompativeis: i.incompativeis || [], origem: 'manual', h: O.GHS.splitCodes(i.h || '', 'H'), qtd: numQtd(i.qtdKg) }));
     (produtos || []).forEach((q) => {
       if (q.id === excluirId) return;
       if (q.ctx && q.ctx.localId === local.id && ['homologado', 'condicionado'].includes(q.status) && q.armazenamento !== 'granel') {
-        itens.push({ nome: q.nome, arm: classeArm(q).id, grupos: q.comp.grupos || [], incompativeis: q.comp.incompativeis || [], origem: 'homologado', pid: q.id });
+        itens.push({ nome: q.nome, arm: classeArm(q).id, grupos: q.comp.grupos || [], incompativeis: q.comp.incompativeis || [], origem: 'homologado', pid: q.id, h: q.ghs.h || [], qtd: numQtd(q.comp.qtdKg) });
       }
     });
     return itens;
@@ -228,6 +230,65 @@
     });
     if (res.status === 'conflito') res.mensagens.push('Há conflito de segregação. Defina local alternativo ou segregação física (bacias separadas, armários distintos, distanciamento).');
     if (res.status === 'com_medidas') res.mensagens.push('Permitido com restrições da NBR 17160: confira as observações de cada par e as condições das Seções 7 e 10 da FDS.');
+    return res;
+  }
+
+
+  // ---------- Quantidades-limite e gatilhos (NBR 17160, Tabela 1, 6.3.1 e Seções 7 a 14) ----------
+  // Cada item entra em todas as categorias de perigo que tiver (quantidade agregada, 4.5). Sem frase H, usa a classe de armazenamento (aproximado).
+  function catsDoItem(it) {
+    const NB = N();
+    const porH = NB.CATS.filter((c) => (it.h || []).some((x) => c.re.test(x)));
+    if (porH.length) return { cats: porH, aprox: false };
+    const porClasse = NB.CATS.filter((c) => c.classes.includes(it.arm));
+    return { cats: porClasse, aprox: porClasse.length > 0 };
+  }
+  function itemDe(p) { return { nome: p.nome, arm: classeArm(p).id, grupos: p.comp.grupos || [], incompativeis: p.comp.incompativeis || [], origem: 'homologado', pid: p.id, h: p.ghs.h || [], qtd: numQtd(p.comp.qtdKg) }; }
+  // extra: produto em análise que ainda não conta como homologado no local
+  function gatilhosLocal(local, produtos, extra) {
+    const NB = N();
+    const itens = itensDoLocal(local, produtos, extra && extra.id);
+    if (extra && extra.armazenamento !== 'granel') itens.push(itemDe(extra));
+    const res = { itens, semQtd: itens.filter((i) => i.qtd == null).map((i) => i.nome), total: 0, informado: itens.some((i) => i.qtd != null), cats: [], total1500: false, conjuntas: [], obs7: [], exige: [] };
+    itens.forEach((i) => { if (i.qtd != null) res.total += i.qtd; });
+    res.total1500 = res.total > 1500;
+    const geral = { k: 'geral', rotulo: 'Perigosos não especificados na Tabela 1', fora: 1000, faixas: [{ acima: 200, secoes: 'Seção 9 (armazenamento conjunto)' }], analise: '' };
+    const por = {};
+    itens.forEach((it) => {
+      const { cats, aprox } = catsDoItem(it);
+      (cats.length ? cats : [geral]).forEach((c) => { (por[c.k] = por[c.k] || { c, qtd: 0, itens: [], aprox: false, sub: 0 }); const g = por[c.k]; g.itens.push(it.nome); if (it.qtd != null) { g.qtd += it.qtd; if (c.sub && (it.h || []).some((x) => c.sub.re.test(x))) g.sub += it.qtd; } if (aprox) g.aprox = true; });
+    });
+    Object.keys(por).forEach((k) => {
+      const g = por[k], c = g.c, q = g.qtd;
+      const ativas = c.faixas.filter((f) => q > f.acima);
+      let status = 'dentro';
+      if (c.fora != null && q > c.fora) status = 'armazem';
+      if (c.analise && c.fora != null && q > c.fora && !ativas.length) status = 'analise';
+      if (c.sub && g.sub > c.sub.limite && status === 'dentro') status = 'armazem';
+      if (ativas.length) status = 'secoes';
+      const secoes = ativas.map((f) => f.secoes).join('; ');
+      const r = { k, rotulo: c.rotulo, unidade: c.unidade || 'kg', qtd: q, fora: c.fora, status, secoes, analise: c.analise, itens: g.itens, aprox: g.aprox, subTexto: c.sub && g.sub > c.sub.limite ? c.sub.texto : '' };
+      res.cats.push(r);
+      if (status === 'secoes') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ' acima de ' + Math.max.apply(null, ativas.map((f) => f.acima)) + ' ' + r.unidade + ' → ' + secoes + '.');
+      else if (status === 'analise') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ', faixa em que as medidas saem da análise de risco (' + c.analise + ').');
+      else if (status === 'armazem') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ' acima de ' + (c.fora != null && q > c.fora ? c.fora : c.sub.limite) + ' ' + r.unidade + ' → armazenar em armazém segregado (6.3.1)' + (r.subTexto ? ' [' + r.subTexto + ']' : '') + '.');
+    });
+    if (res.total1500) res.exige.push('Massa líquida total de ' + Math.round(res.total) + ' kg acima de 1 500 kg: armazenamento conforme a Tabela 1, mesmo abaixo dos limites de cada categoria (6.3.1.3).');
+    // armazenamento conjunto com restrição 3 ou 4 (Tabelas 3 e 4) e restrição 7 (oxidante com combustível)
+    NB.CONJUNTAS.forEach((cj) => {
+      const grupo = itens.filter((i) => cj.classes.includes(i.arm));
+      const tem = grupo.some((a, ia) => grupo.some((b, ib) => ib > ia && a.arm !== b.arm && NB.par(a.arm, b.arm) === '4'));
+      if (!tem) return;
+      const q = grupo.reduce((s, i) => s + (i.qtd || 0), 0);
+      const linhas = NB[cj.t].linhas; const idx = cj.faixas.findIndex((lim) => q <= lim);
+      res.conjuntas.push({ titulo: NB[cj.t].titulo, classes: cj.classes, qtd: q, faixa: idx >= 0 ? linhas[idx][0] : 'acima de ' + (cj.faixas[cj.faixas.length - 1] / 1000) + ' t', texto: idx >= 0 ? linhas[idx][1] : 'Acima da maior faixa da tabela: exige análise de risco e autorização do responsável técnico (observação 1).', itens: grupo.map((i) => i.nome) });
+      res.exige.push('Armazenamento conjunto de classes ' + cj.classes.join(', ') + ' (' + NB[cj.t].titulo.split(' |')[0] + '): ' + Math.round(q) + ' kg, ' + (idx >= 0 ? linhas[idx][0].toLowerCase() + '. ' + linhas[idx][1] : 'fora das faixas da tabela.'));
+    });
+    itens.forEach((a, ia) => itens.forEach((b, ib) => {
+      if (ib <= ia || NB.par(a.arm, b.arm) !== '7') return;
+      const q = (a.qtd || 0) + (b.qtd || 0);
+      if (q > 1000) { res.obs7.push({ a: a.nome, b: b.nome, qtd: q }); res.exige.push(a.nome + ' e ' + b.nome + ' (oxidante com combustível): ' + Math.round(q) + ' kg acima de 1 t. Consultar o responsável técnico (observação 7).'); }
+    }));
     return res;
   }
 
@@ -372,6 +433,13 @@
     }
     r.tri.suspeitos.forEach((c) => r.alertas.push(c.detalhe));
 
+    // quantidades-limite da NBR 17160 no local de armazenamento (alerta; a decisão segue com o analista)
+    const locQ = p.armazenamento !== 'granel' && p.ctx && p.ctx.localId ? O.Store.local(p.ctx.localId) : null;
+    if (locQ) {
+      if (numQtd(p.comp.qtdKg) == null) r.alertas.push('Quantidade a armazenar no local não informada (etapa 11): não é possível verificar as quantidades-limite da NBR 17160.');
+      else gatilhosLocal(locQ, produtos, p).exige.forEach((x) => r.alertas.push('NBR 17160 | ' + locQ.nome + ': ' + x));
+    }
+
     if (p.lista.naLista === true) { r.sugestao = 'na_lista'; return r; }
     if (p.fds.completa === false) r.pendencias.push('FDS fora da ABNT NBR 14725:2023: solicitar correção ao fornecedor.');
     if (p.fds.atualizada === false) r.pendencias.push('FDS desatualizada ou fora do português: solicitar versão atualizada.');
@@ -403,5 +471,5 @@
     return r;
   }
 
-  O.Engine = { gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});

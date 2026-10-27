@@ -6,6 +6,24 @@
   const head = (titulo, sub, ...acoes) => h('div', { class: 'top' }, h('div', {}, h('h1', {}, titulo), sub ? h('p', {}, sub) : null), h('div', { class: 'row' }, acoes));
   const nomeG = (k) => (T.RG.find((r) => r[0] === k) || [k, k])[1];
 
+
+  // ------------------------------------------------------------ quantidades-limite (NBR 17160)
+  const ST_LIM = { dentro: ['ok', 'Dentro do limite'], armazem: ['warn', 'Exige armazém (6.3.1)'], analise: ['warn', 'Definir pela análise de risco'], secoes: ['crit', 'Seções adicionais'] };
+  V.gatilhos = (res, titulo) => {
+    const c = h('div', { class: 'card' }, h('h3', {}, titulo || 'Quantidades-limite da NBR 17160 ', U.disc('PSM')));
+    if (!res.itens.length) { c.appendChild(h('p', { class: 'small' }, 'Nenhum item no local.')); return c; }
+    c.appendChild(h('p', { class: 'small' }, 'Quantidade agregada por perigo (massa líquida em kg; gases em L; inflamáveis pelo volume nominal da embalagem, 6.2.8). Itens sem frase H usam a classe de armazenamento e ficam marcados como aproximados.'));
+    if (res.semQtd.length) c.appendChild(U.alert('warn', 'Quantidade não informada', res.semQtd.join('; ') + '. Sem a quantidade, o item não entra na soma e as seções aplicáveis podem estar subestimadas.'));
+    if (res.informado) {
+      c.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Perigo', 'Quantidade', 'Limite fora de armazém', 'Situação', 'Passa a valer'].map((x) => h('th', {}, x)))),
+        h('tbody', {}, res.cats.map((x) => h('tr', {}, h('td', {}, x.rotulo, x.aprox ? h('small', { class: 'muted' }, ' (aprox.)') : null, h('br'), h('small', { class: 'muted' }, x.itens.join(', '))), h('td', {}, String(Math.round(x.qtd * 100) / 100).replace('.', ',') + ' ' + x.unidade), h('td', {}, x.fora != null ? String(x.fora).replace('.', ',') + ' ' + x.unidade : 'não indicado'), h('td', {}, U.badge(ST_LIM[x.status][0], ST_LIM[x.status][1])), h('td', {}, x.status === 'secoes' ? x.secoes : x.status === 'analise' ? x.analise : '—')))))));
+      c.appendChild(h('p', { class: 'small' }, 'Massa líquida total no local: ' + Math.round(res.total).toLocaleString('pt-BR') + ' kg' + (res.total1500 ? ' (acima de 1 500 kg: 6.3.1.3)' : '') + '.'));
+      res.conjuntas.forEach((j) => c.appendChild(U.alert('warn', j.titulo.split(' |')[0] + ' | armazenamento conjunto das classes ' + j.classes.join(', ') + ': ' + Math.round(j.qtd) + ' kg (' + j.faixa + ')', j.texto)));
+      res.obs7.forEach((o) => c.appendChild(U.alert('warn', 'Observação 7 | ' + o.a + ' com ' + o.b, Math.round(o.qtd) + ' kg acima de 1 t: consultar o responsável técnico.')));
+    }
+    return c;
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -169,6 +187,11 @@
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática da matriz de segregação ', U.disc('PSM')),
         h('p', { class: 'small' }, 'Este produto contra cada produto homologado: matriz de incompatibilidade da ABNT NBR 17160:2024 mais reatividade pela Seção 10 da FDS. Classe de armazenamento deste produto: ' + E.classeArm(p).id + ' (' + E.classeArm(p).motivo + ').'),
         V.resumoCompat(p, outros), outros.length ? V.quadroDoProduto(p, outros) : null, V.tabelaCompat(p, outros)));
+      if (p.armazenamento !== 'granel') {
+        const lq = S.local(p.ctx.localId);
+        root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Quantidade armazenada'), U.input(p, 'comp.qtdKg', { type: 'number', label: 'Quantidade deste produto no local (kg; gases em L)', hint: 'Massa líquida. Para inflamáveis, use o volume nominal da embalagem (6.2.8).', onInput: () => U.salvar(p) })));
+        if (lq) root.appendChild(V.gatilhos(E.gatilhosLocal(lq, S.produtos(), p), 'Quantidades-limite em ' + lq.nome));
+      }
       if (outros.length) { const dq = V.catalogo(p).find((x) => x.id === 'quadro'); if (dq && dq.on) root.appendChild(h('div', { class: 'card' }, h('h3', {}, dq.nome), h('p', { class: 'small' }, dq.desc), V.docBotoes(p, dq))); root.appendChild(V.gruposCard([p].concat(outros))); }
     } else if (tab === 'docs') {
       root.appendChild(V.pacote(p));
@@ -322,11 +345,12 @@
       const linked = aud.itens.filter((i) => i.origem === 'homologado');
       if (linked.length) card.appendChild(h('p', { class: 'small' }, 'Vinculados por homologação: ' + linked.map((i) => i.nome).join('; ')));
       const tb = h('tbody');
-      (l.itens || []).forEach((it, i) => tb.appendChild(h('tr', {}, h('td', {}, it.nome), h('td', {}, E.armDoItem(it) + (it.classeArm ? '' : ' (aprox.)')), h('td', {}, (it.grupos || []).map(nomeG).join(', ') || '—'), h('td', {}, (it.incompativeis || []).map(nomeG).join(', ') || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.itens.splice(i, 1); S.salvarLocal(l); O.route(); } }, 'Remover')))));
-      if ((l.itens || []).length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item', 'Classe de armazenamento', 'Grupos', 'Incompatível com', ''].map((x) => h('th', {}, x)))), tb)));
-      const novo = { nome: '', classeArm: '', grupos: [], incompativeis: [] };
+      (l.itens || []).forEach((it, i) => tb.appendChild(h('tr', {}, h('td', {}, it.nome), h('td', {}, E.armDoItem(it) + (it.classeArm ? '' : ' (aprox.)')), h('td', {}, it.qtdKg !== undefined && it.qtdKg !== '' ? String(it.qtdKg).replace('.', ',') + ' kg' : '—'), h('td', {}, (it.grupos || []).map(nomeG).join(', ') || '—'), h('td', {}, (it.incompativeis || []).map(nomeG).join(', ') || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.itens.splice(i, 1); S.salvarLocal(l); O.route(); } }, 'Remover')))));
+      if ((l.itens || []).length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item', 'Classe de armazenamento', 'Quantidade', 'Grupos', 'Incompatível com', ''].map((x) => h('th', {}, x)))), tb)));
+      const novo = { nome: '', classeArm: '', qtdKg: '', h: '', grupos: [], incompativeis: [] };
       card.appendChild(h('details', {}, h('summary', {}, 'Adicionar item armazenado'), U.input({ n: novo }, 'n.nome', { label: 'Nome do produto' }),
         U.select({ n: novo }, 'n.classeArm', O.NBR17160.CLASSES.filter((c) => c[0] !== '9').map((c) => [c[0], c[0] + ' | ' + c[1]]), { label: 'Classe de armazenamento (NBR 17160, Tabela 2)' }),
+        h('div', { class: 'grid g2' }, U.input({ n: novo }, 'n.qtdKg', { type: 'number', label: 'Quantidade (kg; gases em L)', hint: 'Massa líquida. Inflamáveis: volume nominal da embalagem.' }), U.input({ n: novo }, 'n.h', { label: 'Frases H (opcional)', ph: 'Ex.: H225, H319', hint: 'Com as frases H a soma por perigo fica exata; sem elas usa a classe de armazenamento.' })),
         h('p', { class: 'q' }, 'Grupo de reatividade do item'), U.checks({ n: novo }, 'n.grupos', T.RG.filter((r) => r[0] !== 'ignicao').map((r) => ({ v: r[0], label: r[1] }))),
         h('p', { class: 'q' }, 'Incompatível com (FDS do item)'), U.checks({ n: novo }, 'n.incompativeis', T.RG.map((r) => ({ v: r[0], label: r[1] }))),
         h('button', { class: 'btn', onclick: () => { if (!novo.nome.trim() || !novo.classeArm) { U.toast('Informe o nome e a classe de armazenamento.'); return; } l.itens = l.itens || []; l.itens.push({ ...novo, nome: novo.nome.trim() }); S.salvarLocal(l); O.route(); } }, 'Adicionar')));
@@ -335,6 +359,13 @@
       if (aud.itens.length < 2) card.appendChild(h('p', { class: 'muted' }, 'Cadastre ao menos dois itens para auditar pares.'));
       else if (!crit.length) card.appendChild(U.alert('ok', null, 'Todos os pares são permitidos pela matriz e sem reatividade declarada.'));
       else card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Par', 'Classes', 'Resultado', 'Observação'].map((x) => h('th', {}, x)))), h('tbody', {}, crit.map((x) => { const falta5 = x.codigo === '8' && (Number(l.espacoM) || 0) < 5; return h('tr', {}, h('td', {}, x.a + ' x ' + x.b), h('td', {}, x.par.join(' x ')), h('td', {}, h('span', { class: 'pc ' + NIV_CLASS[x.nivel] }, E.NIVEL[x.nivel])), h('td', {}, [x.texto, falta5 ? 'O local tem ' + (l.espacoM || 0) + ' m: faltam 5 m ou segregação física.' : '', ...x.motivos].filter(Boolean).join(' '))); })))));
+      card.appendChild(h('h4', { style: 'margin-top:14px' }, 'Inventário e quantidades-limite (NBR 17160, 6.1.5 e Tabela 1) ', U.disc('PSM')));
+      const gat = E.gatilhosLocal(l, ps);
+      if (gat.itens.length) {
+        const ps0 = { nome: l.nome, id: 'inv' };
+        card.appendChild(h('div', { class: 'row', style: 'margin-bottom:8px' }, V.docBotoes(ps0, { id: 'inventario', nome: 'Inventário de produtos perigosos', fn: () => D.inventarioLocal(l, S.produtos()) }, true)));
+        card.appendChild(V.gatilhos(gat, 'Situação do local'));
+      } else card.appendChild(h('p', { class: 'muted' }, 'Cadastre itens ou vincule produtos homologados ao local para montar o inventário.'));
       root.appendChild(card);
     });
   };

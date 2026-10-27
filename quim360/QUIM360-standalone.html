@@ -23236,10 +23236,38 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   ];
   const LIMITE_GERAL = { rotulo: 'Produtos perigosos não especificados', limite: '1 000 kg', acima: 'Seção 6.3 acima de 1 000 kg; armazenamento conjunto (Seção 9) acima de 200 kg' };
 
+
+  // Tabela 1 e subitens 6.3.1.2, 7.1, 8.1, 10.1, 11.1, 12.1, 13 e 14.1 | categorias para somar a quantidade agregada.
+  // fora: quantidade permitida fora de armazém (kg; L para gases). faixas: acima da quantidade, passam a valer as seções.
+  // analise: faixa intermediária em que a medida é definida pela análise de risco. classes: uso quando o item só tem a classe de armazenamento (aproximado).
+  const CATS = [
+    { k: 'tox', rotulo: 'Toxicidade aguda, categorias 1 a 3 (H300, H301, H310, H311, H330, H331)', re: /^H(300|301|310|311|330|331)$/, classes: ['6.1A', '6.1B', '6.1C', '6.1D'], fora: 50, faixas: [{ acima: 200, secoes: 'Seções 7 e 10' }], analise: '10.1.2 (entre 50 e 200 kg)' },
+    { k: 'cmr', rotulo: 'Mutagênico, cancerígeno ou tóxico à reprodução, 1A ou 1B (H340, H350, H360)', re: /^H(340|350|360)/, classes: [], fora: 50, faixas: [{ acima: 200, secoes: 'Seção 7' }], analise: '7.1.2 (entre 50 e 200 kg)' },
+    { k: 'stot', rotulo: 'Órgãos-alvo, categoria 1 (H370, H372)', re: /^H(370|372)$/, classes: [], fora: 50, faixas: [{ acima: 200, secoes: 'Seção 7' }], analise: '7.1.2 (entre 50 e 200 kg)' },
+    { k: 'inf12', rotulo: 'Líquido inflamável, categoria 1 ou 2 (H224, H225)', re: /^H(224|225)$/, classes: ['3'], fora: 20, sub: { re: /^H224$/, limite: 10, texto: 'H224 (extremamente inflamável) acima de 10 kg' }, faixas: [{ acima: 200, secoes: 'Seções 7, 8 e 14; Anexos B, C e E' }], analise: '14.1.2 (acima de 10 kg de H224 ou 20 kg de H225, até 200 kg)' },
+    { k: 'inf3', rotulo: 'Líquido inflamável, categoria 3 (H226)', re: /^H226$/, classes: [], fora: 100, faixas: [{ acima: 1000, secoes: 'Seções 7, 8 e 14; Anexos B, C e E' }], analise: '14.1.2 (entre 100 e 1 000 kg)' },
+    { k: 'h227', rotulo: 'Líquido combustível, categoria 4 (H227)', re: /^H227$/, classes: [], fora: 1000, faixas: [{ acima: 1000, secoes: 'Seção 8' }], analise: '' },
+    { k: 'solinf', rotulo: 'Sólido inflamável (H228)', re: /^H228$/, classes: ['4.1B'], fora: null, faixas: [{ acima: 200, secoes: 'Seção 8' }], analise: '' },
+    { k: 'piro', rotulo: 'Pirofórico (H250)', re: /^H250$/, classes: ['4.2'], fora: 200, faixas: [{ acima: 200, secoes: 'Seções 7 e 8' }], analise: '' },
+    { k: 'auto', rotulo: 'Autoaquecimento (H251, H252)', re: /^H(251|252)$/, classes: [], fora: null, faixas: [{ acima: 200, secoes: 'Seção 8' }], analise: '' },
+    { k: 'autorr', rotulo: 'Autorreativo (H242)', re: /^H242$/, classes: ['5.2'], fora: null, faixas: [{ acima: 200, secoes: 'Seção 8' }], analise: '' },
+    { k: 'h260', rotulo: 'Emite gás inflamável em contato com a água (H260, H261)', re: /^H(260|261)$/, classes: ['4.3'], fora: 200, faixas: [{ acima: 200, secoes: 'Seção 8' }], analise: '' },
+    { k: 'ox1', rotulo: 'Altamente oxidante, categoria 1 ou grupo de embalagem I (H271)', re: /^H271$/, classes: ['5.1A'], fora: 1, faixas: [{ acima: 5, secoes: 'Seções 7 e 11' }], analise: '11.1.3 (entre 1 e 5 kg)' },
+    { k: 'ox23', rotulo: 'Oxidante, categoria 2 ou 3 (H272)', re: /^H272$/, classes: ['5.1B'], fora: 50, faixas: [{ acima: 200, secoes: 'Seções 7 e 11' }], analise: '11.1.3 (entre 50 e 200 kg)' },
+    { k: 'gas', rotulo: 'Gás sob pressão, inflamável ou oxidante (H220, H221, H270, H280, H281) | volume em L', re: /^H(220|221|270|280|281)$/, classes: ['2A'], unidade: 'L', fora: 2.5, faixas: [{ acima: 2.5, secoes: 'Seção 12' }, { acima: 200, secoes: 'Seções 7 e 8 (inflamáveis e oxidantes, em kg)' }], analise: '' },
+    { k: 'aer', rotulo: 'Aerossol (H222, H223)', re: /^H(222|223)$/, classes: ['2B'], fora: 20, faixas: [{ acima: 200, secoes: 'Seções 8 e 13' }], analise: '' },
+    { k: 'corr', rotulo: 'Corrosivo (H290, H314)', re: /^H(290|314)$/, classes: ['8A', '8B'], fora: 1000, faixas: [{ acima: 200, secoes: 'Seção 7' }], analise: '' },
+  ];
+  // quantidades das Tabelas 3 e 4 (kg) para o armazenamento conjunto
+  const CONJUNTAS = [
+    { obs: 3, titulo: 'Tabela 3', classes: ['3', '5.1B', '6.1A', '6.1B'], faixas: [1000, 20000], t: 'TABELA3' },
+    { obs: 4, titulo: 'Tabela 4', classes: ['4.1B', '6.1A'], faixas: [1000, 20000, 50000, 100000], t: 'TABELA4' },
+  ];
+
   const BY = {}; CLASSES.forEach((c) => { BY[c[0]] = { id: c[0], nome: c[1], criterio: c[2] }; });
 
   O.NBR17160 = {
-    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, BY,
+    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, CATS, CONJUNTAS, BY,
     nome(id) { return BY[id] ? BY[id].nome : ''; },
     // 'R' | 'G' | '1'..'8' | null (classe fora da matriz, por exemplo 9)
     par(a, b) { return MATRIZ[a] && MATRIZ[a][b] !== undefined ? MATRIZ[a][b] : null; },
@@ -23379,7 +23407,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       amb: { risco: null, contencao: '', residuos: '', derramamento: '' },
       hig: { tlv: null, parecerExigidoOk: false, pgr: '', dosimetria: null, justificativa: '', tlvAgentes: '' },
       imdg: { onu: '', nome: '', classe: '', subrisco: '', pg: '', numeroRisco: '', ems: '', poluente: false, pontoFulgor: '', incompativelOperacao: false, naoRegulado: false },
-      comp: { granel: [], classeArm: '', combustivel: null, estado: '', incompDeclaradas: null, grupos: [], incompativeis: [], incompTexto: '', localOk: '', solucao: '', controles: [], limite: '', tempMax: '', observacoes: '' },
+      comp: { granel: [], classeArm: '', combustivel: null, estado: '', incompDeclaradas: null, grupos: [], incompativeis: [], incompTexto: '', localOk: '', solucao: '', controles: [], limite: '', qtdKg: '', tempMax: '', observacoes: '' },
       par: { tem: null, descricao: '', pgrIndicador: '', pgrPrazo: '', pgrResponsavel: '' },
       dec: { valor: '', justificativa: '', data: '', numero: '', sharepoint: '' },
       trein: { gerar: null },
@@ -23518,12 +23546,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   const LEGADO = { '1': '1', '2.1': '2A', '2.2': '2A', '2.3': '2A', '3': '3', '4.1': '4.1B', '4.2': '4.2', '4.3': '4.3', '5.1': '5.1B', '5.2': '5.2', '6': '6.1B', '6.1': '6.1B', '8': '8B', '8a': '8B', '8b': '8B', '9': '9' };
   function armDoItem(i) { return i.classeArm || LEGADO[String(i.classe)] || ''; }
 
+  function numQtd(v) { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(n) && n >= 0 && String(v).trim() !== '' ? n : null; }
+
   function itensDoLocal(local, produtos, excluirId) {
-    const itens = (local.itens || []).map((i) => ({ nome: i.nome, arm: armDoItem(i), aprox: !i.classeArm, grupos: i.grupos || [], incompativeis: i.incompativeis || [], origem: 'manual' }));
+    const itens = (local.itens || []).map((i) => ({ nome: i.nome, arm: armDoItem(i), aprox: !i.classeArm, grupos: i.grupos || [], incompativeis: i.incompativeis || [], origem: 'manual', h: O.GHS.splitCodes(i.h || '', 'H'), qtd: numQtd(i.qtdKg) }));
     (produtos || []).forEach((q) => {
       if (q.id === excluirId) return;
       if (q.ctx && q.ctx.localId === local.id && ['homologado', 'condicionado'].includes(q.status) && q.armazenamento !== 'granel') {
-        itens.push({ nome: q.nome, arm: classeArm(q).id, grupos: q.comp.grupos || [], incompativeis: q.comp.incompativeis || [], origem: 'homologado', pid: q.id });
+        itens.push({ nome: q.nome, arm: classeArm(q).id, grupos: q.comp.grupos || [], incompativeis: q.comp.incompativeis || [], origem: 'homologado', pid: q.id, h: q.ghs.h || [], qtd: numQtd(q.comp.qtdKg) });
       }
     });
     return itens;
@@ -23577,6 +23607,65 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     });
     if (res.status === 'conflito') res.mensagens.push('Há conflito de segregação. Defina local alternativo ou segregação física (bacias separadas, armários distintos, distanciamento).');
     if (res.status === 'com_medidas') res.mensagens.push('Permitido com restrições da NBR 17160: confira as observações de cada par e as condições das Seções 7 e 10 da FDS.');
+    return res;
+  }
+
+
+  // ---------- Quantidades-limite e gatilhos (NBR 17160, Tabela 1, 6.3.1 e Seções 7 a 14) ----------
+  // Cada item entra em todas as categorias de perigo que tiver (quantidade agregada, 4.5). Sem frase H, usa a classe de armazenamento (aproximado).
+  function catsDoItem(it) {
+    const NB = N();
+    const porH = NB.CATS.filter((c) => (it.h || []).some((x) => c.re.test(x)));
+    if (porH.length) return { cats: porH, aprox: false };
+    const porClasse = NB.CATS.filter((c) => c.classes.includes(it.arm));
+    return { cats: porClasse, aprox: porClasse.length > 0 };
+  }
+  function itemDe(p) { return { nome: p.nome, arm: classeArm(p).id, grupos: p.comp.grupos || [], incompativeis: p.comp.incompativeis || [], origem: 'homologado', pid: p.id, h: p.ghs.h || [], qtd: numQtd(p.comp.qtdKg) }; }
+  // extra: produto em análise que ainda não conta como homologado no local
+  function gatilhosLocal(local, produtos, extra) {
+    const NB = N();
+    const itens = itensDoLocal(local, produtos, extra && extra.id);
+    if (extra && extra.armazenamento !== 'granel') itens.push(itemDe(extra));
+    const res = { itens, semQtd: itens.filter((i) => i.qtd == null).map((i) => i.nome), total: 0, informado: itens.some((i) => i.qtd != null), cats: [], total1500: false, conjuntas: [], obs7: [], exige: [] };
+    itens.forEach((i) => { if (i.qtd != null) res.total += i.qtd; });
+    res.total1500 = res.total > 1500;
+    const geral = { k: 'geral', rotulo: 'Perigosos não especificados na Tabela 1', fora: 1000, faixas: [{ acima: 200, secoes: 'Seção 9 (armazenamento conjunto)' }], analise: '' };
+    const por = {};
+    itens.forEach((it) => {
+      const { cats, aprox } = catsDoItem(it);
+      (cats.length ? cats : [geral]).forEach((c) => { (por[c.k] = por[c.k] || { c, qtd: 0, itens: [], aprox: false, sub: 0 }); const g = por[c.k]; g.itens.push(it.nome); if (it.qtd != null) { g.qtd += it.qtd; if (c.sub && (it.h || []).some((x) => c.sub.re.test(x))) g.sub += it.qtd; } if (aprox) g.aprox = true; });
+    });
+    Object.keys(por).forEach((k) => {
+      const g = por[k], c = g.c, q = g.qtd;
+      const ativas = c.faixas.filter((f) => q > f.acima);
+      let status = 'dentro';
+      if (c.fora != null && q > c.fora) status = 'armazem';
+      if (c.analise && c.fora != null && q > c.fora && !ativas.length) status = 'analise';
+      if (c.sub && g.sub > c.sub.limite && status === 'dentro') status = 'armazem';
+      if (ativas.length) status = 'secoes';
+      const secoes = ativas.map((f) => f.secoes).join('; ');
+      const r = { k, rotulo: c.rotulo, unidade: c.unidade || 'kg', qtd: q, fora: c.fora, status, secoes, analise: c.analise, itens: g.itens, aprox: g.aprox, subTexto: c.sub && g.sub > c.sub.limite ? c.sub.texto : '' };
+      res.cats.push(r);
+      if (status === 'secoes') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ' acima de ' + Math.max.apply(null, ativas.map((f) => f.acima)) + ' ' + r.unidade + ' → ' + secoes + '.');
+      else if (status === 'analise') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ', faixa em que as medidas saem da análise de risco (' + c.analise + ').');
+      else if (status === 'armazem') res.exige.push(c.rotulo.split(' (')[0] + ': ' + q + ' ' + r.unidade + ' acima de ' + (c.fora != null && q > c.fora ? c.fora : c.sub.limite) + ' ' + r.unidade + ' → armazenar em armazém segregado (6.3.1)' + (r.subTexto ? ' [' + r.subTexto + ']' : '') + '.');
+    });
+    if (res.total1500) res.exige.push('Massa líquida total de ' + Math.round(res.total) + ' kg acima de 1 500 kg: armazenamento conforme a Tabela 1, mesmo abaixo dos limites de cada categoria (6.3.1.3).');
+    // armazenamento conjunto com restrição 3 ou 4 (Tabelas 3 e 4) e restrição 7 (oxidante com combustível)
+    NB.CONJUNTAS.forEach((cj) => {
+      const grupo = itens.filter((i) => cj.classes.includes(i.arm));
+      const tem = grupo.some((a, ia) => grupo.some((b, ib) => ib > ia && a.arm !== b.arm && NB.par(a.arm, b.arm) === '4'));
+      if (!tem) return;
+      const q = grupo.reduce((s, i) => s + (i.qtd || 0), 0);
+      const linhas = NB[cj.t].linhas; const idx = cj.faixas.findIndex((lim) => q <= lim);
+      res.conjuntas.push({ titulo: NB[cj.t].titulo, classes: cj.classes, qtd: q, faixa: idx >= 0 ? linhas[idx][0] : 'acima de ' + (cj.faixas[cj.faixas.length - 1] / 1000) + ' t', texto: idx >= 0 ? linhas[idx][1] : 'Acima da maior faixa da tabela: exige análise de risco e autorização do responsável técnico (observação 1).', itens: grupo.map((i) => i.nome) });
+      res.exige.push('Armazenamento conjunto de classes ' + cj.classes.join(', ') + ' (' + NB[cj.t].titulo.split(' |')[0] + '): ' + Math.round(q) + ' kg, ' + (idx >= 0 ? linhas[idx][0].toLowerCase() + '. ' + linhas[idx][1] : 'fora das faixas da tabela.'));
+    });
+    itens.forEach((a, ia) => itens.forEach((b, ib) => {
+      if (ib <= ia || NB.par(a.arm, b.arm) !== '7') return;
+      const q = (a.qtd || 0) + (b.qtd || 0);
+      if (q > 1000) { res.obs7.push({ a: a.nome, b: b.nome, qtd: q }); res.exige.push(a.nome + ' e ' + b.nome + ' (oxidante com combustível): ' + Math.round(q) + ' kg acima de 1 t. Consultar o responsável técnico (observação 7).'); }
+    }));
     return res;
   }
 
@@ -23721,6 +23810,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     }
     r.tri.suspeitos.forEach((c) => r.alertas.push(c.detalhe));
 
+    // quantidades-limite da NBR 17160 no local de armazenamento (alerta; a decisão segue com o analista)
+    const locQ = p.armazenamento !== 'granel' && p.ctx && p.ctx.localId ? O.Store.local(p.ctx.localId) : null;
+    if (locQ) {
+      if (numQtd(p.comp.qtdKg) == null) r.alertas.push('Quantidade a armazenar no local não informada (etapa 11): não é possível verificar as quantidades-limite da NBR 17160.');
+      else gatilhosLocal(locQ, produtos, p).exige.forEach((x) => r.alertas.push('NBR 17160 | ' + locQ.nome + ': ' + x));
+    }
+
     if (p.lista.naLista === true) { r.sugestao = 'na_lista'; return r; }
     if (p.fds.completa === false) r.pendencias.push('FDS fora da ABNT NBR 14725:2023: solicitar correção ao fornecedor.');
     if (p.fds.atualizada === false) r.pendencias.push('FDS desatualizada ou fora do português: solicitar versão atualizada.');
@@ -23752,7 +23848,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return r;
   }
 
-  O.Engine = { gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});
 </script>
 <script>/* Analisador de FDS (ABNT NBR 14725): extrai dados do texto colado ou de arquivo .txt/.pdf.
@@ -24684,6 +24780,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       if (p.comp.localOk === 'conflito') add('Implantar a segregação física ou o local alternativo: ' + (p.comp.observacoes || 'conforme matriz'), 'Etapa 11.2 | PSM', 'Gestor do local', 'Antes do primeiro recebimento', 'Pendente');
       const n20 = E.nr20(p);
       if (n20.aplica) add('NR-20: verificar a classificação da instalação, as áreas classificadas, o aterramento e o prontuário (' + n20.categoria + ')', 'NR-20 | PSM', 'Segurança de processo', 'Antes do primeiro recebimento');
+      if (loc && p.armazenamento !== 'granel') {
+        if (E.gatilhosLocal) {
+          if (p.comp.qtdKg === '' || p.comp.qtdKg == null) add('Informar a quantidade a armazenar em ' + loc.nome + ' para verificar as quantidades-limite da NBR 17160', 'NBR 17160 | Tabela 1', 'Responsável técnico', 'Antes do primeiro recebimento');
+          else E.gatilhosLocal(loc, produtos, p).exige.forEach((x) => add(x, 'NBR 17160 | Tabela 1 e Seções 6 a 14', 'Responsável técnico / Gestor do local', 'Antes do primeiro recebimento'));
+        }
+      }
       add('Rotular recipientes e frações conforme o GHS (NBR 14725) e a NR-26', 'Rotulagem', 'Gestor do local', 'Antes do primeiro uso');
       add('Disponibilizar a FDS em português no ponto de uso e no local de armazenamento', 'NR-26', 'Gestor do local', 'Antes do primeiro uso');
       if (p.trein.gerar !== false) add('Treinar a equipe com o checklist de treinamento e arquivar a lista de presença', 'Etapa 14 | SST', 'SST / Gestor da área', 'Antes do primeiro uso');
@@ -24703,6 +24805,26 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return B;
   }
   function D_STATUS(p) { return STATUS[p.status] || STATUS.em_analise; }
+
+
+  // ---------------------------------------------------------------- Inventário do local (NBR 17160, 6.1.5)
+  const ST_TXT = { dentro: 'Dentro do limite', armazem: 'Exige armazém (6.3.1)', analise: 'Definir pela análise de risco', secoes: 'Seções adicionais' };
+  function inventarioLocal(local, produtos) {
+    const g = E.gatilhosLocal(local, produtos);
+    const pseudo = { nome: local.nome, dec: { numero: '' } };
+    const B = [capa('Inventário de produtos perigosos', 'QUIM 360 | Inventário e quantidades-limite | ABNT NBR 17160:2024', pseudo, [['Local', local.nome + ' (' + local.tipo + ')'], ['Itens', String(g.itens.length)], ['Massa líquida total', Math.round(g.total).toLocaleString('pt-BR') + ' kg']])];
+    B.push({ t: 'h1', text: '1 Inventário (6.1.5)' });
+    B.push({ t: 'table', head: ['Produto', 'Classificação', 'Classe de armazenamento', 'Quantidade', 'Setor'], widths: [28, 22, 18, 14, 18], rows: g.itens.length ? g.itens.map((i) => [i.nome, (i.h || []).join(', ') || 'sem frases H informadas', i.arm || 'não definida' + (i.aprox ? ' (aprox.)' : ''), i.qtd != null ? String(i.qtd).replace('.', ',') + ' kg' : 'não informada', local.nome]) : [['Sem itens', '', '', '', '']] });
+    if (g.semQtd.length) B.push({ t: 'callout', tone: 'warn', title: 'Quantidade não informada', text: g.semQtd.join('; ') + '. O inventário da NBR 17160 exige a quantidade de cada produto.' });
+    B.push({ t: 'h1', text: '2 Quantidades-limite (Tabela 1)' });
+    B.push({ t: 'p', small: true, text: 'Quantidade agregada por perigo: massa líquida em kg (gases em L; inflamáveis pelo volume nominal da embalagem, 6.2.8). Itens sem frase H usam a classe de armazenamento e são aproximados.' });
+    B.push({ t: 'table', head: ['Perigo', 'Quantidade', 'Limite fora de armazém', 'Situação', 'Passa a valer'], widths: [34, 12, 16, 18, 20], rows: g.cats.length ? g.cats.map((x) => [x.rotulo + (x.aprox ? ' (aprox.)' : '') + ' | ' + x.itens.join(', '), String(Math.round(x.qtd * 100) / 100).replace('.', ',') + ' ' + x.unidade, x.fora != null ? String(x.fora).replace('.', ',') + ' ' + x.unidade : 'não indicado', ST_TXT[x.status], x.status === 'secoes' ? x.secoes : x.status === 'analise' ? x.analise : '—']) : [['Sem dados', '', '', '', '']] });
+    if (g.exige.length) { B.push({ t: 'h1', text: '3 O que passa a valer neste local' }); B.push({ t: 'list', items: g.exige }); }
+    g.conjuntas.forEach((j) => B.push({ t: 'callout', tone: 'warn', title: j.titulo.split(' |')[0] + ' | classes ' + j.classes.join(', ') + ': ' + Math.round(j.qtd) + ' kg (' + j.faixa + ')', text: j.texto }));
+    B.push({ t: 'p', small: true, text: 'As seções 7 a 14 e os anexos exigidos devem ser atendidos conforme o texto da norma vigente. Este quadro orienta a análise e não substitui a decisão do responsável técnico.' });
+    B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico'], ['Gestor do local', '']] });
+    return B;
+  }
 
   // ---------------------------------------------------------------- Relatório da análise da FDS
   function analiseFds(p, produtos) {
@@ -24823,7 +24945,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});
 </script>
 <script>/* Renderizadores de blocos: HTML (pré-visualização e PDF por impressão) e Word (.docx). */
@@ -25818,6 +25940,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           const tab = h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Perigo', 'Limite fora de armazém', 'Acima do limite'].map((x) => h('th', {}, x)))), h('tbody', {}, lims.map((l) => h('tr', {}, h('td', {}, l.rotulo), h('td', {}, l.limite), h('td', {}, l.acima)))));
           w.appendChild(h('div', { class: 'sug' }, h('h4', {}, 'Quantidades-limite da NBR 17160 (Tabela 1)'), h('p', { class: 'small' }, 'Quantidade agregada permitida fora de armazéns e seções da norma que passam a valer acima do limite.'), tab, h('p', { class: 'small' }, 'Também vale: ' + O.NBR17160.LIMITE_GERAL.rotulo + ', ' + O.NBR17160.LIMITE_GERAL.limite + '.')));
         }
+        const boxQ = h('div');
+        const drawQ = () => { boxQ.innerHTML = ''; if (loc && p.comp.qtdKg !== '' && p.comp.qtdKg != null) boxQ.appendChild(O.Views.gatilhos(E.gatilhosLocal(loc, S.produtos(), p), 'Quantidades-limite em ' + loc.nome)); };
+        w.appendChild(U.input(p, 'comp.qtdKg', { type: 'number', label: 'Quantidade a armazenar no local (kg; gases em L)', hint: 'Massa líquida. Inflamáveis: volume nominal da embalagem (6.2.8). Com ela, o app soma o que já está no local e aponta as seções da NBR 17160 que passam a valer.', onInput: drawQ }));
+        drawQ(); w.appendChild(boxQ);
         w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'comp.limite', { label: 'Quantidade máxima armazenada', ph: 'Ex.: 200 L' }), U.input(p, 'comp.tempMax', { label: 'Temperatura máxima de armazenamento (Seção 7)', ph: 'Ex.: 35 °C' })));
         w.appendChild(U.alert('', 'Base', 'ABNT NBR 17160:2024: classe de armazenamento (Anexo D) e matriz de incompatibilidade (Figura 1), mais os grupos de reatividade da Seção 10 da FDS. A norma lembra que a classificação não é a única base: avalie combustão, gases, corrosivos e instáveis formados.'));
         return w;
@@ -26026,6 +26152,24 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   const head = (titulo, sub, ...acoes) => h('div', { class: 'top' }, h('div', {}, h('h1', {}, titulo), sub ? h('p', {}, sub) : null), h('div', { class: 'row' }, acoes));
   const nomeG = (k) => (T.RG.find((r) => r[0] === k) || [k, k])[1];
 
+
+  // ------------------------------------------------------------ quantidades-limite (NBR 17160)
+  const ST_LIM = { dentro: ['ok', 'Dentro do limite'], armazem: ['warn', 'Exige armazém (6.3.1)'], analise: ['warn', 'Definir pela análise de risco'], secoes: ['crit', 'Seções adicionais'] };
+  V.gatilhos = (res, titulo) => {
+    const c = h('div', { class: 'card' }, h('h3', {}, titulo || 'Quantidades-limite da NBR 17160 ', U.disc('PSM')));
+    if (!res.itens.length) { c.appendChild(h('p', { class: 'small' }, 'Nenhum item no local.')); return c; }
+    c.appendChild(h('p', { class: 'small' }, 'Quantidade agregada por perigo (massa líquida em kg; gases em L; inflamáveis pelo volume nominal da embalagem, 6.2.8). Itens sem frase H usam a classe de armazenamento e ficam marcados como aproximados.'));
+    if (res.semQtd.length) c.appendChild(U.alert('warn', 'Quantidade não informada', res.semQtd.join('; ') + '. Sem a quantidade, o item não entra na soma e as seções aplicáveis podem estar subestimadas.'));
+    if (res.informado) {
+      c.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Perigo', 'Quantidade', 'Limite fora de armazém', 'Situação', 'Passa a valer'].map((x) => h('th', {}, x)))),
+        h('tbody', {}, res.cats.map((x) => h('tr', {}, h('td', {}, x.rotulo, x.aprox ? h('small', { class: 'muted' }, ' (aprox.)') : null, h('br'), h('small', { class: 'muted' }, x.itens.join(', '))), h('td', {}, String(Math.round(x.qtd * 100) / 100).replace('.', ',') + ' ' + x.unidade), h('td', {}, x.fora != null ? String(x.fora).replace('.', ',') + ' ' + x.unidade : 'não indicado'), h('td', {}, U.badge(ST_LIM[x.status][0], ST_LIM[x.status][1])), h('td', {}, x.status === 'secoes' ? x.secoes : x.status === 'analise' ? x.analise : '—')))))));
+      c.appendChild(h('p', { class: 'small' }, 'Massa líquida total no local: ' + Math.round(res.total).toLocaleString('pt-BR') + ' kg' + (res.total1500 ? ' (acima de 1 500 kg: 6.3.1.3)' : '') + '.'));
+      res.conjuntas.forEach((j) => c.appendChild(U.alert('warn', j.titulo.split(' |')[0] + ' | armazenamento conjunto das classes ' + j.classes.join(', ') + ': ' + Math.round(j.qtd) + ' kg (' + j.faixa + ')', j.texto)));
+      res.obs7.forEach((o) => c.appendChild(U.alert('warn', 'Observação 7 | ' + o.a + ' com ' + o.b, Math.round(o.qtd) + ' kg acima de 1 t: consultar o responsável técnico.')));
+    }
+    return c;
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -26189,6 +26333,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática da matriz de segregação ', U.disc('PSM')),
         h('p', { class: 'small' }, 'Este produto contra cada produto homologado: matriz de incompatibilidade da ABNT NBR 17160:2024 mais reatividade pela Seção 10 da FDS. Classe de armazenamento deste produto: ' + E.classeArm(p).id + ' (' + E.classeArm(p).motivo + ').'),
         V.resumoCompat(p, outros), outros.length ? V.quadroDoProduto(p, outros) : null, V.tabelaCompat(p, outros)));
+      if (p.armazenamento !== 'granel') {
+        const lq = S.local(p.ctx.localId);
+        root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Quantidade armazenada'), U.input(p, 'comp.qtdKg', { type: 'number', label: 'Quantidade deste produto no local (kg; gases em L)', hint: 'Massa líquida. Para inflamáveis, use o volume nominal da embalagem (6.2.8).', onInput: () => U.salvar(p) })));
+        if (lq) root.appendChild(V.gatilhos(E.gatilhosLocal(lq, S.produtos(), p), 'Quantidades-limite em ' + lq.nome));
+      }
       if (outros.length) { const dq = V.catalogo(p).find((x) => x.id === 'quadro'); if (dq && dq.on) root.appendChild(h('div', { class: 'card' }, h('h3', {}, dq.nome), h('p', { class: 'small' }, dq.desc), V.docBotoes(p, dq))); root.appendChild(V.gruposCard([p].concat(outros))); }
     } else if (tab === 'docs') {
       root.appendChild(V.pacote(p));
@@ -26342,11 +26491,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       const linked = aud.itens.filter((i) => i.origem === 'homologado');
       if (linked.length) card.appendChild(h('p', { class: 'small' }, 'Vinculados por homologação: ' + linked.map((i) => i.nome).join('; ')));
       const tb = h('tbody');
-      (l.itens || []).forEach((it, i) => tb.appendChild(h('tr', {}, h('td', {}, it.nome), h('td', {}, E.armDoItem(it) + (it.classeArm ? '' : ' (aprox.)')), h('td', {}, (it.grupos || []).map(nomeG).join(', ') || '—'), h('td', {}, (it.incompativeis || []).map(nomeG).join(', ') || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.itens.splice(i, 1); S.salvarLocal(l); O.route(); } }, 'Remover')))));
-      if ((l.itens || []).length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item', 'Classe de armazenamento', 'Grupos', 'Incompatível com', ''].map((x) => h('th', {}, x)))), tb)));
-      const novo = { nome: '', classeArm: '', grupos: [], incompativeis: [] };
+      (l.itens || []).forEach((it, i) => tb.appendChild(h('tr', {}, h('td', {}, it.nome), h('td', {}, E.armDoItem(it) + (it.classeArm ? '' : ' (aprox.)')), h('td', {}, it.qtdKg !== undefined && it.qtdKg !== '' ? String(it.qtdKg).replace('.', ',') + ' kg' : '—'), h('td', {}, (it.grupos || []).map(nomeG).join(', ') || '—'), h('td', {}, (it.incompativeis || []).map(nomeG).join(', ') || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.itens.splice(i, 1); S.salvarLocal(l); O.route(); } }, 'Remover')))));
+      if ((l.itens || []).length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Item', 'Classe de armazenamento', 'Quantidade', 'Grupos', 'Incompatível com', ''].map((x) => h('th', {}, x)))), tb)));
+      const novo = { nome: '', classeArm: '', qtdKg: '', h: '', grupos: [], incompativeis: [] };
       card.appendChild(h('details', {}, h('summary', {}, 'Adicionar item armazenado'), U.input({ n: novo }, 'n.nome', { label: 'Nome do produto' }),
         U.select({ n: novo }, 'n.classeArm', O.NBR17160.CLASSES.filter((c) => c[0] !== '9').map((c) => [c[0], c[0] + ' | ' + c[1]]), { label: 'Classe de armazenamento (NBR 17160, Tabela 2)' }),
+        h('div', { class: 'grid g2' }, U.input({ n: novo }, 'n.qtdKg', { type: 'number', label: 'Quantidade (kg; gases em L)', hint: 'Massa líquida. Inflamáveis: volume nominal da embalagem.' }), U.input({ n: novo }, 'n.h', { label: 'Frases H (opcional)', ph: 'Ex.: H225, H319', hint: 'Com as frases H a soma por perigo fica exata; sem elas usa a classe de armazenamento.' })),
         h('p', { class: 'q' }, 'Grupo de reatividade do item'), U.checks({ n: novo }, 'n.grupos', T.RG.filter((r) => r[0] !== 'ignicao').map((r) => ({ v: r[0], label: r[1] }))),
         h('p', { class: 'q' }, 'Incompatível com (FDS do item)'), U.checks({ n: novo }, 'n.incompativeis', T.RG.map((r) => ({ v: r[0], label: r[1] }))),
         h('button', { class: 'btn', onclick: () => { if (!novo.nome.trim() || !novo.classeArm) { U.toast('Informe o nome e a classe de armazenamento.'); return; } l.itens = l.itens || []; l.itens.push({ ...novo, nome: novo.nome.trim() }); S.salvarLocal(l); O.route(); } }, 'Adicionar')));
@@ -26355,6 +26505,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       if (aud.itens.length < 2) card.appendChild(h('p', { class: 'muted' }, 'Cadastre ao menos dois itens para auditar pares.'));
       else if (!crit.length) card.appendChild(U.alert('ok', null, 'Todos os pares são permitidos pela matriz e sem reatividade declarada.'));
       else card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Par', 'Classes', 'Resultado', 'Observação'].map((x) => h('th', {}, x)))), h('tbody', {}, crit.map((x) => { const falta5 = x.codigo === '8' && (Number(l.espacoM) || 0) < 5; return h('tr', {}, h('td', {}, x.a + ' x ' + x.b), h('td', {}, x.par.join(' x ')), h('td', {}, h('span', { class: 'pc ' + NIV_CLASS[x.nivel] }, E.NIVEL[x.nivel])), h('td', {}, [x.texto, falta5 ? 'O local tem ' + (l.espacoM || 0) + ' m: faltam 5 m ou segregação física.' : '', ...x.motivos].filter(Boolean).join(' '))); })))));
+      card.appendChild(h('h4', { style: 'margin-top:14px' }, 'Inventário e quantidades-limite (NBR 17160, 6.1.5 e Tabela 1) ', U.disc('PSM')));
+      const gat = E.gatilhosLocal(l, ps);
+      if (gat.itens.length) {
+        const ps0 = { nome: l.nome, id: 'inv' };
+        card.appendChild(h('div', { class: 'row', style: 'margin-bottom:8px' }, V.docBotoes(ps0, { id: 'inventario', nome: 'Inventário de produtos perigosos', fn: () => D.inventarioLocal(l, S.produtos()) }, true)));
+        card.appendChild(V.gatilhos(gat, 'Situação do local'));
+      } else card.appendChild(h('p', { class: 'muted' }, 'Cadastre itens ou vincule produtos homologados ao local para montar o inventário.'));
       root.appendChild(card);
     });
   };
@@ -26536,11 +26693,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     criar() {
       const pq = S.novoLocal('Contêiner de PQ 01 (demonstração)', 'Contêiner de PQ');
       pq.espacoM = 0; pq.descricao = 'Contêiner com bacia de contenção e ventilação natural.';
-      pq.itens = [{ nome: 'Ácido clorídrico 33 % (demonstração)', classeArm: '8B', grupos: ['acido'], incompativeis: ['base', 'cianeto_sulfeto', 'hipoclorito', 'metais'] }];
+      pq.itens = [{ nome: 'Ácido clorídrico 33 % (demonstração)', classeArm: '8B', qtdKg: 300, h: 'H290, H314', grupos: ['acido'], incompativeis: ['base', 'cianeto_sulfeto', 'hipoclorito', 'metais'] }];
       S.salvarLocal(pq);
       const of = S.novoLocal('Oficina mecânica (demonstração)', 'Oficina');
       of.espacoM = 8; of.descricao = 'Armário de inflamáveis aterrado e área ventilada.';
-      of.itens = [{ nome: 'Tinta alquídica (demonstração)', classeArm: '3', grupos: ['organico_combustivel'], incompativeis: ['oxidante'] }];
+      of.itens = [{ nome: 'Tinta alquídica (demonstração)', classeArm: '3', qtdKg: 80, h: 'H226', grupos: ['organico_combustivel'], incompativeis: ['oxidante'] }];
       S.salvarLocal(of);
 
       const a = produtoBase('solvente', of.id);
@@ -26549,7 +26706,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       a.amb = { risco: false, contencao: '', residuos: '', derramamento: '' };
       a.hig = { tlv: true, parecerExigidoOk: true, pgr: 'coberto', dosimetria: false, justificativa: 'Cobertura por avaliação quantitativa de solventes similares.', tlvAgentes: 'Acetato de etila, TLV-TWA 400 ppm' };
       a.imdg.incompativelOperacao = false;
-      a.comp.incompDeclaradas = true; a.comp.localOk = 'sim'; a.comp.controles = ['temp_vent', 'sinalizacao', 'bacia']; a.comp.limite = '200 L'; a.comp.tempMax = '35 °C';
+      a.comp.incompDeclaradas = true; a.comp.localOk = 'sim'; a.comp.controles = ['temp_vent', 'sinalizacao', 'bacia']; a.comp.limite = '200 L'; a.comp.qtdKg = 250; a.comp.tempMax = '35 °C';
       a.par = { tem: true, descricao: 'Parecer de Higiene Ocupacional (demonstração)', pgrIndicador: 'nao_requer', pgrPrazo: '', pgrResponsavel: '' };
       a.dec = { valor: 'sim', justificativa: 'Atende aos critérios internos. Homologado para limpeza de peças na oficina.', data: new Date().toISOString(), numero: S.proximoNumero(), sharepoint: '' };
       a.trein.gerar = true; a.status = 'homologado';
@@ -26573,7 +26730,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       c.ocup = { risco: true, subst: '', eng: 'Lava-olhos e chuveiro de emergência próximos.', adm: 'Treinamento prévio e sinalização GHS.', epi: 'Luvas de PVC ou neoprene, óculos de ampla visão, protetor facial e avental.' };
       c.amb = { risco: false, contencao: '', residuos: '', derramamento: '' };
       c.hig = { tlv: false, parecerExigidoOk: false, pgr: 'coberto', dosimetria: false, justificativa: 'Sem agente com limite NR-15 ou TLV.', tlvAgentes: '' };
-      c.comp.incompDeclaradas = true; c.comp.localOk = 'sim'; c.comp.controles = ['bacia', 'sinalizacao']; c.comp.limite = '100 L';
+      c.comp.incompDeclaradas = true; c.comp.localOk = 'sim'; c.comp.controles = ['bacia', 'sinalizacao']; c.comp.limite = '100 L'; c.comp.qtdKg = 120;
       c.par = { tem: false, descricao: '', pgrIndicador: 'nao_requer', pgrPrazo: '', pgrResponsavel: '' };
       c.dec = { valor: 'sim', justificativa: 'Atende aos critérios internos.', data: new Date().toISOString(), numero: S.proximoNumero(), sharepoint: '' };
       c.trein.gerar = true; c.status = 'homologado';
@@ -26587,7 +26744,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         q.ocup = { risco: true, subst: '', eng: 'Lava-olhos e chuveiro de emergência próximos.', adm: 'Treinamento prévio e sinalização GHS.', epi: 'Luvas de PVC ou neoprene, óculos de ampla visão, protetor facial e avental.' };
         q.amb = { risco: chave === 'hipoclorito', contencao: chave === 'hipoclorito' ? 'Bacia de contenção.' : '', residuos: chave === 'hipoclorito' ? 'Neutralizar e destinar conforme a legislação.' : '', derramamento: chave === 'hipoclorito' ? 'Kit de absorção; impedir chegada à drenagem.' : '' };
         q.hig = { tlv: false, parecerExigidoOk: false, pgr: 'coberto', dosimetria: false, justificativa: 'Sem agente com limite NR-15 ou TLV.', tlvAgentes: '' };
-        q.comp.incompDeclaradas = true; q.comp.localOk = 'sim'; q.comp.controles = ['bacia', 'sinalizacao']; q.comp.limite = '100 L';
+        q.comp.incompDeclaradas = true; q.comp.localOk = 'sim'; q.comp.controles = ['bacia', 'sinalizacao']; q.comp.limite = '100 L'; q.comp.qtdKg = 150;
         q.par = { tem: false, descricao: '', pgrIndicador: 'nao_requer', pgrPrazo: '', pgrResponsavel: '' };
         q.dec = { valor: 'sim', justificativa: justif, data: new Date().toISOString(), numero: S.proximoNumero(), sharepoint: '' };
         q.trein.gerar = true; q.status = 'homologado';

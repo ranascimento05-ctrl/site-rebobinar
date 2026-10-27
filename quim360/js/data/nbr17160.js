@@ -120,10 +120,38 @@
   ];
   const LIMITE_GERAL = { rotulo: 'Produtos perigosos não especificados', limite: '1 000 kg', acima: 'Seção 6.3 acima de 1 000 kg; armazenamento conjunto (Seção 9) acima de 200 kg' };
 
+
+  // Tabela 1 e subitens 6.3.1.2, 7.1, 8.1, 10.1, 11.1, 12.1, 13 e 14.1 | categorias para somar a quantidade agregada.
+  // fora: quantidade permitida fora de armazém (kg; L para gases). faixas: acima da quantidade, passam a valer as seções.
+  // analise: faixa intermediária em que a medida é definida pela análise de risco. classes: uso quando o item só tem a classe de armazenamento (aproximado).
+  const CATS = [
+    { k: 'tox', rotulo: 'Toxicidade aguda, categorias 1 a 3 (H300, H301, H310, H311, H330, H331)', re: /^H(300|301|310|311|330|331)$/, classes: ['6.1A', '6.1B', '6.1C', '6.1D'], fora: 50, faixas: [{ acima: 200, secoes: 'Seções 7 e 10' }], analise: '10.1.2 (entre 50 e 200 kg)' },
+    { k: 'cmr', rotulo: 'Mutagênico, cancerígeno ou tóxico à reprodução, 1A ou 1B (H340, H350, H360)', re: /^H(340|350|360)/, classes: [], fora: 50, faixas: [{ acima: 200, secoes: 'Seção 7' }], analise: '7.1.2 (entre 50 e 200 kg)' },
+    { k: 'stot', rotulo: 'Órgãos-alvo, categoria 1 (H370, H372)', re: /^H(370|372)$/, classes: [], fora: 50, faixas: [{ acima: 200, secoes: 'Seção 7' }], analise: '7.1.2 (entre 50 e 200 kg)' },
+    { k: 'inf12', rotulo: 'Líquido inflamável, categoria 1 ou 2 (H224, H225)', re: /^H(224|225)$/, classes: ['3'], fora: 20, sub: { re: /^H224$/, limite: 10, texto: 'H224 (extremamente inflamável) acima de 10 kg' }, faixas: [{ acima: 200, secoes: 'Seções 7, 8 e 14; Anexos B, C e E' }], analise: '14.1.2 (acima de 10 kg de H224 ou 20 kg de H225, até 200 kg)' },
+    { k: 'inf3', rotulo: 'Líquido inflamável, categoria 3 (H226)', re: /^H226$/, classes: [], fora: 100, faixas: [{ acima: 1000, secoes: 'Seções 7, 8 e 14; Anexos B, C e E' }], analise: '14.1.2 (entre 100 e 1 000 kg)' },
+    { k: 'h227', rotulo: 'Líquido combustível, categoria 4 (H227)', re: /^H227$/, classes: [], fora: 1000, faixas: [{ acima: 1000, secoes: 'Seção 8' }], analise: '' },
+    { k: 'solinf', rotulo: 'Sólido inflamável (H228)', re: /^H228$/, classes: ['4.1B'], fora: null, faixas: [{ acima: 200, secoes: 'Seção 8' }], analise: '' },
+    { k: 'piro', rotulo: 'Pirofórico (H250)', re: /^H250$/, classes: ['4.2'], fora: 200, faixas: [{ acima: 200, secoes: 'Seções 7 e 8' }], analise: '' },
+    { k: 'auto', rotulo: 'Autoaquecimento (H251, H252)', re: /^H(251|252)$/, classes: [], fora: null, faixas: [{ acima: 200, secoes: 'Seção 8' }], analise: '' },
+    { k: 'autorr', rotulo: 'Autorreativo (H242)', re: /^H242$/, classes: ['5.2'], fora: null, faixas: [{ acima: 200, secoes: 'Seção 8' }], analise: '' },
+    { k: 'h260', rotulo: 'Emite gás inflamável em contato com a água (H260, H261)', re: /^H(260|261)$/, classes: ['4.3'], fora: 200, faixas: [{ acima: 200, secoes: 'Seção 8' }], analise: '' },
+    { k: 'ox1', rotulo: 'Altamente oxidante, categoria 1 ou grupo de embalagem I (H271)', re: /^H271$/, classes: ['5.1A'], fora: 1, faixas: [{ acima: 5, secoes: 'Seções 7 e 11' }], analise: '11.1.3 (entre 1 e 5 kg)' },
+    { k: 'ox23', rotulo: 'Oxidante, categoria 2 ou 3 (H272)', re: /^H272$/, classes: ['5.1B'], fora: 50, faixas: [{ acima: 200, secoes: 'Seções 7 e 11' }], analise: '11.1.3 (entre 50 e 200 kg)' },
+    { k: 'gas', rotulo: 'Gás sob pressão, inflamável ou oxidante (H220, H221, H270, H280, H281) | volume em L', re: /^H(220|221|270|280|281)$/, classes: ['2A'], unidade: 'L', fora: 2.5, faixas: [{ acima: 2.5, secoes: 'Seção 12' }, { acima: 200, secoes: 'Seções 7 e 8 (inflamáveis e oxidantes, em kg)' }], analise: '' },
+    { k: 'aer', rotulo: 'Aerossol (H222, H223)', re: /^H(222|223)$/, classes: ['2B'], fora: 20, faixas: [{ acima: 200, secoes: 'Seções 8 e 13' }], analise: '' },
+    { k: 'corr', rotulo: 'Corrosivo (H290, H314)', re: /^H(290|314)$/, classes: ['8A', '8B'], fora: 1000, faixas: [{ acima: 200, secoes: 'Seção 7' }], analise: '' },
+  ];
+  // quantidades das Tabelas 3 e 4 (kg) para o armazenamento conjunto
+  const CONJUNTAS = [
+    { obs: 3, titulo: 'Tabela 3', classes: ['3', '5.1B', '6.1A', '6.1B'], faixas: [1000, 20000], t: 'TABELA3' },
+    { obs: 4, titulo: 'Tabela 4', classes: ['4.1B', '6.1A'], faixas: [1000, 20000, 50000, 100000], t: 'TABELA4' },
+  ];
+
   const BY = {}; CLASSES.forEach((c) => { BY[c[0]] = { id: c[0], nome: c[1], criterio: c[2] }; });
 
   O.NBR17160 = {
-    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, BY,
+    CLASSES, ORDEM, MATRIZ, OBS, TABELA3, TABELA4, REGRAS, LIMITES, LIMITE_GERAL, CATS, CONJUNTAS, BY,
     nome(id) { return BY[id] ? BY[id].nome : ''; },
     // 'R' | 'G' | '1'..'8' | null (classe fora da matriz, por exemplo 9)
     par(a, b) { return MATRIZ[a] && MATRIZ[a][b] !== undefined ? MATRIZ[a][b] : null; },
