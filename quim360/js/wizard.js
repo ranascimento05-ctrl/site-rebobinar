@@ -75,6 +75,14 @@
     return h('label', { class: 'f' }, h('span', {}, label), el, hint ? h('small', {}, hint) : null);
   };
 
+  // Atalho para produtos criados antes da natureza existir (ou marcados como insumo por engano)
+  function btnCarga(p, api) {
+    const set = (arm) => { p.natureza = 'carga'; p.ctx.area = 'Armazenamento (carga)'; p.finalidade = 'Armazenamento de carga'; p.armazenamento = arm; p.rejeicaoAuto = false; p.etapa = 'ghs'; delete p.confirmadas.decisao; U.salvarJa(p); api.rerender(); };
+    return h('div', { class: 'sug' }, h('b', {}, 'Este produto é a carga do terminal (por exemplo, gasolina, nafta ou reformado)?'),
+      h('p', { class: 'small' }, 'O critério de reprovação automática vale só para insumos de operação, manutenção, limpeza e conservação. Para a carga do terminal, a homologação exige justificativa de não substituição, controles de exposição e parecer de Higiene Ocupacional.'),
+      h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => set('granel') }, 'Tratar como carga a granel (tanque)'), h('button', { class: 'btn ghost', onclick: () => set('embalado') }, 'Tratar como carga embalada')));
+  }
+
   // Produto armazenado pelo terminal com agente CMR ou PFC: justificativa e controles de exposição
   function cmrCard(p, api) {
     const tri = E.triagem(p);
@@ -305,7 +313,7 @@
         w.appendChild(h('label', { class: 'f' }, h('span', {}, 'Componentes (CAS) da Seção 3'), (() => { const el = h('input', { type: 'text', value: (p.fds.cas || []).join(', ') }); el.addEventListener('change', () => { p.fds.cas = el.value.split(/[\s,;]+/).filter((x) => /^\d{2,7}-\d{2}-\d$/.test(x)); U.salvar(p); }); return el; })()));
         const tri = E.triagem(p);
         if (tri.criticos.length && E.ehCarga(p)) { w.appendChild(U.alert('warn', 'Produto armazenado pelo terminal: sem reprovação automática (' + tri.criticos.length + ' evidência(s) CMR ou PFC)', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']'))); w.appendChild(cmrCard(p, api)); }
-        else if (tri.criticos.length) w.appendChild(U.alert('crit', 'Reprovação automática: ' + tri.criticos.length + ' evidência(s)', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']')));
+        else if (tri.criticos.length) { w.appendChild(U.alert('crit', 'Reprovação automática: ' + tri.criticos.length + ' evidência(s)', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']'))); w.appendChild(btnCarga(p, api)); }
         tri.suspeitos.forEach((c) => w.appendChild(U.alert('warn', 'Alerta', c.detalhe)));
         tri.informativos.forEach((c) => w.appendChild(U.alert('', null, c)));
         w.appendChild(h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: () => { const c = tri.criticos; p.ghs.cancerigeno = c.some((x) => x.tipo === 'cancerigeno'); p.ghs.mutagenico = c.some((x) => x.tipo === 'mutagenico'); p.ghs.teratogenico = c.some((x) => x.tipo === 'teratogenico' || x.tipo === 'reprodutivo'); p.ghs.pfc = c.some((x) => x.tipo === 'pfc'); p.ghs.nenhum = !c.length; U.salvarJa(p); api.rerender(); } }, 'Marcar conforme a análise')));
@@ -536,6 +544,7 @@
         w.appendChild(U.alert(st[1], 'Resultado da análise: ' + st[0], av.reprovacoes.concat(av.pendencias, av.condicionantes).length ? av.reprovacoes.concat(av.pendencias, av.condicionantes) : 'Nenhum impedimento registrado.'));
         av.alertas.forEach((a) => w.appendChild(U.alert('warn', 'Alerta', a)));
         if (p.sim.encerrada) w.appendChild(U.alert('warn', 'Via simplificada encerrada', p.sim.divergencia));
+        if (!E.ehCarga(p) && E.triagem(p).reprovado) w.appendChild(btnCarga(p, api));
         const autoIds = visiveis(p).filter((x) => p.autoConf[x] && p.confirmadas[x]);
         if (autoIds.length) w.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Revise o que a análise da FDS preencheu'), h('p', { class: 'small' }, 'A decisão confirma estas respostas. Abra qualquer etapa para corrigir.'),
           h('table', { class: 't' }, h('tbody', {}, autoIds.map((x) => h('tr', {}, h('td', {}, TITLES[x][0].replace(/^\d+ /, '')), h('td', {}, O.Auto.resumo(p, x)), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => api.ir(x) }, 'Revisar'))))))));
