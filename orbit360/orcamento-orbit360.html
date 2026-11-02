@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerador de orçamentos | Orbit 360</title>
+<style>
+:root{
+  --bg:#0f172a; --card:#162036; --card2:#1b2a46;
+  --sky:#60a5fa; --light:#93c5fd;
+  --t1:#e5e7eb; --t2:#d1d5db; --t3:#9ca3af; --line:#374157;
+  --psm:#8b5cf6; --ga:#06b6d4; --sst:#10b981; --crit:#ef4444;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);line-height:1.5;font-size:14px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}
+.wrap{max-width:960px;margin:0 auto;padding:16px}
+header.top{display:flex;align-items:center;gap:14px;padding:12px 0 18px;border-bottom:1px solid var(--line);margin-bottom:18px}
+header.top svg{width:56px;height:56px;flex:none}
+h1{font-size:24px;margin:0;color:#fff}
+h1 span{color:var(--sky)}
+.sub{color:var(--light);font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+h2{font-size:14px;margin:0 0 12px;color:var(--sky);font-weight:700}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:12px;color:var(--light);margin-bottom:4px;font-weight:600}
+input,textarea,select{width:100%;background:var(--bg);color:var(--t1);border:1px solid var(--line);border-radius:8px;
+  padding:9px 10px;font:inherit;min-height:40px}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--sky);border-color:var(--sky)}
+textarea{resize:vertical;min-height:80px}
+.full{grid-column:1/-1}
+.items-head,.item{display:grid;grid-template-columns:3fr 80px 130px 120px 40px;gap:8px;align-items:center}
+.items-head{font-size:12px;color:var(--light);font-weight:600;padding:0 0 6px}
+.item{margin-bottom:8px}
+.item .sub-total{text-align:right;color:var(--t1);font-weight:600;font-variant-numeric:tabular-nums}
+.item .lbl{display:none}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--sky);background:transparent;color:var(--sky);
+  padding:9px 14px;font-weight:600;min-height:40px}
+button:hover{background:rgba(96,165,250,.12)}
+button.primary{background:var(--sky);color:var(--bg)}
+button.primary:hover{background:var(--light)}
+button.del{border-color:var(--crit);color:var(--crit);padding:0;width:40px}
+button.del:hover{background:rgba(239,68,68,.15)}
+.disc{display:grid;grid-template-columns:1fr 140px;gap:8px}
+.totals{max-width:360px;margin-left:auto}
+.totals .row{display:flex;justify-content:space-between;padding:6px 0;color:var(--t2);font-variant-numeric:tabular-nums}
+.totals .row.total{border-top:1px solid var(--line);margin-top:6px;padding-top:10px;font-size:20px;font-weight:700;color:#fff}
+.totals .row.total b{color:var(--sky)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.hint{font-size:12px;color:var(--t3);margin-top:8px}
+
+/* documento de impressão */
+#doc{display:none}
+
+@media (max-width:700px){
+  .grid{grid-template-columns:1fr}
+  .items-head{display:none}
+  .item{grid-template-columns:1fr 1fr;background:var(--card2);padding:10px;border-radius:10px;border:1px solid var(--line)}
+  .item .desc{grid-column:1/-1}
+  .item .lbl{display:block;font-size:12px;color:var(--light);margin-bottom:2px}
+  .item .sub-total{grid-column:1/2;text-align:left}
+  .item .del{grid-column:2/3;width:100%}
+  .actions button{flex:1}
+  .totals{max-width:none}
+}
+
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff;color:#111;font-size:11pt}
+  .wrap>*:not(#doc){display:none!important}
+  .wrap{padding:0;max-width:none}
+  #doc{display:block;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+#doc .band{background:#0f172a;color:#fff;padding:14px 18px;border-radius:6px;display:flex;align-items:center;gap:14px;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+#doc .band svg{width:48px;height:48px}
+#doc .band .t{font-size:20pt;font-weight:700}
+#doc .band .t span{color:#60a5fa}
+#doc .band .s{font-size:9pt;color:#93c5fd}
+#doc .meta{display:flex;justify-content:space-between;margin:16px 0 10px;gap:16px}
+#doc .meta div{font-size:10.5pt}
+#doc .meta b{display:block;font-size:9pt;color:#2563eb}
+#doc table{width:100%;border-collapse:collapse;margin-top:8px}
+#doc th{background:#0f172a;color:#fff;text-align:left;padding:7px 8px;font-size:10pt;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+#doc td{padding:7px 8px;border-bottom:1px solid #d1d5db;font-size:10.5pt}
+#doc td.n,#doc th.n{text-align:right;white-space:nowrap}
+#doc tr{break-inside:avoid}
+#doc .tot{margin:12px 0 0 auto;width:55%}
+#doc .tot div{display:flex;justify-content:space-between;padding:4px 0;font-size:10.5pt}
+#doc .tot .g{border-top:2px solid #60a5fa;margin-top:4px;padding-top:8px;font-size:14pt;font-weight:700}
+#doc .obs{margin-top:18px;font-size:10.5pt;white-space:pre-wrap}
+#doc .obs b{display:block;color:#2563eb;font-size:9pt}
+#doc .foot{margin-top:28px;border-top:1px solid #d1d5db;padding-top:8px;font-size:9pt;color:#6b7280}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <svg viewBox="0 0 100 100" aria-hidden="true">
+    <rect width="100" height="100" rx="14" fill="#0f172a"/>
+    <line x1="8" y1="50" x2="92" y2="50" stroke="#60a5fa" stroke-width="1" opacity=".6"/>
+    <line x1="50" y1="8" x2="50" y2="92" stroke="#60a5fa" stroke-width="1" opacity=".6"/>
+    <circle cx="50" cy="50" r="40" fill="none" stroke="#8b5cf6" stroke-width="3" stroke-dasharray="150 101"/>
+    <circle cx="50" cy="50" r="31" fill="none" stroke="#06b6d4" stroke-width="3" stroke-dasharray="120 76" transform="rotate(100 50 50)"/>
+    <circle cx="50" cy="50" r="22" fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="90 48" transform="rotate(200 50 50)"/>
+    <circle cx="50" cy="50" r="13" fill="none" stroke="#60a5fa" stroke-width="3"/>
+    <circle cx="50" cy="50" r="5" fill="#60a5fa"/>
+    <circle cx="84" cy="16" r="6" fill="none" stroke="#60a5fa" stroke-width="2"/>
+    <circle cx="84" cy="16" r="2.5" fill="#60a5fa"/>
+  </svg>
+  <div>
+    <h1>Orbit <span>360</span> | Gerador de orçamentos</h1>
+    <div class="sub">Preencha, confira o total e salve em PDF. Tudo roda no navegador, sem instalação.</div>
+  </div>
+</header>
+
+<section class="card">
+  <h2>Dados do orçamento</h2>
+  <div class="grid">
+    <div><label for="empresa">Nome da empresa</label><input id="empresa" placeholder="Ex.: Orbit 360 Consultoria SSMA" autocomplete="organization"></div>
+    <div><label for="cliente">Nome do cliente</label><input id="cliente" placeholder="Ex.: Terminal Alfa Ltda." autocomplete="off"></div>
+    <div><label for="numero">Número do orçamento</label><input id="numero" placeholder="Gerado automaticamente"></div>
+    <div><label for="data">Data</label><input id="data" type="date"></div>
+    <div><label for="validade">Validade (dias)</label><input id="validade" type="number" min="1" value="15" inputmode="numeric"></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Itens</h2>
+  <div class="items-head"><div>Produto ou serviço</div><div>Quantidade</div><div>Valor unitário (R$)</div><div style="text-align:right">Subtotal</div><div></div></div>
+  <div id="items"></div>
+  <button type="button" id="add">+ Adicionar item</button>
+</section>
+
+<section class="card">
+  <h2>Desconto e observações</h2>
+  <div class="grid">
+    <div>
+      <label for="descVal">Desconto</label>
+      <div class="disc">
+        <input id="descVal" type="number" min="0" step="0.01" value="0" inputmode="decimal">
+        <select id="descTipo" aria-label="Tipo de desconto"><option value="pct">Percentual (%)</option><option value="val">Valor (R$)</option></select>
+      </div>
+    </div>
+    <div class="full"><label for="obs">Observações</label><textarea id="obs" placeholder="Condições de pagamento, prazo de entrega, escopo..."></textarea></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="totals" aria-live="polite">
+    <div class="row"><span>Subtotal</span><span id="tSub">R$ 0,00</span></div>
+    <div class="row"><span>Desconto</span><span id="tDesc">- R$ 0,00</span></div>
+    <div class="row total"><span>Total</span><b id="tTot">R$ 0,00</b></div>
+  </div>
+  <div class="actions" style="margin-top:16px">
+    <button type="button" id="limpar">Limpar tudo</button>
+    <button type="button" class="primary" id="imprimir">Imprimir ou salvar em PDF</button>
+  </div>
+  <div class="hint">Na janela de impressão, escolha "Salvar como PDF" como destino. Seus dados ficam salvos neste navegador.</div>
+</section>
+
+<!-- Documento gerado para impressão -->
+<div id="doc"></div>
+
+</div>
+
+<script>
+(function(){
+  var $ = function(id){return document.getElementById(id)};
+  var KEY = 'orbit360_orcamento_v1';
+  var brl = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+  var itemsEl = $('items');
+
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function num(v){var n=parseFloat(String(v).replace(',','.'));return isFinite(n)&&n>0?n:0}
+
+  function addItem(d){
+    d = d || {};
+    var row = document.createElement('div');
+    row.className = 'item';
+    row.innerHTML =
+      '<div class="desc"><span class="lbl">Produto ou serviço</span><input class="i-desc" placeholder="Descrição" value="'+esc(d.desc||'')+'"></div>'+
+      '<div><span class="lbl">Quantidade</span><input class="i-qtd" type="number" min="0" step="any" inputmode="decimal" value="'+(d.qtd!=null?d.qtd:1)+'"></div>'+
+      '<div><span class="lbl">Valor unitário (R$)</span><input class="i-val" type="number" min="0" step="0.01" inputmode="decimal" value="'+(d.val!=null?d.val:'')+'"></div>'+
+      '<div class="sub-total">R$ 0,00</div>'+
+      '<button type="button" class="del" aria-label="Excluir item" title="Excluir item">×</button>';
+    row.querySelector('.del').onclick = function(){
+      row.remove();
+      if(!itemsEl.children.length) addItem();
+      calc();
+    };
+    itemsEl.appendChild(row);
+  }
+
+  function readItems(){
+    return Array.prototype.map.call(itemsEl.children,function(r){
+      var q=num(r.querySelector('.i-qtd').value), v=num(r.querySelector('.i-val').value);
+      return {desc:r.querySelector('.i-desc').value, qtd:r.querySelector('.i-qtd').value, val:r.querySelector('.i-val').value, q:q, v:v, sub:q*v, row:r};
+    });
+  }
+
+  function calc(){
+    var its = readItems(), sub = 0;
+    its.forEach(function(i){ sub += i.sub; i.row.querySelector('.sub-total').textContent = brl.format(i.sub); });
+    var dv = num($('descVal').value), desc = $('descTipo').value==='pct' ? sub*Math.min(dv,100)/100 : Math.min(dv,sub);
+    $('tSub').textContent = brl.format(sub);
+    $('tDesc').textContent = '- ' + brl.format(desc);
+    $('tTot').textContent = brl.format(sub-desc);
+    save();
+    return {its:its, sub:sub, desc:desc, tot:sub-desc};
+  }
+
+  function save(){
+    try{
+      localStorage.setItem(KEY, JSON.stringify({
+        empresa:$('empresa').value, cliente:$('cliente').value, numero:$('numero').value, data:$('data').value,
+        validade:$('validade').value, descVal:$('descVal').value, descTipo:$('descTipo').value, obs:$('obs').value,
+        items:readItems().map(function(i){return {desc:i.desc,qtd:i.qtd,val:i.val}})
+      }));
+    }catch(e){}
+  }
+  function load(){
+    try{
+      var s = JSON.parse(localStorage.getItem(KEY)||'null');
+      if(!s) return false;
+      ['empresa','cliente','numero','data','validade','descVal','descTipo','obs'].forEach(function(k){ if(s[k]!=null) $(k).value = s[k]; });
+      (s.items||[]).forEach(addItem);
+      return true;
+    }catch(e){return false}
+  }
+
+  function today(){var d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)}
+  function defaults(){
+    if(!$('data').value) $('data').value = today();
+    if(!$('numero').value){
+      var d=new Date(); $('numero').value = 'ORC-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(Math.floor(Math.random()*900)+100);
+    }
+    if(!itemsEl.children.length) addItem();
+  }
+  function fmtDate(iso){var p=iso.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:iso}
+
+  function buildDoc(){
+    var c = calc(), rows='';
+    c.its.forEach(function(i){
+      if(!i.desc && !i.v) return;
+      rows += '<tr><td>'+esc(i.desc||'-')+'</td><td class="n">'+i.q.toLocaleString('pt-BR')+'</td><td class="n">'+brl.format(i.v)+'</td><td class="n">'+brl.format(i.sub)+'</td></tr>';
+    });
+    var logo = document.querySelector('header.top svg').outerHTML;
+    var descLbl = $('descTipo').value==='pct' ? 'Desconto ('+num($('descVal').value).toLocaleString('pt-BR')+'%)' : 'Desconto';
+    $('doc').innerHTML =
+      '<div class="band">'+logo+'<div><div class="t">Orçamento</div><div class="s">'+esc($('empresa').value||'Empresa não informada')+'</div></div></div>'+
+      '<div class="meta">'+
+        '<div><b>Cliente</b>'+esc($('cliente').value||'-')+'</div>'+
+        '<div><b>Número</b>'+esc($('numero').value||'-')+'</div>'+
+        '<div><b>Data</b>'+fmtDate($('data').value||today())+'</div>'+
+        '<div><b>Validade</b>'+(num($('validade').value)||'-')+' dias</div>'+
+      '</div>'+
+      '<table><thead><tr><th>Produto ou serviço</th><th class="n">Qtd.</th><th class="n">Valor unit.</th><th class="n">Subtotal</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      '<div class="tot"><div><span>Subtotal</span><span>'+brl.format(c.sub)+'</span></div>'+
+        (c.desc>0?'<div><span>'+descLbl+'</span><span>- '+brl.format(c.desc)+'</span></div>':'')+
+        '<div class="g"><span>Total</span><span>'+brl.format(c.tot)+'</span></div></div>'+
+      ($('obs').value.trim()?'<div class="obs"><b>Observações</b>'+esc($('obs').value)+'</div>':'')+
+      '<div class="foot">Gerado com Orbit 360 | Orçamento válido por '+(num($('validade').value)||'-')+' dias a partir de '+fmtDate($('data').value||today())+'.</div>';
+  }
+
+  $('add').onclick = function(){ addItem(); calc(); var l=itemsEl.lastChild.querySelector('.i-desc'); l.focus(); };
+  $('imprimir').onclick = function(){
+    buildDoc();
+    var old = document.title;
+    document.title = ($('numero').value||'orcamento') + (' - '+($('cliente').value||'')).trim();
+    window.print();
+    setTimeout(function(){document.title=old},500);
+  };
+  window.addEventListener('beforeprint', buildDoc);
+  $('limpar').onclick = function(){
+    if(!confirm('Apagar todos os dados deste orçamento?')) return;
+    try{localStorage.removeItem(KEY)}catch(e){}
+    ['empresa','cliente','numero','obs'].forEach(function(k){$(k).value=''});
+    $('data').value=''; $('validade').value=15; $('descVal').value=0; $('descTipo').value='pct';
+    itemsEl.innerHTML=''; defaults(); calc();
+  };
+  document.addEventListener('input', calc);
+  document.addEventListener('change', calc);
+
+  load(); defaults(); calc();
+})();
+</script>
+</body>
+</html>
