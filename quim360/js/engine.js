@@ -13,6 +13,7 @@
       confirmadas: {},
       ctx: { area: '', atividade: '', localId: '' },
       nome: '', fornecedor: '', codigoFornecedor: '',
+      assina: { nome: '', registro: '', funcao: '' },
       cpa: { semToxAguda: false, semAmbiental: false, biodegradavel: false, ensaio: '' },
       natureza: '', armazenamento: '', cmr: { justificativa: '', controles: [], controlesOk: false },
       finalidade: '', aplicacao: '',

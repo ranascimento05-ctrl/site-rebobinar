@@ -17,6 +17,8 @@
   const corta = (t, n) => { t = (t || '').replace(/\s+\n/g, '\n').trim(); return t.length > n ? t.slice(0, n).replace(/\s+\S*$/, '') + ' [continua na FDS]' : t; };
   const localDe = (p) => O.Store.local(p.ctx.localId);
   const cfg = () => O.Store.config();
+  // quem assina: o assinante definido na análise, ou o padrão da equipe (Configurações)
+  const signer = (p) => { const a = (p && p.assina) || {}; const c = cfg(); const nome = (a.nome || '').trim() || c.responsavel || ''; const reg = (a.nome || '').trim() ? (a.registro || '') : (a.registro || c.registro || ''); return { nome, registro: reg, funcao: (a.funcao || '').trim() || 'Responsável técnico', linha: nome ? nome + (reg ? ' | ' + reg : '') : '' }; };
   const nomeG = (k) => (T.RG.find((r) => r[0] === k) || [k, k])[1];
   const ctrlNome = (k) => (T.CONTROLES_ARM.find((c) => c[0] === k) || [k, k])[1];
 
@@ -28,7 +30,7 @@
         ['Produto', nz(p.nome)],
         ['Registro', nz(p.dec.numero, 'sem número de homologação')],
         ['Data', fmtData(new Date().toISOString())],
-        ['Responsável técnico', c.responsavel + (c.registro ? ' | ' + c.registro : '')],
+        [signer(p).funcao, signer(p).linha || 'não informado'],
       ].concat(extra || []),
       org: c.organizacao,
     };
@@ -178,7 +180,7 @@
     B.push({ t: 'h2', text: 'Base técnico-legal consultada' });
     B.push({ t: 'list', items: T.BASE_LEGAL.map((b) => b.sigla + ': ' + b.titulo) });
     B.push({ t: 'p', small: true, text: 'A classe e a matriz de armazenamento seguem a ABNT NBR 17160:2024. A triagem CMR e PFC e as sugestões de controle são apoio à decisão. A decisão formal depende da FDS vigente do fornecedor, do Código IMDG e da avaliação do responsável técnico.' });
-    B.push({ t: 'sign', rows: [[cfg().responsavel, cfg().registro || 'Responsável técnico']] });
+    B.push({ t: 'sign', rows: [[signer(p).nome, signer(p).registro ? signer(p).funcao + ' | ' + signer(p).registro : signer(p).funcao]] });
     return B;
   }
 
@@ -338,7 +340,7 @@
     B.push({ t: 'h1', text: '7 Registro de presença' });
     const rows = []; for (let i = 0; i < 10; i++) rows.push(['', '', '', '']);
     B.push({ t: 'table', head: ['Nome', 'Matrícula', 'Assinatura', 'Data'], widths: [38, 18, 30, 14], rows, tall: true });
-    B.push({ t: 'sign', rows: [['Instrutor', ''], [cfg().responsavel, cfg().registro]] });
+    B.push({ t: 'sign', rows: [['Instrutor', ''], [signer(p).nome, signer(p).registro ? signer(p).funcao + ' | ' + signer(p).registro : signer(p).funcao]] });
     return B;
   }
 
@@ -410,7 +412,7 @@
     B.push({ t: 'h1', text: 'Ações' });
     B.push({ t: 'table', head: ['Nº', 'Ação', 'Origem', 'Responsável', 'Prazo', 'Situação'], widths: [5, 37, 15, 13, 18, 12], rows: A.length ? A : [['1', 'Sem ações geradas', '', '', '', '']] });
     B.push({ t: 'p', small: true, text: 'Responsáveis e prazos em branco devem ser definidos pelo responsável técnico. Os prazos marcados como "antes de" valem a partir da liberação do uso.' });
-    B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico'], ['Aprovação da gestão', '']] });
+    B.push({ t: 'sign', rows: [[signer(p).nome, signer(p).registro ? signer(p).funcao + ' | ' + signer(p).registro : signer(p).funcao], ['Aprovação da gestão', '']] });
     return B;
   }
   function D_STATUS(p) { return STATUS[p.status] || STATUS.em_analise; }
@@ -438,7 +440,7 @@
     B.push({ t: 'kv', rows: [['Área do setor', ct.areaM2 ? fm(ct.areaM2) + ' m²' : 'não informada'], ['Categoria de segurança', ct.catK || 'não informada (considerada K1/K2)'], ['Classe de perigo à água do local', 'CPA ' + ct.cpa], ['Volume pela Tabela F.1', ct.vol ? fm(ct.vol.base) + ' m³' : 'informe a área do setor'], ['Volume com fator de CPA', ct.vol ? fm(ct.vol.total) + ' m³' : '—'], ['Volume de material que pode vazar', ct.material ? fm(ct.material) + ' m³' : 'não informado'], ['Volume total a reter', ct.total != null ? fm(ct.total) + ' m³' : '—']] });
     B.push({ t: 'p', small: true, text: O.NBR17160.F1_NOTA + ' O Anexo F é informativo; considere as exigências do corpo de bombeiros e do órgão ambiental.' });
     B.push({ t: 'p', small: true, text: 'As seções 7 a 14 e os anexos exigidos devem ser atendidos conforme o texto da norma vigente. Este quadro orienta a análise e não substitui a decisão do responsável técnico.' });
-    B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico'], ['Gestor do local', '']] });
+    B.push({ t: 'sign', rows: [[signer(null).nome, signer(null).funcao], ['Gestor do local', '']] });
     return B;
   }
 
@@ -515,7 +517,7 @@
     B.push({ t: 'h2', text: 'Base técnico-legal' });
     B.push({ t: 'list', items: T.BASE_LEGAL.map((b) => b.sigla + ': ' + b.titulo) });
     B.push({ t: 'p', small: true, text: 'Análise automática da FDS: apoio à decisão. Valores lidos do texto devem ser conferidos contra a FDS vigente do fornecedor.' });
-    B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico']] });
+    B.push({ t: 'sign', rows: [[signer(p).nome, signer(p).funcao]] });
     return B;
   }
 
@@ -550,7 +552,7 @@
     B.push({ t: 'p', text: 'Cada grupo reúne produtos com todos os pares permitidos e sem restrição. Produtos de grupos diferentes devem ficar em setores, contêineres ou armários distintos, ou cumprir as restrições da seção 3.' });
     B.push({ t: 'table', head: ['Grupo', 'Produtos'], widths: [14, 86], rows: grupos.map((g, i) => ['Grupo ' + String.fromCharCode(65 + i), g.map((p) => (L.indexOf(p) + 1) + ' ' + p.nome).join('\n')]) });
     B.push({ t: 'p', small: true, text: 'Produtos a granel em tanque ficam fora do quadro (fora do escopo da NBR 17160). A matriz considera a classe de armazenamento; a incompatibilidade também depende de combustão, gases, corrosivos e substâncias instáveis formadas (item 9.1.1 da norma). Confirme nas Seções 7 e 10 da FDS.' });
-    B.push({ t: 'sign', rows: [[cfg().responsavel, 'Responsável técnico']] });
+    B.push({ t: 'sign', rows: [[signer(destaque || null).nome, signer(destaque || null).funcao]] });
     return B;
   }
 
@@ -561,5 +563,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

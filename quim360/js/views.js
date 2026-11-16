@@ -41,6 +41,22 @@
     return c;
   };
 
+  // assinatura e logo dos documentos de uma análise: cada pessoa da equipe assina o que analisou
+  V.assinaturaCard = (p) => {
+    p.assina = p.assina || { nome: '', registro: '', funcao: '' };
+    const cfgc = S.config();
+    const prev = h('p', { class: 'small', style: 'margin-top:6px' });
+    const atual = () => { const q = D.signer(p); prev.textContent = 'Assinará os documentos: ' + (q.nome ? q.nome + (q.registro ? ' | ' + q.registro : '') + ' (' + q.funcao + ')' : 'ninguém definido: a linha de assinatura sairá em branco para preenchimento manual.'); };
+    const c = h('div', { class: 'card' }, h('h3', {}, 'Quem assina os documentos desta análise'),
+      h('p', { class: 'small' }, 'Cada análise pode ter um responsável técnico diferente. Se deixar em branco, usa o padrão da equipe em Configurações' + (cfgc.responsavel ? ' (' + cfgc.responsavel + ')' : ' (ainda não definido)') + '.'),
+      h('div', { class: 'grid g2' }, U.input(p, 'assina.nome', { label: 'Nome do responsável técnico', onInput: atual }), U.input(p, 'assina.registro', { label: 'Registro profissional (opcional)', onInput: atual })),
+      U.input(p, 'assina.funcao', { label: 'Função na assinatura (opcional)', ph: 'Responsável técnico', onInput: atual }),
+      prev,
+      h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'btn sm ghost', onclick: () => { if (!(p.assina.nome || '').trim()) { U.toast('Informe o nome para usar como padrão.'); return; } S.setConfig({ responsavel: p.assina.nome.trim(), registro: p.assina.registro || '' }); U.toast('Definido como padrão da equipe.'); atual(); } }, 'Usar como padrão da equipe')));
+    atual();
+    return c;
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -104,6 +120,7 @@
         area.appendChild(h('div', { class: 'row', style: 'margin-bottom:10px' }, h('a', { class: 'btn', href: '#/doc/' + p.id + '/relatorio' }, 'Abrir relatório em tela cheia')));
         area.appendChild(h('div', { class: 'paper', html: R.html(D.relatorio(p, S.produtos())) }));
       } else {
+        area.appendChild(V.assinaturaCard(p)); area.appendChild(V.logoCard());
         cat.forEach((d) => area.appendChild(h('div', { class: 'card', style: d.on ? '' : 'opacity:.5' }, h('h3', {}, d.nome), h('p', { class: 'small' }, d.desc + (d.on ? '' : ' Disponível após a leitura da FDS ou da homologação.')), d.on ? V.docBotoes(p, d) : null)));
         area.appendChild(V.pacote(p));
         area.appendChild(h('p', { class: 'small' }, 'Word (.docx) e PDF são baixados como arquivo. "Imprimir" abre a impressão do navegador, se preferir.'));
@@ -212,6 +229,7 @@
       if (outros.length) { const dq = V.catalogo(p).find((x) => x.id === 'quadro'); if (dq && dq.on) root.appendChild(h('div', { class: 'card' }, h('h3', {}, dq.nome), h('p', { class: 'small' }, dq.desc), V.docBotoes(p, dq))); root.appendChild(V.gruposCard([p].concat(outros))); }
     } else if (tab === 'docs') {
       root.appendChild(V.pacote(p));
+      root.appendChild(V.assinaturaCard(p)); root.appendChild(V.logoCard());
       V.catalogo(p).forEach((d) => root.appendChild(h('div', { class: 'card', style: d.on ? '' : 'opacity:.5' }, h('h3', {}, d.nome), h('p', { class: 'small' }, d.desc + (d.on ? '' : ' Disponível após a leitura da FDS ou da homologação.')), d.on ? V.docBotoes(p, d) : null)));
     } else {
       const link = D.linkRegistro(p);
@@ -472,15 +490,9 @@
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Critérios internos de rejeição automática'), h('ul', {}, h('li', {}, 'Cancerígeno: frases H350, H350i, H351 e CAS da lista de alerta.'), h('li', {}, 'Mutagênico: H340 e H341.'), h('li', {}, 'Teratogênico e tóxico à reprodução: H360 e H361 (D e F).'), h('li', {}, 'Contém PFCs ou PFAS: CAS da lista de alerta, ou marcação do analista; termos no texto geram alerta.'), h('li', {}, 'Categoria 2 (suspeita) reprova por padrão. Altere em Configurações.')), h('p', { class: 'small' }, 'A lista de alerta por CAS é de triagem e não exaustiva. Substâncias fora dela dependem das frases H e da Seção 3 da FDS.')));
   };
 
-  // ------------------------------------------------------------ configurações
-  V.config = (root) => {
-    const c = S.config();
-    root.appendChild(head('Configurações', 'Responsável técnico, critérios e dados'));
-    const holder = { c };
-    const save = () => S.setConfig(holder.c);
-    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Responsável técnico e organização'), h('div', { class: 'grid g2' }, U.input(holder, 'c.responsavel', { label: 'Responsável técnico', onInput: save }), U.input(holder, 'c.registro', { label: 'Registro profissional', onInput: save }), U.input(holder, 'c.organizacao', { label: 'Organização (aparece na capa dos documentos)', onInput: save }), U.input(holder, 'c.email', { label: 'E-mail', onInput: save }), U.input(holder, 'c.telEmergencia', { label: 'Telefone de emergência da organização', onInput: save }), U.input(holder, 'c.sharepointBase', { label: 'Endereço base do SharePoint (opcional)', onInput: save }))));
-    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Critérios'), U.input(holder, 'c.anosValidadeFDS', { type: 'number', label: 'Validade da FDS em anos (alerta acima deste valor)', onInput: save }), h('div', { class: 'opts' }, U.flag(holder, 'c.cat2Reprova', 'Tratar categoria 2 (suspeita) como gatilho de reprovação automática', 'H341, H351, H361 e H361d. O app apenas sinaliza; a decisão é do responsável técnico.', save))));
-    // logo dos documentos
+
+  // logo e identidade dos documentos (usada em Configurações, na aba Documentos e na saída)
+  V.logoCard = () => {
     const lg = O.Logo.atual();
     const arq = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/svg+xml,image/webp', style: 'display:none' });
     arq.addEventListener('change', async () => {
@@ -488,13 +500,24 @@
       try { const r = await O.Logo.processar(arq.files[0]); const claro = lg.custom ? !!S.config().capaClara : true; S.setConfig({ logoDoc: r.src, logoDocW: r.w, logoDocH: r.h, capaClara: claro }); U.toast('Logo atualizada nos documentos.'); O.route(); }
       catch (e) { U.toast(e.message); }
     });
-    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Logo dos documentos'),
+    return (h('div', { class: 'card' }, h('h3', {}, 'Logo dos documentos'),
       h('p', { class: 'small' }, 'A logo aparece na capa do relatório, do plano de ação, da ficha de emergência, da rotulagem, do envelope e do checklist, em Word, PDF e na pré-visualização. Use PNG com fundo transparente, JPG ou SVG. A imagem é reduzida e guardada neste navegador.'),
       h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => arq.click() }, lg.custom ? 'Trocar logo' : 'Enviar minha logo'), arq,
         lg.custom ? h('button', { class: 'btn ghost', onclick: () => { S.setConfig({ logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false }); U.toast('Voltou para a logo Orbit 360.'); O.route(); } }, 'Voltar para a logo Orbit 360') : null),
       lg.custom ? h('div', { class: 'opts', style: 'margin-top:12px' },
         [[false, 'Faixa escura', 'Para logos claras ou brancas'], [true, 'Faixa clara', 'Para logos escuras ou coloridas']].map((o) => { const inp = h('input', { type: 'radio', name: 'tema', ...(!!S.config().capaClara === o[0] ? { checked: true } : {}) }); const lab = h('label', { class: 'opt' + (!!S.config().capaClara === o[0] ? ' sel' : '') }, inp, h('span', {}, h('b', {}, o[1]), h('small', {}, o[2]))); inp.addEventListener('change', () => { S.setConfig({ capaClara: o[0] }); O.route(); }); return lab; })) : h('p', { class: 'small', style: 'margin-top:8px' }, 'Logo em uso: Orbit 360.'),
       h('div', { class: 'paper', style: 'margin-top:12px;max-width:640px', html: R.html([{ t: 'cover', titulo: 'Exemplo de documento', sub: 'Pré-visualização da capa', org: S.config().organizacao, meta: [['Produto', 'Produto de exemplo']] }]) })));
+  };
+
+  // ------------------------------------------------------------ configurações
+  V.config = (root) => {
+    const c = S.config();
+    root.appendChild(head('Configurações', 'Responsável técnico, critérios e dados'));
+    const holder = { c };
+    const save = () => S.setConfig(holder.c);
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Padrão da equipe: responsável técnico e organização'), h('p', { class: 'small' }, 'Usado quando a análise não define outro assinante. Cada análise pode ser assinada por outra pessoa na aba Documentos ou na etapa de saída.'), h('div', { class: 'grid g2' }, U.input(holder, 'c.responsavel', { label: 'Responsável técnico', onInput: save }), U.input(holder, 'c.registro', { label: 'Registro profissional', onInput: save }), U.input(holder, 'c.organizacao', { label: 'Organização (aparece na capa dos documentos)', onInput: save }), U.input(holder, 'c.email', { label: 'E-mail', onInput: save }), U.input(holder, 'c.telEmergencia', { label: 'Telefone de emergência da organização', onInput: save }), U.input(holder, 'c.sharepointBase', { label: 'Endereço base do SharePoint (opcional)', onInput: save }))));
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Critérios'), U.input(holder, 'c.anosValidadeFDS', { type: 'number', label: 'Validade da FDS em anos (alerta acima deste valor)', onInput: save }), h('div', { class: 'opts' }, U.flag(holder, 'c.cat2Reprova', 'Tratar categoria 2 (suspeita) como gatilho de reprovação automática', 'H341, H351, H361 e H361d. O app apenas sinaliza; a decisão é do responsável técnico.', save))));
+    root.appendChild(V.logoCard());
     const extra = h('textarea', { rows: 4, placeholder: 'CAS;nome;tipo   (tipo: cancerigeno, reprotoxico, mutagenico ou pfas)' }); extra.value = (c.watchExtra || '');
     extra.addEventListener('change', () => { holder.c.watchExtra = extra.value; save(); V.aplicarWatch(); U.toast('Lista de alerta atualizada.'); });
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Lista de alerta de triagem'), h('p', { class: 'small' }, 'Adicione substâncias de interesse da organização. Já constam ' + Object.values(T.WATCH).reduce((n, a) => n + a.length, 0) + ' registros (benzeno, formaldeído, tricloroetileno, PFOA, PFOS, entre outros).'), extra));
@@ -543,7 +566,7 @@
         h('div', { class: 'cv-chips' }, T.BASE_LEGAL.map((b) => h('a', { class: 'cv-chip', href: '#/legal', title: b.titulo }, b.sigla)))),
       h('section', { class: 'cv-cta' }, ps.length ? h('p', {}, ps.length + ' produto(s) cadastrado(s) neste navegador.') : h('p', {}, 'Nenhum produto cadastrado. Comece pela FDS ou carregue a demonstração.'),
         h('div', { class: 'row', style: 'justify-content:center' }, h('a', { class: 'btn big', href: '#/nova' }, 'Iniciar'), !ps.length ? h('button', { class: 'btn big ghost', onclick: () => { O.Demo.criar(); location.hash = '#/painel'; } }, 'Carregar demonstração') : null)),
-      h('footer', { class: 'cv-foot' }, h('span', {}, 'Orbit 360 | Consultoria em SSMA'), h('span', {}, c.responsavel + (c.registro ? ' | ' + c.registro : '')), h('span', {}, 'Apoio à decisão: a decisão formal é do responsável técnico, com a FDS vigente do fornecedor.'))));
+      h('footer', { class: 'cv-foot' }, h('span', {}, 'Orbit 360 | Consultoria em SSMA'), h('span', {}, (c.responsavel || '') + (c.responsavel && c.registro ? ' | ' + c.registro : '')), h('span', {}, 'Apoio à decisão: a decisão formal é do responsável técnico, com a FDS vigente do fornecedor.'))));
   };
 
   O.Views = V;

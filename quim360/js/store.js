@@ -5,7 +5,7 @@
 
   const DEFAULT_CFG = {
     organizacao: '',
-    responsavel: 'Roberto Almeida do Nascimento',
+    responsavel: '',
     registro: '',
     email: 'ranascimento05@gmail.com',
     telEmergencia: '',
