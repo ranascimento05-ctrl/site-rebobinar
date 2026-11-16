@@ -41,7 +41,7 @@
       const b = produtoBase('benzeno', of.id);
       b.ghs.cancerigeno = true; b.ghs.mutagenico = true; b.ghs.confirmado = true;
       b.rejeicaoAuto = true;
-      b.dec = { valor: 'nao', justificativa: E.avaliar(b, []).reprovacoes.join(' '), data: new Date().toISOString(), numero: '', sharepoint: '' };
+      b.dec = { valor: 'nao', justificativa: 'Reprovado pelo responsável técnico: contém benzeno (cancerígeno e mutagênico) e existe alternativa de menor perigo.', data: new Date().toISOString(), numero: '', sharepoint: '' };
       b.status = 'reprovado';
       ['ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'decisao'].forEach((k) => { b.confirmadas[k] = new Date().toISOString(); });
       b.etapa = 'saida';

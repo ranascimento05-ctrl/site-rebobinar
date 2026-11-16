@@ -91,8 +91,10 @@
 
   // Produto armazenado ou movimentado pelo terminal (carga): a reprovação automática de CMR e PFC vale só para insumos
   const ehCarga = (p) => p.natureza === 'carga';
-  const rejeitaAuto = (p) => triagem(p).reprovado && !ehCarga(p);
-  const cmrCarga = (p) => ehCarga(p) && triagem(p).reprovado;
+  // Gatilho de reprovação automática (CMR e PFC): sempre sinalizado, nunca bloqueia. A decisão é do responsável técnico.
+  const gatilhoCMR = (p) => triagem(p).reprovado;
+  const rejeitaAuto = () => false;
+  const cmrCarga = gatilhoCMR;
 
   // ---------- NR-20 ----------
   function nr20(p) {
@@ -466,13 +468,13 @@
       const g = {};
       r.tri.criticos.forEach((c) => { (g[c.tipo] = g[c.tipo] || []).push(c.fonte === 'analista' ? 'marcado pelo analista' : c.fonte + (c.detalhe.includes('componente ') ? ' (' + c.detalhe.split('componente ')[1].split(' consta')[0] + ')' : '')); });
       const lista = Object.keys(g).map((k) => rot[k] + ' [' + g[k].join('; ') + ']');
-      if (!ehCarga(p)) Object.keys(g).forEach((k) => r.reprovacoes.push('Critério interno (GHS): ' + rot[k] + ' [' + g[k].join('; ') + '].'));
-      else {
-        // produto armazenado pelo terminal: sem reprovação automática, mas com controles de exposição obrigatórios
+      {
+        // gatilho de reprovação automática: sinaliza, pede justificativa e controles, e deixa a decisão com o responsável técnico
         r.cmr = lista;
-        r.alertas.push('Produto armazenado pelo terminal com perigo CMR ou PFC: ' + lista.join('; ') + '. Sem reprovação automática; exige justificativa de não substituição, controles de exposição e parecer de Higiene Ocupacional.');
+        r.gatilhos = [(ehCarga(p) ? 'Produto armazenado pelo terminal' : 'Insumo') + ' com perigo CMR ou PFC: ' + lista.join('; ') + '.'];
+        r.alertas.push('Gatilho de reprovação automática acionado: ' + lista.join('; ') + '. O app não bloqueia: a decisão é do responsável técnico, com justificativa, controles de exposição (PGR, PCMSO, plano de emergência) e parecer de Higiene Ocupacional.');
         const c = p.cmr || {};
-        if (!String(c.justificativa || '').trim()) r.pendencias.push('Justificativa de não substituição do agente CMR ou PFC não registrada (produto é a carga do terminal), etapa 7.');
+        if (!String(c.justificativa || '').trim()) r.pendencias.push('Justificativa de não substituição do agente CMR ou PFC não registrada (etapa 7).');
         if (!(c.controles || []).length) r.pendencias.push('Controles de exposição a agentes CMR ou PFC não selecionados, etapa 7.');
         if (!p.hig.parecerExigidoOk) r.pendencias.push('Parecer formal de Higiene Ocupacional exigido antes da decisão (agente CMR ou PFC).');
         if ((c.controles || []).length && !c.controlesOk) r.condicionantes.push('Implantar e verificar os controles de exposição a agentes CMR ou PFC: ' + c.controles.map((k) => ((O.CMR_CONTROLES || []).find((x) => x[0] === k) || [k, k])[1]).join('; ') + '.');
@@ -494,14 +496,14 @@
     if (idade != null && idade > cfg.anosValidadeFDS) r.alertas.push('FDS com revisão há ' + idade.toFixed(1).replace('.', ',') + ' anos (limite configurado: ' + cfg.anosValidadeFDS + ').');
 
     if (['1', '6.2', '7'].includes(p.imdg.classe)) r.pendencias.push('Classe ' + p.imdg.classe + ' (' + T.classeNome(p.imdg.classe) + ') fora do escopo geral do aplicativo: exige análise especial e exceção legal para armazenamento em área comum.');
-    if (p.imdg.incompativelOperacao) r.reprovacoes.push('Classificação IMDG incompatível com as operações do local de uso.');
+    if (p.imdg.incompativelOperacao) r.alertas.push('Classificação IMDG incompatível com as operações do local de uso: sinalizado, a decisão é do responsável técnico.');
     if (p.hig.tlv === true && !p.hig.parecerExigidoOk) r.pendencias.push('Parecer formal de Higiene Ocupacional exigido antes da decisão (agente com limite NR-15 ou TLV).');
     if (p.hig.pgr === 'requer' || p.par.pgrIndicador === 'requer') r.condicionantes.push('PGR / Inventário de Riscos exige atualização antes da liberação de uso.');
     if (p.hig.pgr === 'indefinido') r.pendencias.push('Cobertura do PGR indefinida: encaminhar FDS ao elaborador do PGR.');
     if (p.hig.dosimetria === true) r.condicionantes.push('Avaliação quantitativa (dosimetria ou varredura) pendente antes da liberação de uso.');
     if (p.comp.localOk === 'insuficiente') r.pendencias.push('Informação insuficiente na FDS para avaliar o armazenamento: solicitar complementação ao fornecedor.');
     if (p.comp.localOk === 'conflito') {
-      if (p.comp.solucao === 'reprovar') r.reprovacoes.push('Conflito de segregação no local de armazenamento sem solução viável.');
+      if (p.comp.solucao === 'reprovar') r.alertas.push('Conflito de segregação no local de armazenamento sem solução viável: sinalizado, a decisão é do responsável técnico.');
       else if (p.comp.solucao === 'condicionar') r.condicionantes.push('Conflito de segregação: homologação condicionada a medida de segregação ou local alternativo.');
       else r.pendencias.push('Conflito de segregação sem solução definida (etapa 11.2).');
     }
@@ -512,11 +514,12 @@
       if (dv.length) r.alertas.push('Divergência em relação à referência: a via simplificada deve ser encerrada. ' + dv.map((x) => x.texto).join(' '));
     }
     if (r.reprovacoes.length) r.sugestao = 'reprovado';
+    else if (p.imdg.incompativelOperacao || p.comp.solucao === 'reprovar') r.sugestao = 'pendente';
     else if (r.pendencias.length) r.sugestao = 'pendente';
     else if (r.condicionantes.length) r.sugestao = 'condicionado';
     else r.sugestao = 'homologado';
     return r;
   }
 
-  O.Engine = { contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});

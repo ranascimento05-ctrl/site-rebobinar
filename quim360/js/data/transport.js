@@ -183,6 +183,7 @@
 
   // controles de exposição a agentes CMR e PFC para produto armazenado pelo terminal
   O.CMR_CONTROLES = [
+    ['pgr', 'Agente incluído no PGR e no Inventário de Riscos, com medidas de prevenção'],
     ['exposicao', 'Programa de controle de exposição: avaliação quantitativa de agentes CMR no PGR'],
     ['saude', 'Vigilância da saúde dos expostos (PCMSO)'],
     ['fechado', 'Transferência em sistema fechado, com controle ou recuperação de vapores'],

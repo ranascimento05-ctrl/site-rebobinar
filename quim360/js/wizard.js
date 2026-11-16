@@ -79,7 +79,7 @@
   function btnCarga(p, api) {
     const set = (arm) => { p.natureza = 'carga'; p.ctx.area = 'Armazenamento (carga)'; p.finalidade = 'Armazenamento de carga'; p.armazenamento = arm; p.rejeicaoAuto = false; p.etapa = 'ghs'; delete p.confirmadas.decisao; U.salvarJa(p); api.rerender(); };
     return h('div', { class: 'sug' }, h('b', {}, 'Este produto é a carga do terminal (por exemplo, gasolina, nafta ou reformado)?'),
-      h('p', { class: 'small' }, 'O critério de reprovação automática vale só para insumos de operação, manutenção, limpeza e conservação. Para a carga do terminal, a homologação exige justificativa de não substituição, controles de exposição e parecer de Higiene Ocupacional.'),
+      h('p', { class: 'small' }, 'O gatilho de reprovação automática (CMR e PFC) só sinaliza; a decisão é sua. Para a carga do terminal, a substituição não se aplica. Em qualquer caso, registre a justificativa, os controles de exposição e o parecer de Higiene Ocupacional.'),
       h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => set('granel') }, 'Tratar como carga a granel (tanque)'), h('button', { class: 'btn ghost', onclick: () => set('embalado') }, 'Tratar como carga embalada')));
   }
 
@@ -87,8 +87,8 @@
   function cmrCard(p, api) {
     const tri = E.triagem(p);
     const c = h('div', { class: 'card' }, h('h3', {}, 'Controles de exposição a agentes CMR e PFC ', U.disc('SST')),
-      h('p', { class: 'small' }, 'O produto é a carga do terminal, então a substituição não se aplica. A homologação fica condicionada a justificativa, aos controles abaixo e ao parecer de Higiene Ocupacional (etapa 9).'),
-      U.input(p, 'cmr.justificativa', { rows: 3, label: 'Justificativa de não substituição', ph: 'Ex.: gasolina é produto comercializado e armazenado pelo terminal; não há alternativa de menor perigo.' }),
+      h('p', { class: 'small' }, (E.ehCarga(p) ? 'O produto é a carga do terminal, então a substituição não se aplica. ' : 'Registre por que o produto é necessário ao processo e por que não há substituto viável. ') + 'Você decide: a homologação pode ser condicionada a justificativa, aos controles abaixo (PGR, PCMSO, plano de emergência) e ao parecer de Higiene Ocupacional (etapa 9). Nada disso trava o avanço.'),
+      U.input(p, 'cmr.justificativa', { rows: 3, label: 'Justificativa de não substituição', ph: 'Ex.: thinner é necessário à manutenção e à integridade dos equipamentos; sem substituto viável; exposição controlada pelo PGR e pelo PCMSO.' }),
       h('p', { class: 'q' }, 'Controles de exposição existentes'),
       U.checks(p, 'cmr.controles', (O.CMR_CONTROLES || []).map((x) => ({ v: x[0], label: x[1] })), {}),
       h('div', { class: 'opts' }, U.flag(p, 'cmr.controlesOk', 'Confirmo que os controles selecionados estão implantados e verificados', 'Sem esta confirmação, o produto é homologado com condicionantes.')));
@@ -107,7 +107,7 @@
 
   function visiveis(p) {
     const fim = p.lista.naLista === true;
-    const rej = !!p.rejeicaoAuto;
+    const rej = false; // gatilhos apenas sinalizam; nenhuma etapa é dispensada
     const triRej = !!(p.fds.analisada && E.rejeitaAuto(p));
     return ORDER.filter((id) => {
       if (triRej && ['fds', 'fds2'].includes(id) && !p.confirmadas[id] && !fim) return false;
@@ -120,7 +120,7 @@
   }
 
   function reavaliarRejeicao(p) {
-    p.rejeicaoAuto = (p.confirmadas.ghs && E.rejeitaAuto(p)) || (p.confirmadas.imdg && p.imdg.incompativelOperacao) || false;
+    p.rejeicaoAuto = false; // gatilhos apenas sinalizam; nenhuma etapa é dispensada
   }
 
   function checarSimplificada(p) {
@@ -147,7 +147,7 @@
           const dAn = O.Views.catalogo(p).find((x) => x.id === 'analise');
           if (dAn) w.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Relatório da análise da FDS'), h('p', { class: 'small' }, 'Leitura completa da FDS, sem decisão: validade, GHS, composição, triagem, transporte, classe de armazenamento e controles sugeridos.'), O.Views.docBotoes(p, dAn)));
           const tri = E.triagem(p);
-          if (tri.criticos.length) w.appendChild(U.alert('warn', 'Perigo CMR ou PFC identificado na FDS', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']').concat(['Insumo: reprovação automática. Produto armazenado pelo terminal (carga): homologação com controles de exposição. Informe a natureza do produto na etapa seguinte.'])));
+          if (tri.criticos.length) w.appendChild(U.alert('warn', 'Perigo CMR ou PFC identificado na FDS', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']').concat(['Gatilho de reprovação automática: o app apenas sinaliza. A decisão é do responsável técnico, com justificativa e controles de exposição.'])));
           w.appendChild(h('div', { class: 'opts' }, U.flag(p, 'modoAuto', 'Confirmar automaticamente as etapas que a FDS responde por completo', 'Você revisa tudo na decisão. Etapas com conflito ou dado faltante sempre param para você.', api.rerender)));
         } else w.appendChild(h('p', { class: 'small' }, 'Sem FDS, todas as respostas serão manuais. Você pode enviar a FDS depois, em qualquer etapa.'));
         return w;
@@ -160,8 +160,8 @@
         const wrap = h('div');
         wrap.appendChild(U.q('', 'Qual é a natureza do produto?'));
         wrap.appendChild(U.radio(p, 'natureza', [
-          { v: 'insumo', label: 'Insumo de operação, manutenção, limpeza ou conservação', hint: 'Cancerígeno, mutagênico, teratogênico e PFC reprovam de forma automática' },
-          { v: 'carga', label: 'Produto armazenado ou movimentado pelo terminal (carga)', hint: 'Sem reprovação automática por CMR e PFC: homologação com controles de exposição' },
+          { v: 'insumo', label: 'Insumo de operação, manutenção, limpeza ou conservação', hint: 'Se houver CMR ou PFC, o app sinaliza o gatilho de reprovação e pede justificativa e controles' },
+          { v: 'carga', label: 'Produto armazenado ou movimentado pelo terminal (carga)', hint: 'Substituição não se aplica; homologação com controles de exposição' },
         ], { uid: 'nat', onChange: () => {
           if (p.natureza === 'carga') { p.ctx.area = 'Armazenamento (carga)'; if (!p.finalidade || ['Operação', 'Manutenção', 'Limpeza', 'Conservação'].includes(p.finalidade)) p.finalidade = 'Armazenamento de carga'; if (!p.armazenamento) p.armazenamento = ''; }
           else { if (p.ctx.area === 'Armazenamento (carga)') p.ctx.area = ''; if (p.finalidade === 'Armazenamento de carga') p.finalidade = ''; p.armazenamento = 'embalado'; }
@@ -314,15 +314,14 @@
         w.appendChild(h('div', { class: 'grid g2' }, listaInput(p, 'ghs.h', 'Frases H (Seção 2 da FDS)', 'H', 'Separe por espaço. Ex.: H225 H319 H336'), listaInput(p, 'ghs.p', 'Frases P (Seção 2 da FDS)', 'P', 'Usadas na rotulagem.')));
         w.appendChild(h('label', { class: 'f' }, h('span', {}, 'Componentes (CAS) da Seção 3'), (() => { const el = h('input', { type: 'text', value: (p.fds.cas || []).join(', ') }); el.addEventListener('change', () => { p.fds.cas = el.value.split(/[\s,;]+/).filter((x) => /^\d{2,7}-\d{2}-\d$/.test(x)); U.salvar(p); }); return el; })()));
         const tri = E.triagem(p);
-        if (tri.criticos.length && E.ehCarga(p)) { w.appendChild(U.alert('warn', 'Produto armazenado pelo terminal: sem reprovação automática (' + tri.criticos.length + ' evidência(s) CMR ou PFC)', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']'))); w.appendChild(cmrCard(p, api)); }
-        else if (tri.criticos.length) { w.appendChild(U.alert('crit', 'Reprovação automática: ' + tri.criticos.length + ' evidência(s)', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']'))); w.appendChild(btnCarga(p, api)); }
+        if (tri.criticos.length) { w.appendChild(U.alert('crit', 'Gatilho de reprovação automática: ' + tri.criticos.length + ' evidência(s) CMR ou PFC', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']').concat(['O app apenas sinaliza. Você, como responsável técnico, decide: homologar com condicionantes (PGR, PCMSO, plano de emergência e demais controles abaixo) ou reprovar.']))); w.appendChild(cmrCard(p, api)); }
         tri.suspeitos.forEach((c) => w.appendChild(U.alert('warn', 'Alerta', c.detalhe)));
         tri.informativos.forEach((c) => w.appendChild(U.alert('', null, c)));
         w.appendChild(h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: () => { const c = tri.criticos; p.ghs.cancerigeno = c.some((x) => x.tipo === 'cancerigeno'); p.ghs.mutagenico = c.some((x) => x.tipo === 'mutagenico'); p.ghs.teratogenico = c.some((x) => x.tipo === 'teratogenico' || x.tipo === 'reprodutivo'); p.ghs.pfc = c.some((x) => x.tipo === 'pfc'); p.ghs.nenhum = !c.length; U.salvarJa(p); api.rerender(); } }, 'Marcar conforme a análise')));
         w.appendChild(h('div', { class: 'opts' }, U.flag(p, 'ghs.cancerigeno', 'Cancerígeno', 'Categoria 1A, 1B ou 2 (H350, H351)', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.teratogenico', 'Teratogênico', 'Toxicidade para o desenvolvimento (H360D, H361d)', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.mutagenico', 'Mutagênico', 'H340, H341', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.pfc', 'Contém PFCs', 'Per e polifluorados (PFAS, PFOA, PFOS, fluoropolímeros)', (v) => { if (v) p.ghs.nenhum = false; api.rerender(); }), U.flag(p, 'ghs.nenhum', 'Nenhum dos acima', 'Só vale se a Seção 2 e a Seção 3 não trouxerem os indícios acima', (v) => { if (v) { p.ghs.cancerigeno = p.ghs.teratogenico = p.ghs.mutagenico = p.ghs.pfc = false; } api.rerender(); })));
         const dv = G.derive(p.ghs.h);
         if (dv.pictos.length) w.appendChild(h('div', { class: 'pictos' }, dv.pictos.map((c) => h('span', { html: O.Pic.ghs(c, 56), title: G.PICTO[c] })), h('span', { class: 'muted' }, 'Palavra de advertência: ' + (dv.palavra || '—'))));
-        w.appendChild(U.alert('', 'Critério interno', 'Insumos cancerígenos, teratogênicos, mutagênicos ou com PFCs são reprovados de forma automática. Produto armazenado pelo terminal (carga) não é reprovado: exige justificativa e controles de exposição. O motor também lê as frases H e os CAS: marcar "Nenhum" não anula uma evidência encontrada.'));
+        w.appendChild(U.alert('', 'Critério interno', 'Cancerígenos, mutagênicos, teratogênicos e PFCs acionam o gatilho de reprovação automática: o app sinaliza e registra, mas não bloqueia. A decisão é do responsável técnico, com justificativa e controles de exposição. O motor também lê as frases H e os CAS: marcar "Nenhum" não anula uma evidência encontrada.'));
         return w;
       },
       validar: (p) => {
@@ -330,7 +329,6 @@
         const any = p.ghs.cancerigeno || p.ghs.teratogenico || p.ghs.mutagenico || p.ghs.pfc || p.ghs.nenhum;
         if (!any && !E.triagem(p).criticos.length) e.push('Marque uma opção (ou "Nenhum dos acima").');
         if (!(p.ghs.h || []).length && !p.ghs.nenhum && !any) e.push('Informe as frases H da Seção 2 ou confirme "Nenhum dos acima".');
-        if (E.cmrCarga(p)) { if (!String(p.cmr.justificativa || '').trim()) e.push('Registre a justificativa de não substituição (produto armazenado pelo terminal).'); if (!(p.cmr.controles || []).length) e.push('Selecione os controles de exposição a agentes CMR ou PFC.'); }
         return e;
       },
       depois(p) {
@@ -558,23 +556,21 @@
         w.appendChild(U.alert(st[1], 'Resultado da análise: ' + st[0], av.reprovacoes.concat(av.pendencias, av.condicionantes).length ? av.reprovacoes.concat(av.pendencias, av.condicionantes) : 'Nenhum impedimento registrado.'));
         av.alertas.forEach((a) => w.appendChild(U.alert('warn', 'Alerta', a)));
         if (p.sim.encerrada) w.appendChild(U.alert('warn', 'Via simplificada encerrada', p.sim.divergencia));
-        if (!E.ehCarga(p) && E.triagem(p).reprovado) w.appendChild(btnCarga(p, api));
         const autoIds = visiveis(p).filter((x) => p.autoConf[x] && p.confirmadas[x]);
         if (autoIds.length) w.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Revise o que a análise da FDS preencheu'), h('p', { class: 'small' }, 'A decisão confirma estas respostas. Abra qualquer etapa para corrigir.'),
           h('table', { class: 't' }, h('tbody', {}, autoIds.map((x) => h('tr', {}, h('td', {}, TITLES[x][0].replace(/^\d+ /, '')), h('td', {}, O.Auto.resumo(p, x)), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => api.ir(x) }, 'Revisar'))))))));
         const opts = [{ v: 'sim', label: av.sugestao === 'condicionado' ? 'Sim, com condicionantes' : 'Sim, homologar', hint: 'Gera relatório, cadastro e QR Code' }, { v: 'nao', label: 'Não homologar', hint: 'Informar justificativa técnica ou legal' }, { v: 'pendente', label: 'Manter pendente', hint: 'Aguardar fornecedor ou parecer' }];
         w.appendChild(U.radio(p, 'dec.valor', opts, { onChange: api.rerender }));
-        if (p.dec.valor === 'sim' && (av.reprovacoes.length || av.pendencias.length)) w.appendChild(U.alert('crit', 'Homologação bloqueada', 'Há reprovação automática ou pendência. Resolva ou escolha outra opção.'));
+        if (p.dec.valor === 'sim' && (av.reprovacoes.length || av.pendencias.length || (av.gatilhos || []).length)) w.appendChild(U.alert('warn', 'Decisão do responsável técnico', 'O app sinaliza ' + (av.gatilhos || []).concat(av.reprovacoes, av.pendencias).length + ' ponto(s) que normalmente impediriam a homologação, mas não bloqueia. Registre abaixo a justificativa técnica e as condições. Os pontos em aberto viram condicionantes e ações do plano.'));
         if (p.dec.valor === 'nao' && !p.dec.justificativa) { p.dec.justificativa = av.reprovacoes.join(' '); }
-        w.appendChild(U.input(p, 'dec.justificativa', { rows: 3, label: p.dec.valor === 'sim' ? 'Observações da decisão' : 'Justificativa técnica ou legal' }));
+        w.appendChild(U.input(p, 'dec.justificativa', { rows: 3, label: p.dec.valor === 'sim' ? ((av.reprovacoes.length || av.pendencias.length || (av.gatilhos || []).length) ? 'Justificativa técnica para homologar apesar dos gatilhos e pendências' : 'Observações da decisão') : 'Justificativa técnica ou legal' }));
         if (p.dec.valor === 'sim') w.appendChild(U.input(p, 'dec.sharepoint', { label: 'Link do cadastro no SharePoint (opcional)', hint: 'O QR Code aponta para este link. Sem link, aponta para o registro neste aplicativo.' }));
         return w;
       },
       validar: (p) => {
         const e = []; const av = E.avaliar(p, S.produtos());
         if (!p.dec.valor) e.push('Escolha a decisão.');
-        if (p.dec.valor === 'sim' && av.reprovacoes.length) e.push('Reprovação automática: não é possível homologar.');
-        if (p.dec.valor === 'sim' && av.pendencias.length) e.push('Há pendências: resolva-as antes de homologar.');
+        if (p.dec.valor === 'sim' && (av.reprovacoes.length || av.pendencias.length || (av.gatilhos || []).length) && !String(p.dec.justificativa || '').trim()) e.push('Registre a justificativa técnica para homologar com os gatilhos e pendências sinalizados.');
         if (p.dec.valor === 'nao' && !p.dec.justificativa.trim()) e.push('Informe a justificativa técnica ou legal.');
         return e;
       },
@@ -582,7 +578,11 @@
         const av = E.avaliar(p, S.produtos());
         if (p.dec.valor === 'nao') p.status = 'reprovado';
         else if (p.dec.valor === 'pendente') p.status = 'pendente';
-        else p.status = av.sugestao === 'condicionado' ? 'condicionado' : 'homologado';
+        else {
+          const abertos = (av.gatilhos || []).concat(av.reprovacoes, av.pendencias);
+          p.dec.sobrepoe = abertos;
+          p.status = (av.sugestao === 'condicionado' || av.pendencias.length || av.reprovacoes.length || (av.gatilhos || []).length) ? 'condicionado' : 'homologado';
+        }
         p.dec.data = new Date().toISOString();
         if (['homologado', 'condicionado'].includes(p.status) && !p.dec.numero) p.dec.numero = S.proximoNumero();
       },
@@ -626,7 +626,7 @@
     const v2 = visiveis(p);
     const prox = v2[v2.indexOf(cur) + 1] || 'saida';
     p.etapa = (cur === 'decisao' && !v2.includes('plano')) ? 'saida' : prox;
-    const rej = !!(p.rejeicaoAuto && ['ghs', 'imdg'].includes(cur));
+    const rej = false;
     if (rej) p.etapa = 'decisao';
     return { aviso, rej };
   }
@@ -653,7 +653,7 @@
     let seq = Promise.resolve();
     avisos.forEach((a) => {
       if (a.tipo === 'sim') seq = seq.then(() => U.modal('Via simplificada encerrada', h('div', {}, h('p', {}, 'Foi identificada divergência relevante em relação ao produto de referência. A análise completa passa a ser obrigatória.'), h('ul', {}, a.aviso.map((x) => h('li', {}, x)))), [['Entendi', true, '']]));
-      else seq = seq.then(() => U.modal('Reprovação automática', h('p', {}, 'O produto atinge critério de rejeição. As etapas 8 a 12 foram dispensadas e a análise segue para a decisão e o relatório com a justificativa.'), [['Seguir para a decisão', true, '']]));
+      else seq = seq.then(() => U.modal('Gatilho de reprovação automática', h('p', {}, 'O produto aciona um critério de reprovação. O app não bloqueia nem dispensa etapas: complete a análise e decida como responsável técnico.'), [['Seguir para a decisão', true, '']]));
     });
     return seq;
   }

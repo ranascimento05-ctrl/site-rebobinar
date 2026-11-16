@@ -50,6 +50,7 @@
     B.push(capa('Relatório de homologação de produto químico', 'QUIM 360 | Relatório de Homologação | ' + fmtData(new Date().toISOString()) + ' | ' + nz(p.nome), p));
     B.push({ t: 'callout', tone: st[1], title: 'Decisão: ' + st[0], text: p.dec.justificativa || (av.reprovacoes[0] || av.pendencias[0] || av.condicionantes[0]) || 'Sem pendências registradas.' });
     if (p.status === 'reprovado' || av.reprovacoes.length) B.push({ t: 'list', items: av.reprovacoes });
+    if (['homologado', 'condicionado'].includes(p.status) && (p.dec.sobrepoe || []).length) { B.push({ t: 'callout', tone: 'warn', title: 'Gatilhos e pendências assumidos pelo responsável técnico na decisão', text: 'O app sinalizou os pontos abaixo, que normalmente impediriam a homologação. O produto foi liberado com condicionantes, conforme a justificativa técnica registrada.' }); B.push({ t: 'list', items: p.dec.sobrepoe }); }
     if (p.status === 'pendente') B.push({ t: 'list', items: av.pendencias });
     if (p.status === 'condicionado') B.push({ t: 'p', text: 'Condicionantes antes da liberação de uso:', bold: true }, { t: 'list', items: av.condicionantes });
     if (av.alertas.length) B.push({ t: 'callout', tone: 'warn', title: 'Alertas', text: av.alertas.join(' ') });
@@ -90,7 +91,7 @@
       ['Seções ausentes', faltam.length ? faltam.join(', ') : 'Nenhuma'],
     ] });
 
-    B.push({ t: 'h1', text: E.ehCarga(p) ? '4 Triagem GHS: perigos CMR e PFC (produto armazenado pelo terminal)' : '4 Triagem GHS: rejeição automática' });
+    B.push({ t: 'h1', text: '4 Triagem GHS: perigos CMR e PFC (gatilho de reprovação automática)' });
     const tri = av.tri;
     B.push({ t: 'table', head: ['Critério', 'Resultado'], widths: [34, 66], rows: [
       ['Cancerígeno', tri.criticos.some((c) => c.tipo === 'cancerigeno') ? 'Identificado' : 'Não identificado'],
@@ -101,7 +102,7 @@
     if (tri.criticos.length) B.push({ t: 'list', items: tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']') });
     if (E.cmrCarga(p)) {
       const cm = p.cmr || {};
-      B.push({ t: 'callout', tone: 'warn', title: 'Sem reprovação automática: produto é a carga do terminal', text: 'O critério interno de rejeição por CMR e PFC vale para insumos. Para o produto armazenado pelo terminal, a homologação exige justificativa de não substituição, controles de exposição e parecer de Higiene Ocupacional.' });
+      B.push({ t: 'callout', tone: 'warn', title: 'Gatilho de reprovação automática acionado: decisão do responsável técnico', text: 'O critério interno de CMR e PFC é sinalizado, mas não bloqueia a homologação. A decisão cabe ao responsável técnico, com justificativa, controles de exposição (PGR, PCMSO, plano de emergência) e parecer de Higiene Ocupacional.' });
       B.push({ t: 'kv', rows: [
         ['Justificativa de não substituição', nz(cm.justificativa)],
         ['Controles de exposição', (cm.controles || []).length ? cm.controles.map((k) => ((O.CMR_CONTROLES || []).find((x) => x[0] === k) || [k, k])[1]).join('\n') : '—'],
@@ -486,7 +487,7 @@
       ['Contém PFCs / PFAS', tri.criticos.some((c) => c.tipo === 'pfc') ? 'Identificado' : 'Não identificado'],
     ] });
     if (tri.criticos.length) B.push({ t: 'list', items: tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']') });
-    B.push({ t: 'p', small: true, text: E.ehCarga(p) ? 'Produto armazenado pelo terminal: sem reprovação automática. A homologação exige justificativa, controles de exposição e parecer de Higiene Ocupacional.' : 'Insumo: cancerígeno, mutagênico, teratogênico e PFC reprovam de forma automática pelo critério interno.' });
+    B.push({ t: 'p', small: true, text: 'Cancerígeno, mutagênico, teratogênico e PFC acionam o gatilho de reprovação automática: o app sinaliza e a decisão é do responsável técnico, com justificativa, controles de exposição e parecer de Higiene Ocupacional.' });
 
     B.push({ t: 'h1', text: '4 Transporte e armazenamento' });
     const n20 = E.nr20(p); const ca = E.classeArm(p); const cb = E.combustivel(p);

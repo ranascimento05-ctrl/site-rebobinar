@@ -54,7 +54,7 @@
       p.ghs.cancerigeno = c.some((x) => x.tipo === 'cancerigeno'); p.ghs.mutagenico = c.some((x) => x.tipo === 'mutagenico');
       p.ghs.teratogenico = c.some((x) => x.tipo === 'teratogenico' || x.tipo === 'reprodutivo'); p.ghs.pfc = c.some((x) => x.tipo === 'pfc');
       p.ghs.nenhum = !c.length;
-      p.auto.ghs = c.length ? c.length + ' evidência(s) de critério de rejeição' : 'sem cancerígeno, mutagênico, teratogênico ou PFC nas frases H, CAS e texto';
+      p.auto.ghs = c.length ? c.length + ' evidência(s) de gatilho de reprovação (CMR ou PFC): decisão do responsável técnico' : 'sem cancerígeno, mutagênico, teratogênico ou PFC nas frases H, CAS e texto';
     },
     impactos(p) {
       if (!p.fds.analisada) return;
@@ -109,7 +109,7 @@
     sim: (p) => p.sim.ativa === false,
     fds: (p) => p.fds.completa === true,
     fds2: (p) => p.fds.atualizada === true,
-    ghs: (p) => p.fds.analisada,
+    ghs: (p) => p.fds.analisada && !E.gatilhoCMR(p), // com gatilho CMR ou PFC, o analista registra justificativa e controles
     impactos: (p) => p.fds.analisada && p.ocup.risco !== null && p.amb.risco !== null,
     imdg: (p) => p.fds.analisada && !['1', '6.2', '7'].includes(p.imdg.classe) && (p.imdg.naoRegulado || (p.imdg.onu && p.imdg.classe)),
     compat: (p) => p.fds.analisada && p.comp.localOk === 'sim' && p.comp._motor !== 'conflito',
