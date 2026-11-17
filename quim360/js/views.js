@@ -57,6 +57,54 @@
     return c;
   };
 
+  // ------------------------------------------------------------ checklist da NBR 17160 por local
+  V.checklistCard = (l) => {
+    const RQ = O.NBR17160REQ;
+    const card = h('div', { class: 'card' }, h('h3', {}, 'Checklist de requisitos da NBR 17160 ', U.disc('PSM')));
+    const r0 = E.requisitosLocal(l, S.produtos());
+    const resumo = h('p', { class: 'small' });
+    const pinta = () => { const r = E.requisitosLocal(l, S.produtos()); resumo.textContent = r.cont.total + ' requisitos aplicáveis: ' + r.cont.c + ' conformes, ' + r.cont.nc + ' não conformes, ' + r.cont.na + ' não se aplicam, ' + r.cont.aberto + ' sem resposta.'; };
+    card.appendChild(h('p', { class: 'small' }, 'Requisitos que se aplicam a este local conforme o que está armazenado, as quantidades e as características marcadas (ar livre, armário de segurança). Texto condensado, com o número do item da norma; a norma vigente prevalece. Itens não conformes viram ações no plano de ação dos produtos do local.'));
+    card.appendChild(resumo); pinta();
+    Object.keys(RQ.GRUPOS).forEach((gk) => {
+      const itens = r0.itens.filter((i) => i.grupo === gk);
+      if (!itens.length) return;
+      const det = h('details', { class: 'ck' }, h('summary', {}, RQ.GRUPOS[gk] + ' (' + itens.length + ')'));
+      itens.forEach((it) => {
+        const nome = 'rq-' + l.id + '-' + it.id;
+        const salva = (patch) => { l.check = l.check || {}; l.check[it.id] = Object.assign({ r: '', obs: '' }, l.check[it.id], patch); S.salvarLocal(l); pinta(); };
+        const grupoOp = h('div', { class: 'row', style: 'margin-top:4px' });
+        const op = (v, rot) => { const inp = h('input', { type: 'radio', name: nome, value: v, style: 'display:none', ...(it.resp === v ? { checked: true } : {}) }); const lab = h('label', { class: 'ro ' + v + (it.resp === v ? ' sel' : '') }, inp, rot); inp.addEventListener('change', () => { grupoOp.querySelectorAll('.ro').forEach((x) => x.classList.remove('sel')); lab.classList.add('sel'); salva({ r: v }); }); return lab; };
+        grupoOp.append(op('c', 'Conforme'), op('nc', 'Não conforme'), op('na', 'Não se aplica'));
+        const obs = h('input', { type: 'text', placeholder: 'Observação ou evidência (opcional)', value: it.obs }); obs.addEventListener('input', () => salva({ obs: obs.value }));
+        det.appendChild(h('div', { style: 'padding:8px 0;border-top:1px solid var(--line,#26324d)' }, h('div', {}, h('b', { class: 'sky' }, it.id + ' '), it.texto, it.semTexto ? U.badge('warn', 'texto não transcrito') : null), grupoOp, obs));
+      });
+      card.appendChild(det);
+    });
+    card.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, V.docBotoes({ nome: l.nome, id: 'chk' }, { id: 'checklist', nome: 'Checklist NBR 17160', fn: () => D.checklistLocal(l, S.produtos()) }, true)));
+    return card;
+  };
+
+  V.inspecaoCard = (l) => {
+    const RQ = O.NBR17160REQ; const holder = { l };
+    const r = E.requisitosLocal(l, S.produtos());
+    const hoje = new Date().toISOString().slice(0, 10);
+    const novo = { data: hoje, resp: '', resultado: 'conforme', obs: '', lista: [] };
+    const card = h('div', { class: 'card' }, h('h3', {}, 'Inspeções do armazém (NBR 17160, 6.3.9) ', U.disc('PSM')),
+      h('p', { class: 'small' }, 'Verificação antes da primeira utilização e depois em intervalos regulares, com registro do resultado. O intervalo é definido pelo empregador (6.3.2.5).'),
+      U.input(holder, 'l.periodoInspecaoDias', { type: 'number', label: 'Intervalo entre inspeções (dias)', onInput: () => S.salvarLocal(l) }));
+    if (r.semInspecao) card.appendChild(U.alert('warn', 'Nenhuma inspeção registrada', 'A norma pede inspeção antes da primeira utilização do armazém.'));
+    else if (r.proxima) card.appendChild(U.alert(r.vencida ? 'crit' : 'ok', r.vencida ? 'Inspeção vencida' : 'Inspeção em dia', 'Última: ' + D.fmtData(r.inspecoes[0].data) + '. Próxima até ' + D.fmtData(r.proxima) + '.'));
+    const form = h('details', {}, h('summary', {}, 'Registrar inspeção'),
+      U.input({ n: novo }, 'n.data', { type: 'date', label: 'Data' }), U.input({ n: novo }, 'n.resp', { label: 'Responsável pela inspeção' }),
+      h('p', { class: 'q' }, 'Itens verificados (6.3.9.2)'), U.checks({ n: novo }, 'n.lista', RQ.INSPECAO.map((x) => ({ v: x[0], label: x[1] }))),
+      U.select({ n: novo }, 'n.resultado', [['conforme', 'Conforme'], ['pendencias', 'Com pendências']], { label: 'Resultado', empty: false }), U.input({ n: novo }, 'n.obs', { rows: 2, label: 'Observações e pendências' }),
+      h('button', { class: 'btn', onclick: () => { if (!novo.data || !(novo.resp || '').trim()) { U.toast('Informe a data e o responsável.'); return; } l.inspecoes = l.inspecoes || []; l.inspecoes.push({ data: novo.data, resp: novo.resp.trim(), resultado: novo.resultado || 'conforme', obs: novo.obs || '', itens: novo.lista || [] }); S.salvarLocal(l); O.route(); } }, 'Registrar'));
+    card.appendChild(form);
+    if (r.inspecoes.length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Data', 'Responsável', 'Resultado', 'Itens', 'Observações', ''].map((x) => h('th', {}, x)))), h('tbody', {}, r.inspecoes.map((x, i) => h('tr', {}, h('td', {}, D.fmtData(x.data)), h('td', {}, x.resp), h('td', {}, x.resultado === 'conforme' ? 'Conforme' : 'Com pendências'), h('td', {}, String((x.itens || []).length) + ' de ' + RQ.INSPECAO.length), h('td', {}, x.obs || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.inspecoes = l.inspecoes.filter((y) => y !== x); S.salvarLocal(l); O.route(); } }, 'Remover'))))))));
+    return card;
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -377,6 +425,7 @@
       card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.nome', { label: 'Nome', onInput: () => S.salvarLocal(l) }), U.input(holder, 'l.espacoM', { type: 'number', label: 'Distância livre disponível entre ácidos e bases (m)', hint: 'A NBR 17160 exige 5 m (ou segregação física) entre corrosivos ácidos e básicos.', onInput: () => S.salvarLocal(l) })));
       card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.areaM2', { type: 'number', label: 'Área do setor de armazenamento (m²)', hint: 'Usada no cálculo da água de extinção (Anexo F).', onInput: () => S.salvarLocal(l) }),
         U.select(holder, 'l.catK', O.NBR17160.CATK, { label: 'Categoria de segurança contra incêndio (Anexo F, F.2.1)', empty: 'Não informada (usa K1/K2)', onChange: () => S.salvarLocal(l) })));
+      card.appendChild(h('div', { class: 'opts' }, U.flag(holder, 'l.aoArLivre', 'Armazenamento ao ar livre', 'Ativa os requisitos de distâncias e paredes para áreas externas (Seções 10, 11, 14 e Anexo E).', () => { S.salvarLocal(l); O.route(); }), U.flag(holder, 'l.armarioSeg', 'Armário de segurança', 'Ativa os requisitos do Anexo C.', () => { S.salvarLocal(l); O.route(); })));
       card.appendChild(U.input(holder, 'l.volMaterialM3', { type: 'number', label: 'Volume de material que pode vazar (m³), opcional', hint: 'Somado ao da água de extinção (F.1 a).', onInput: () => S.salvarLocal(l) }));
       card.appendChild(U.input(holder, 'l.descricao', { rows: 2, label: 'Descrição, contenção e condições do local', onInput: () => S.salvarLocal(l) }));
       card.appendChild(h('h4', {}, 'Itens armazenados'));
@@ -404,6 +453,7 @@
         card.appendChild(h('div', { class: 'row', style: 'margin-bottom:8px' }, V.docBotoes(ps0, { id: 'inventario', nome: 'Inventário de produtos perigosos', fn: () => D.inventarioLocal(l, S.produtos()) }, true)));
         card.appendChild(V.gatilhos(gat, 'Situação do local'));
         card.appendChild(V.contencao(l));
+        card.appendChild(V.checklistCard(l)); card.appendChild(V.inspecaoCard(l));
       } else card.appendChild(h('p', { class: 'muted' }, 'Cadastre itens ou vincule produtos homologados ao local para montar o inventário.'));
       root.appendChild(card);
     });

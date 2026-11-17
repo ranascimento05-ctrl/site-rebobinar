@@ -13,6 +13,8 @@ Registro do que foi conferido contra o PDF da norma (exemplar licenciado) e do q
 | Tabela F.1 | Página 53 | Valores coincidem; "≥ 1 000 m²" consta na tabela |
 | Tabela F.2 | Páginas 54 e 55 | Regra de prioridade corrigida (antes usava o maior valor por grupo, o que não é o que a tabela diz); F.2.3.3 (ensaio) incluído |
 
+## Checklist por local (`js/data/nbr17160-req.js`)
+Requisitos condensados, cada um com o número do item, das Seções 5, 6, 7, 8, 9 (9.1.1.3 e 9.1.1.4), 10, 11 e 14 e dos Anexos C e E, transcritos do texto da norma lido durante o desenvolvimento. Ainda não foram conferidos por uma segunda pessoa.
+
 ## Não transcrito ainda
-Texto das Seções 6, 7, 8, 10, 11, 12, 13 e 14 e dos Anexos B, C e E como requisitos verificáveis (checklist por local).
-O app indica quais seções valem; o atendimento depende da leitura da norma vigente.
+Seção 12 (gases pressurizados), Seção 13 (aerossóis e cartuchos de gás) e Anexo B (áreas de vendas): aparecem no checklist como itens "texto não transcrito", para verificação direta na norma. Também ficaram de fora 7.1.2, 10.1.2 e 14.2 (quantidades) como itens do checklist, já tratados em `gatilhosLocal`.

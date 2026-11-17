@@ -201,6 +201,14 @@ input:focus,select:focus,textarea:focus,.btn:focus-visible,.opt:focus-within{out
 .cq-leg i{font-style:normal;font-weight:700;min-width:30px;height:22px;display:grid;place-items:center;border-radius:5px;padding:0 5px}
 .cq-leg i.cq-r{background:var(--crit);color:#fff}.cq-leg i.cq-y{background:var(--warn);color:#1f1300}.cq-leg i.cq-g{background:var(--ok);color:#052e22}.cq-leg i.cq-n{background:#475569;color:#fff}
 .cq-grupo{background:#0b1222;border:1px solid var(--line2);border-radius:10px;padding:10px 12px}.cq-grupo ul{margin:6px 0 0 16px;padding:0}
+
+/* checklist por local (NBR 17160) */
+.ck .ro{display:inline-flex;align-items:center;padding:5px 12px;border:1px solid #3b4a6b;border-radius:999px;margin:0 8px 4px 0;cursor:pointer;font-size:13px;color:#cbd5e1;background:transparent}
+.ck .ro:hover{border-color:#60a5fa}
+.ck .ro.sel.c{background:#064e3b;border-color:#10b981;color:#d1fae5}
+.ck .ro.sel.nc{background:#7f1d1d;border-color:#ef4444;color:#fee2e2}
+.ck .ro.sel.na{background:#334155;border-color:#94a3b8;color:#f1f5f9}
+.ck summary{cursor:pointer;font-weight:600;padding:8px 0}
 </style>
 <style id="doc-css"></style>
 </head>
@@ -23300,6 +23308,173 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   };
 })(window.O360 = window.O360 || {});
 </script>
+<script>/* ABNT NBR 17160:2024 | requisitos verificáveis por local (checklist).
+   Cada item traz o número do item da norma e o texto condensado, mantendo a condição exigida.
+   Transcrito das Seções 5 a 11 e 14 e dos Anexos C e E. Seções 12 e 13 e Anexo B: texto ainda não transcrito (itens "semTexto").
+   Uso interno do licenciado da norma: não redistribuir. A norma vigente prevalece.
+   quando: sempre | inflam | toxcmr | p405 | conjunto | aerosol | sec7 | sec8 | sec10 | sec11 | sec12 | sec13 | sec14 | arlivre | armario */
+(function (O) {
+  const G = {
+    s5: 'Análise de risco (Seção 5)',
+    s6a: 'Seção 6 | Armazenamento seguro, em qualquer quantidade',
+    s6b: 'Seção 6 | Armazém, organização e pessoas',
+    s6c: 'Seção 6 | Emergência, EPI, higiene e primeiros socorros',
+    s9: 'Seção 9 | Armazenamento conjunto',
+    s7: 'Seção 7 | Medidas adicionais (acima de 200 kg)',
+    s8: 'Seção 8 | Proteção contra incêndios',
+    s10: 'Seção 10 | Toxicidade aguda',
+    s11: 'Seção 11 | Oxidantes',
+    s12: 'Seção 12 | Gases pressurizados',
+    s13: 'Seção 13 | Aerossóis e cartuchos de gás',
+    s14: 'Seção 14 | Líquidos inflamáveis',
+    aE: 'Anexo E | Inflamáveis: incêndio e explosão',
+    aC: 'Anexo C | Armários de segurança',
+    aB: 'Anexo B | Áreas de vendas e instalações residenciais',
+  };
+  // [item, grupo, quando, texto, semTexto?]
+  const R = [
+    ['5.1', 'a5', 'sempre', 'Análise de riscos do armazém realizada, abordando saúde e segurança do trabalhador, efeitos físicos nos produtos, regulamentação estadual de incêndio, reações químicas e compatibilidade (Seção 9), proteção ambiental (Anexo F) e atmosferas explosivas (áreas Ex).'],
+    ['5.2', 'a5', 'sempre', 'A análise considera propriedades e estado físico dos produtos, quantidade por seção do armazém, tipo de armazenamento, atividades (ex.: manutenção), armazenamento conjunto, condições de trabalho e ambientais e operações de movimentação e remoção em vazamentos.'],
+
+    ['6.1.5', 's6a', 'sempre', 'Inventário de produtos perigosos mantido pelos responsáveis do armazém, com nome, classificação ou propriedades de perigo, quantidade e setor do armazém.'],
+    ['6.2.1', 's6a', 'sempre', 'Produtos perigosos somente em embalagens originais e, quando possível, fechadas; recipientes não originais conformes aos regulamentos e à especificação do fabricante.'],
+    ['6.2.2', 's6a', 'sempre', 'Nenhum produto em recipiente cuja forma, marcação ou rotulagem possa confundir o conteúdo com gêneros alimentícios.'],
+    ['6.2.3', 's6a', 'sempre', 'Nenhum produto em rotas de tráfego (escadas, rotas de fuga, saídas de emergência, passagens, acessos a equipamentos de emergência) nem em salas de descanso, de trabalho, instalações sanitárias ou salas de primeiros socorros.'],
+    ['6.2.4', 's6a', 'sempre', 'Produtos em áreas de trabalho somente se o armazenamento for seguro para a saúde, a segurança e o meio ambiente, com análise de risco que assegure riscos aceitáveis.'],
+    ['6.2.5', 's6a', 'inflam', 'Nenhuma fonte de ignição no local nem nas proximidades diretas de recipientes com produtos inflamáveis; locais aprovados pelos órgãos competentes e conformes à legislação de armazenamento de inflamáveis (também 6.2.9, inclusive temporários).'],
+    ['6.2.6', 's6a', 'aerosol', 'Aerossóis e cartuchos de gás cheios não aquecidos acima de 50 °C pela luz solar ou outras fontes de calor.'],
+    ['6.2.10', 's6a', 'sempre', 'Recipientes com líquidos em instalação com contenção de derramamentos (dique) de capacidade de ao menos o maior recipiente; à prova de explosão onde não se possa descartar atmosfera explosiva; canaletas ligadas à rede de efluentes ou a caixas de contenção, sem deságue em águas pluviais ou esgotos.'],
+    ['6.2.11', 's6a', 'sempre', 'Distância horizontal de pelo menos 2 m entre produtos perigosos e produtos farmacêuticos, alimentos, aditivos, cosméticos, bebidas ou tabaco (também quando houver tóxicos agudos 1 a 3 ou CMR 1A/1B juntos). Demais perigosos em áreas separadas.'],
+    ['6.2.12', 's6a', 'toxcmr', 'Tóxicos agudos, cancerígenos (categoria 1 ou 2), mutagênicos (categoria 1 ou 2) e tóxicos à reprodução (categoria 1 ou 2) em setor identificado, com acesso somente de pessoas qualificadas e treinadas.'],
+    ['6.2.13', 's6a', 'p405', 'Produtos rotulados com a frase P405 ("Armazene em local fechado à chave") recebem o mesmo tratamento de 6.2.12.'],
+
+    ['6.3.1.1', 's6b', 'sempre', 'Produtos acima das quantidades de 6.3.1.2 (e total acima de 1 500 kg, 6.3.1.3) segregados dentro de um armazém, conforme a Tabela 1.'],
+    ['6.3.1.4', 's6b', 'sempre', 'Iluminação com visibilidade adequada em toda a área, inclusive na iluminação de emergência, privilegiando locais de EPI, material de controle de vazamentos e rotas de fuga.'],
+    ['6.3.1.5', 's6b', 'inflam', 'Instalações elétricas e equipamentos classificados, projetados e construídos conforme requisitos legais e normas; lâmpadas totalmente vedadas (blindadas) quando houver vapores ácidos ou inflamáveis; recomendado não posicionar lâmpadas diretamente sobre os estoques.'],
+    ['6.3.1.6', 's6b', 'sempre', 'Ventilação eficiente que impeça acúmulo de vapores de vazamentos, gases de empilhadeiras e de áreas de recarga de baterias.'],
+    ['6.3.2.2', 's6b', 'sempre', 'Armazém organizado, com as medidas de segurança dos trabalhadores documentadas em procedimento operacional (6.3.2.1 e 6.3.2.2).'],
+    ['6.3.2.3', 's6b', 'sempre', 'Produtos armazenados de modo que possam ser identificados, recolhidos e removidos; recomendado uso de paletes ou estrados.'],
+    ['6.3.2.4', 's6b', 'sempre', 'Reparos nas instalações estruturais e técnicas necessárias à operação segura realizados de imediato.'],
+    ['6.3.2.5', 's6b', 'sempre', 'Quantidade máxima de armazenamento por área do armazém e período regular de verificação de embalagens e recipientes determinados pelo empregador.'],
+    ['6.3.2.6', 's6b', 'sempre', 'Proibido fumar no armazém.'],
+    ['6.3.2.7', 's6b', 'sempre', 'Alimentos, bebidas e tabaco não consumidos no armazém, com áreas adequadas disponíveis para essa finalidade.'],
+    ['6.3.3.1', 's6b', 'sempre', 'Embalagens com setas de orientação ou símbolos de manuseio armazenadas conforme essas marcações.'],
+    ['6.3.3.2', 's6b', 'sempre', 'Áreas de carga e descarga resistentes e estáveis, com proteção como para-choques ou barreira de colisão de dimensões suficientes.'],
+    ['6.3.3.3', 's6b', 'sempre', 'Empilhamento assegura a estabilidade mecânica: altura limitada à resistência do piso; resistência das embalagens, geometria, amarração e inclinação das pilhas; requisitos de empilhamento das embalagens.'],
+    ['6.3.3.4', 's6b', 'sempre', 'Operadores de empilhadeira treinados e instruídos para produtos perigosos; corredores de paletes e capacidade de carga dos compartimentos de rack limitadas, respeitadas e sinalizadas.'],
+    ['6.3.3.5', 's6b', 'sempre', 'Embalagens frágeis empilhadas e travadas para não caírem dos racks, mantidas em altura que permita retirada e colocação seguras.'],
+    ['6.3.4', 's6b', 'sempre', 'Trabalhadores instruídos conforme a norma; designados para o armazenamento somente trabalhadores previamente instruídos, cientes dos perigos e das medidas de proteção.'],
+
+    ['6.3.5', 's6c', 'sempre', 'Instalações conforme as instruções técnicas do Corpo de Bombeiros e a análise de risco; trabalhadores alertados com antecedência suficiente; rotas de fuga e saídas acessíveis a qualquer momento; plano de emergência atualizado para fuga e resgate.'],
+    ['6.3.6.1', 's6c', 'sempre', 'EPI adequado fornecido para liberação acidental, exposição temporariamente alta e produtos sensibilizantes, irritantes ou absorvidos pela pele; equipamentos portáteis de proteção respiratória quando aplicável.'],
+    ['6.3.6.3', 's6c', 'sempre', 'Roupas de proteção fornecidas, lavadas e, se necessário, substituídas e descartadas pelo empregador.'],
+    ['6.3.7', 's6c', 'sempre', 'Quando a análise de risco indicar possível exposição por pele, ingestão ou inalação: estação de lava-olhos; uniformes individuais mantidos separados e limpos pelo empregador.'],
+    ['6.3.8', 's6c', 'sempre', 'Suprimentos e instalações de primeiros socorros conforme o tipo de local, as atividades e o número de trabalhadores, verificados regularmente; análise de risco indica se lava-olhos e chuveiros de emergência podem ser dispensados.'],
+    ['6.3.9.1', 's6c', 'sempre', 'Todas as instalações do armazém verificadas antes da primeira utilização e depois em intervalos regulares.'],
+    ['6.3.9.3', 's6c', 'sempre', 'Resultado das inspeções documentado de forma adequada e ordenada (use o registro de inspeções abaixo).'],
+
+    ['9.1.1.3 k', 's9', 'sempre', 'Reatividade de cada produto avaliada em contato com a água, inclusive a água usada para extinção de incêndio.'],
+    ['9.1.1.3 i', 's9', 'conjunto', 'Barreiras de produtos não combustíveis entre incompatíveis feitas com substâncias enquadradas nas classes de armazenamento 12 e 13.'],
+    ['9.1.1.4 a', 's9', 'conjunto', 'Tipos diferentes de produtos na mesma área do armazém somente se for possível usar extintores adequados a todos eles (NBR 14725:2023, Anexo A, Seção 5).'],
+    ['9.1.1.4 b', 's9', 'conjunto', 'Tipos diferentes de produtos no mesmo armazém somente se exigirem condições de armazenamento iguais ou semelhantes, como temperatura e ventilação (NBR 14725:2023, Anexo A, Seção 7).'],
+    ['9.1.1.4 d', 's9', 'aerosol', 'Aerossóis sempre em áreas separadas e protegidas por grades, para evitar a projeção das embalagens pelo armazém.'],
+
+    ['7.2.1', 's7', 'sec7', 'Armazém separado das salas adjacentes, com período de resistência ao fogo conforme a legislação aplicável.'],
+    ['7.2.2', 's7', 'sec7', 'Armazém impermeável à substância armazenada; pisos, paredes, telhados e diques resistentes, impermeáveis, não combustíveis e compatíveis com os produtos; área de contenção conforme a legislação.'],
+    ['7.2.3', 's7', 'sec7', 'Armazém capaz de reter ao menos o volume do maior recipiente, sem medidas adicionais (líquidos e gases liquefeitos).'],
+    ['7.2.4', 's7', 'sec7', 'Materiais do armazém que não causem perigos quando líquidos ou gases liquefeitos armazenados forem liberados.'],
+    ['7.2.5', 's7', 'sec7', 'Quando pertinente, barreiras de contenção em todas as aberturas conforme o perímetro e a capacidade de estocagem, respeitando a movimentação de máquinas.'],
+    ['7.2.6', 's7', 'sec7', 'Sem drenos de piso; canaletas ligadas a tanque de contenção ou a rede de tratamento de efluentes, sem deságue em galerias de águas pluviais ou esgotos.'],
+    ['7.3.1', 's7', 'sec7', 'Somente pessoas autorizadas têm acesso ao armazém; nomeadas e instruídas pelo empregador em intervalos regulares.'],
+    ['7.3.2', 's7', 'sec7', 'Proibição de acesso indicada de forma clara e permanente por sinalização adequada.'],
+    ['7.4.1', 's7', 'sec7', 'Plano de emergência (incêndio, acidente, incidentes, emissões e vazamentos) elaborado e disponível em vários locais de fácil acesso na área do armazém.'],
+    ['7.4.2', 's7', 'sec7', 'Plano de emergência com fluxo de comunicação com todas as partes e informações sobre sinais de alarme, pontos de encontro, verificação de presença, desligamento de energia, rotas de fuga, combate a incêndios e entorno.'],
+    ['7.4.3', 's7', 'sec7', 'Planos de emergência contra incêndio elaborados e atualizados em cooperação com a autoridade de proteção contra incêndios.'],
+    ['7.4.4', 's7', 'sec7', 'FDS dos produtos mantidas atualizadas e acessíveis para auxiliar os bombeiros em caso de vazamento.'],
+    ['7.4.5', 's7', 'sec7', 'Simulados de emergência em intervalos regulares, definidos na análise de risco.'],
+
+    ['8.1.1', 's8', 'sec8', 'Instruções técnicas do corpo de bombeiros e regulamentações vigentes atendidas, conforme a análise de risco.'],
+    ['8.2.2', 's8', 'sec8', 'Acesso da brigada de incêndio e rotas alternativas, fumaças e ondas de calor, rotas de fuga e emergência definidos conforme o tipo e o tamanho do armazém e as autoridades.'],
+    ['8.2.3', 's8', 'sec8', 'Portas, portões, rotas de fuga e saídas de emergência conforme as normas específicas.'],
+    ['8.2.4', 's8', 'sec8', 'Instalações suficientes e adequadas de combate a incêndio (extintores, hidrantes, sistemas de extinção); sistemas não automáticos identificados, acessíveis e fáceis de manusear; rotas de combate marcadas e livres de obstáculos.'],
+    ['8.2.5', 's8', 'sec8', 'Quantidade suficiente de água de extinção disponível, determinada pela autoridade de proteção contra incêndios.'],
+    ['8.2.6', 's8', 'sec8', 'Outros agentes extintores, quando exigidos, em quantidade suficiente; áreas onde a água não pode ser usada identificadas com sinalização como "Não extinguir o fogo com água".'],
+    ['8.2.7', 's8', 'sec8', 'Sistemas automáticos de extinção instalados quando a altura das substâncias armazenadas exceder 7,5 m.'],
+    ['8.2.8', 's8', 'sec8', 'Com sprinkler ou pulverização de água, as substâncias podem ser atingidas diretamente pelo agente extintor.'],
+    ['8.2.9', 's8', 'sec8', 'Sistemas semiestacionários no lugar dos automáticos somente com brigada certificada no local em até 5 min do alarme e detecção precoce e alerta imediato assegurados.'],
+    ['8.2.10', 's8', 'sec8', 'Tubulações de água de extinção, bicos de sprinkler e detectores fixados de modo que não sejam danificados ao colocar ou retirar substâncias.'],
+    ['8.2.12', 's8', 'sec8', 'Fontes de ignição evitadas; materiais auxiliares e resíduos, como panos embebidos em óleo, tratados como possíveis fontes de ignição.'],
+    ['8.2.13', 's8', 'sec8', 'Atividades com risco de interação (ex.: soldagem) com autorização de trabalho e instruções escritas do empregador antes do início.'],
+    ['8.2.14', 's8', 'sec8', 'Prédios com sistema adequado de proteção contra raios.'],
+    ['8.2.15', 's8', 'sec8', 'Áreas com mais de 200 kg de inflamáveis (H224, H225, H226) marcadas com sinal de advertência como "Aviso: Material inflamável".'],
+
+    ['10.2.1', 's10', 'sec10', 'Produtos mantidos vedados ou armazenados com acesso restrito às pessoas capacitadas e treinadas: em armário fechado (ex.: lacre removível), em prédio ou sala fechados, ou em instalações cercadas com controle de acesso.'],
+    ['10.2.2', 's10', 'sec10', 'Armazéns de 800 m² ou mais com sistemas de alarme de incêndio (ex.: autofalantes) para avisar pessoas no armazém ou nas proximidades.'],
+    ['10.2.3', 's10', 'arlivre', 'Áreas de armazenamento externas a ao menos 5 m das aberturas do prédio.'],
+    ['10.2.4', 's10', 'sec10', 'Acesso às áreas de processamento onde as substâncias são preparadas para o transporte restrito a pessoas autorizadas, instruídas e supervisionadas.'],
+    ['10.3.1', 's10', 'sec10', 'Em prédios, setores do armazém separados de outros setores, salas ou prédios por componentes resistentes ao fogo, não combustíveis (ao menos 90 min); setores acima de 1 600 m² separados por paredes corta-fogo.'],
+    ['10.3.2', 's10', 'sec10', 'Em prédios, com mais de 10 t e até 20 t por setor, alarme automático de incêndio se as condições operacionais exigirem; acima de 20 t por armazém, alarme automático de incêndio (10.3.3).'],
+    ['10.3.4', 's10', 'arlivre', 'Armazenamento externo: setores separados por componentes resistentes ao fogo e não combustíveis (ao menos 90 min) ou por distâncias conforme 10.3.6.'],
+    ['10.3.5', 's10', 'arlivre', 'Paredes de separação ao menos 1 m mais altas que as substâncias e excedendo em ao menos 0,5 m a largura das substâncias no lado aberto.'],
+    ['10.3.6', 's10', 'arlivre', 'Sem paredes, distância mínima entre setores: 5 m (recipientes acima de 200 L, altura máxima de 4 m); 5 m com alarme automático e brigada da fábrica; 5 m com extinção automática; 10 m nos demais casos.'],
+    ['10.3.7', 's10', 'arlivre', 'Acima de 20 t por setor ao ar livre, detecção e alarme por controles a cada hora (com possibilidade de acionar alarme) ou por medidas técnicas, salvo sistema automático de alarme instalado.'],
+
+    ['11.2.1', 's11', 'sec11', 'Produtos derramados não limpos com materiais combustíveis; removidos imediatamente e de maneira segura.'],
+    ['11.2.2', 's11', 'sec11', 'Remoção segura por dissolução em grande quantidade de água ou por ligantes adequados (terra diatomácea, areia, cimento); água contaminada removida de maneira adequada.'],
+    ['11.2.3', 's11', 'sec11', 'Nenhum equipamento ou veículo com motor a combustão operando ou alocado no armazém; combustíveis e lubrificantes vazados removidos imediatamente.'],
+    ['11.2.4', 's11', 'sec11', 'Sem materiais inflamáveis que favoreçam a deflagração ou a expansão rápida de incêndios (embalagens, materiais de enchimento, paletes, serragem) no armazém.'],
+    ['11.3.1', 's11', 'sec11', 'Em prédios, setores separados por componentes resistentes ao fogo, não combustíveis (ao menos 90 min); setores acima de 1 600 m² separados por paredes corta-fogo.'],
+    ['11.3.2', 's11', 'sec11', 'Oxidantes da categoria 1 ou grupo de embalagem I em prédio de vários andares somente se não aumentar o risco, documentado na análise de risco (detecção ou extinção automática, rotas e portas especiais); caso contrário, armazém de um só andar.'],
+    ['11.3.4', 's11', 'arlivre', 'Ao ar livre, setores separados por prédios ou paredes corta-fogo não combustíveis (ao menos 90 min) ou por distância mínima de 5 m.'],
+    ['11.3.5', 's11', 'arlivre', 'Paredes de 11.3.4 estendidas ao menos 1 m acima do topo do depósito e 0,5 m à frente das partes abertas.'],
+
+    ['12', 's12', 'sec12', 'Requisitos das Seções 12.2 a 12.4 (gases pressurizados): texto ainda não transcrito neste app. Verificar na norma.', true],
+    ['13', 's13', 'sec13', 'Requisitos das Seções 13.1 e 13.2 (aerossóis e cartuchos de gás pressurizado): texto ainda não transcrito neste app. Verificar na norma.', true],
+    ['B', 'aB', 'aerosol', 'Anexo B (áreas de vendas e instalações residenciais): texto ainda não transcrito neste app. Verificar na norma se o local for área de vendas.', true],
+
+    ['14.1.5', 's14', 'sec14', 'Recipientes vazios e não limpos tratados como cheios quanto às medidas de proteção.'],
+    ['14.3.1', 's14', 'sec14', 'Paredes, tetos e portas do armazém de materiais de construção não inflamáveis.'],
+    ['14.3.2', 's14', 'sec14', 'Salas com até 1 000 kg separadas das adjacentes por materiais que retardam o fogo (ao menos 30 min); acima dessa quantidade, por materiais resistentes ao fogo (ao menos 90 min).'],
+    ['14.3.3', 's14', 'sec14', 'Aberturas de paredes e teto para salas adjacentes protegidas por divisórias resistentes ao fogo.'],
+    ['14.3.4', 's14', 'sec14', 'Cubas de retenção de material impermeável aos líquidos armazenados e de materiais não combustíveis.'],
+    ['14.3.5', 's14', 'sec14', 'Drenos, aberturas e dutos para níveis inferiores, porões, poços e canais protegidos contra penetração de líquidos e vapores.'],
+    ['14.3.6', 's14', 'sec14', 'Chaminés sem nenhuma abertura dentro do armazém.'],
+    ['14.3.7', 's14', 'sec14', 'Armazém não utilizado para outros fins.'],
+    ['14.3.8', 's14', 'sec14', 'Armazém não localizado ao lado de salas de convivência, quartos ou dormitórios; acima de 10 t, também não ao lado de salas de uso geral, salvo as exceções de 14.3.10 e 14.3.11.'],
+    ['14.3.12', 's14', 'sec14', 'Acima de 20 t de líquidos inflamáveis, sistema automático de extinção de incêndios (8.2.9); abaixo de 20 t, alarme automático de incêndio se a análise de risco exigir.'],
+    ['14.4.1', 's14', 'sec14', 'Recipientes instalados em espaços de contenção resistentes aos líquidos e impermeáveis, de componentes de suporte não combustíveis, considerando a estabilidade em caso de incêndio.'],
+    ['14.4.3', 's14', 'sec14', 'Áreas de contenção abertas na parte superior (ventilação suficiente) e sem qualquer drenagem.'],
+    ['14.4.4', 's14', 'sec14', 'Capacidade da área de contenção dimensionada para que as substâncias não se expandam além dela em situação de perigo.'],
+    ['14.4.7', 's14', 'sec14', 'Paredes que limitam a área de contenção resistentes ao fogo (ao menos 90 min) em todos os níveis.'],
+    ['14.4.9', 's14', 'sec14', 'Superfícies de drenagem projetadas para conduzir os líquidos vazados à área de contenção associada, com resistência a impactos de curto prazo.'],
+    ['14.4.10', 's14', 'arlivre', 'Áreas de contenção ao ar livre com instalações que possam ser travadas ou desligadas para remover a água; uso só para essa finalidade; água contaminada tratada conforme a lei de águas.'],
+    ['14.4.11', 's14', 'sec14', 'É vedado armazenar materiais no interior das bacias de contenção.'],
+
+    ['E.2.1', 'aE', 'sec14', 'Áreas de armazenamento com ventilação adequada para evitar atmosferas explosivas perigosas, eficaz próximo ao nível do piso.'],
+    ['E.2.2', 'aE', 'sec14', 'Medidas de proteção contra explosão determinadas por zoneamento conforme a série ABNT NBR IEC 60079.'],
+    ['E.2.3', 'aE', 'sec14', 'Se houver envase, amostragem ou fracionamento: ventilação conforme a ABNT NBR 17505 e avaliação específica de classificação de áreas (ABNT NBR IEC 60079-10).'],
+    ['E.2.4', 'aE', 'sec14', 'Equipamentos para atmosferas potencialmente explosivos selecionados conforme a série ABNT NBR IEC 60079 e as instruções dos fabricantes.'],
+    ['E.4.2', 'aE', 'arlivre', 'Recipientes não estacionários ao ar livre a ao menos 10 m de prédios (3 m até 200 kg no total; 5 m acima de 200 e abaixo de 1 000 kg), salvo as exceções de E.4.3.'],
+
+    ['C.1a', 'aC', 'armario', 'Armário de segurança projetado, instalado, operado e mantido para proteger os trabalhadores contra incêndio e explosão, atendendo à legislação específica; instruções operacionais conforme o fabricante e trabalhadores treinados.'],
+    ['C.1b', 'aC', 'armario', 'Líquidos inflamáveis não armazenados no armário junto de produtos que possam causar início de incêndio (ex.: autorreativos ou pirofóricos).'],
+    ['C.2', 'aC', 'armario', 'Com ventilação técnica: ar de exaustão conduzido a local seguro (ao ar livre). Sem ventilação técnica: protege do aquecimento inadmissível em incêndio, sem fonte de ignição interna e aterrado por ligação equipotencial.'],
+  ];
+
+  // itens do registro de inspeção (6.3.9.2 a a g)
+  const INSPECAO = [
+    ['rack', 'Peso máximo de carga nos racks e prateleiras cheios e estabilidade dos componentes (6.3.9.2 a)'],
+    ['coleta', 'Instalações de coleta: vedação e revestimento de recipientes e tonéis (6.3.9.2 b)'],
+    ['descarte', 'Instalações de descarte: recipientes vedados e não corrosivos para eliminação de solventes (6.3.9.2 c)'],
+    ['ventilacao', 'Instalações de ventilação: canais e coletores de ventilação íntegros (6.3.9.2 d)'],
+    ['lavaolhos', 'Lava-olhos e chuveiros de segurança (6.3.9.2 e)'],
+    ['temperatura', 'Temperatura dos produtos que necessitem desse controle, quando aplicável (6.3.9.2 f)'],
+    ['incendio', 'Itens de combate a incêndio (8.2.4) (6.3.9.2 g)'],
+  ];
+
+  O.NBR17160REQ = { GRUPOS: G, REQ: R.map((r) => ({ id: r[0], grupo: r[1] === 'a5' ? 's5' : r[1], quando: r[2], texto: r[3], semTexto: !!r[4] })), INSPECAO };
+})(window.O360 = window.O360 || {});
+</script>
 <script>/* FDS fictícias para demonstração e teste. Não representam produtos reais. */
 (function (O) { O.SAMPLES = {
  "solvente": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 12/03/2025\nVersão: 3\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Solvente de limpeza SL-30 (demonstração)\nFabricante: Química Exemplo Ltda.\nTelefone de emergência: 0800 000 0000\nCódigo do produto: DEMO-001\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Líquidos inflamáveis categoria 2; Irritação ocular categoria 2A; Toxicidade para órgãos-alvo categoria 3.\nPalavra de advertência: Perigo\nPictogramas: GHS02, GHS07\nFrases de perigo: H225 Líquido e vapores altamente inflamáveis. H319 Provoca irritação ocular grave. H336 Pode provocar sonolência ou vertigem.\nFrases de precaução: P210 P233 P240 P241 P261 P280 P305+P351+P338 P370+P378 P403+P235 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nMistura.\nAcetato de etila - CAS 141-78-6 - 60 a 80 %\nIsopropanol - CAS 67-63-0 - 10 a 20 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: remova a pessoa para local ventilado e mantenha em repouso.\nContato com a pele: lave com água e sabão em abundância.\nContato com os olhos: enxágue com água por 15 minutos e retire lentes de contato.\nIngestão: não provoque vômito; procure atendimento médico.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nMeios de extinção: espuma resistente a álcool, pó químico e dióxido de carbono. Não usar jato d'água direto.\nPerigos: vapores formam mistura explosiva com o ar e podem se deslocar até fonte de ignição.\nProteção dos bombeiros: aparelho de respiração autônomo e roupa de combate a incêndio.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nEliminar fontes de ignição e isolar a área. Conter com material absorvente inerte (areia, vermiculita). Não descartar em rede pluvial ou corpos d'água. Usar ferramentas antifaiscantes.\n\nSEÇÃO 7 - Manuseio e armazenamento\nManuseio: aterrar recipientes na transferência, evitar o acúmulo de vapores, usar em local ventilado.\nArmazenamento: local fresco, ventilado e ao abrigo do sol, longe de fontes de ignição. Incompatível com oxidantes fortes, ácidos fortes e bases fortes.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nControle de engenharia: exaustão local.\nProteção respiratória: respirador com filtro para vapores orgânicos.\nLuvas: nitrila.\nOlhos: óculos de ampla visão.\nLimites de exposição: acetato de etila TLV-TWA 400 ppm (ACGIH); NR-15: 310 ppm.\n\nSEÇÃO 9 - Propriedades físicas e químicas\nEstado físico: líquido. Cor: incolor. Ponto de fulgor: 8 °C (vaso fechado). pH: não aplicável.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstabilidade: estável nas condições recomendadas.\nMateriais a evitar: agentes oxidantes fortes, ácidos fortes e bases fortes. Evitar calor, faíscas e chamas.\n\nSEÇÃO 11 - Informações toxicológicas\nToxicidade aguda: baixa. Irritante para os olhos. Vapores podem causar narcose.\n\nSEÇÃO 12 - Informações ecológicas\nTóxico para organismos aquáticos em altas concentrações. Não são esperados efeitos persistentes.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nDestinar como resíduo perigoso conforme ABNT NBR 10004 em incinerador licenciado. Embalagens vazias devem ser tríplice lavadas.\n\nSEÇÃO 14 - Informações sobre transporte\nTerrestre (ANTT 5.947/21): Número ONU: 1993\nNome apropriado para embarque: LÍQUIDO INFLAMÁVEL, N.E. (acetato de etila, isopropanol)\nClasse de risco: 3\nGrupo de embalagem: II\nNúmero de risco: 33\nMarítimo (IMDG): Classe 3, Grupo de embalagem II, EmS F-E, S-D. Não é poluente marinho.\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n",
@@ -23745,6 +23920,45 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return { linhas, semDados, cpa, vol, catK: local.catK || '', areaM2: Number(local.areaM2) || 0, material: mat, total: vol ? vol.total + mat : null };
   }
 
+
+  // ---------- Checklist de requisitos da NBR 17160 por local ----------
+  // Aplica cada requisito conforme o que está armazenado (quantidades) e as características do local.
+  function requisitosLocal(local, produtos, extra) {
+    const RQ = O.NBR17160REQ;
+    const g = gatilhosLocal(local, produtos, extra);
+    const secoes = {};
+    g.cats.filter((c) => c.status === 'secoes').forEach((c) => { (c.secoes.match(/\b(7|8|10|11|12|13|14)\b/g) || []).forEach((n) => { secoes['sec' + n] = true; }); });
+    const tem = (...ks) => g.cats.some((c) => ks.includes(c.k) && c.qtd > 0);
+    const prods = itensDoLocal(local, produtos, extra && extra.id).map((i) => (produtos || []).find((x) => x.id === i.pid)).filter(Boolean);
+    if (extra) prods.push(extra);
+    const cond = {
+      sempre: true,
+      inflam: tem('inf12', 'inf3'),
+      toxcmr: tem('tox', 'cmr'),
+      p405: prods.some((x) => (x.ghs.p || []).includes('P405')),
+      conjunto: g.itens.length > 1,
+      aerosol: tem('aer'),
+      arlivre: !!local.aoArLivre,
+      armario: !!local.armarioSeg,
+    };
+    Object.assign(cond, secoes);
+    const chk = local.check || {};
+    const itens = RQ.REQ.filter((r) => {
+      if (r.quando !== 'arlivre') return !!cond[r.quando];
+      // itens de armazenamento ao ar livre: local externo e a seção do item aplicável
+      const sec = { '10': 'sec10', '11': 'sec11', '14': 'sec14', 'E': 'sec14' }[r.id.split('.')[0]];
+      return cond.arlivre && !!cond[sec];
+    }).map((r) => Object.assign({}, r, { resp: (chk[r.id] || {}).r || '', obs: (chk[r.id] || {}).obs || '' }));
+    const cont = { total: itens.length, c: 0, nc: 0, na: 0, aberto: 0 };
+    itens.forEach((i) => { if (i.resp === 'c') cont.c++; else if (i.resp === 'nc') cont.nc++; else if (i.resp === 'na') cont.na++; else cont.aberto++; });
+    // inspeções (6.3.9)
+    const insp = (local.inspecoes || []).slice().sort((a, b) => String(b.data).localeCompare(String(a.data)));
+    const per = Number(local.periodoInspecaoDias) || 0;
+    let proxima = null, vencida = false;
+    if (insp[0] && per) { const d = new Date(insp[0].data + 'T00:00:00'); d.setDate(d.getDate() + per); proxima = d.toISOString().slice(0, 10); vencida = proxima < new Date().toISOString().slice(0, 10); }
+    return { itens, cont, cond, inspecoes: insp, periodo: per, proxima, vencida, semInspecao: !insp.length, gatilhos: g };
+  }
+
   // ---------- Compatibilidade entre dois produtos (aplicação prática da matriz) ----------
   function compatPar(a, b) {
     const A = { nome: a.nome, arm: classeArm(a).id, grupos: a.comp.grupos || [], incompativeis: a.comp.incompativeis || [] };
@@ -23925,7 +24139,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return r;
   }
 
-  O.Engine = { gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});
 </script>
 <script>/* Analisador de FDS (ABNT NBR 14725): extrai dados do texto colado ou de arquivo .txt/.pdf.
@@ -24867,6 +25081,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         }
       }
       if (loc && p.armazenamento !== 'granel') {
+        const rq = E.requisitosLocal(loc, produtos, p);
+        rq.itens.filter((i) => i.resp === 'nc').forEach((i) => add('Local ' + loc.nome + ', item ' + i.id + ': ' + i.texto.split(/;|:/)[0] + (i.obs ? ' (' + i.obs + ')' : ''), 'NBR 17160 | ' + i.id, 'Gestor do local / Engenharia', 'Antes do primeiro recebimento'));
+        if (rq.cont.aberto) add('Concluir o checklist da NBR 17160 de ' + loc.nome + ': ' + rq.cont.aberto + ' requisito(s) sem resposta', 'NBR 17160 | Checklist do local', 'Responsável técnico', 'Antes do primeiro recebimento');
+        if (rq.semInspecao) add('Registrar a inspeção de ' + loc.nome + ' antes da primeira utilização', 'NBR 17160 | 6.3.9.1', 'Gestor do local', 'Antes do primeiro recebimento');
+        else if (rq.vencida) add('Inspeção de ' + loc.nome + ' vencida: realizar nova inspeção', 'NBR 17160 | 6.3.9', 'Gestor do local', 'Imediato');
         const ct = E.contencaoLocal(loc, produtos, p);
         if (ct.vol) add('Garantir a retenção da água de extinção de incêndio: cerca de ' + (Math.round(ct.total * 10) / 10).toLocaleString('pt-BR') + ' m³ em ' + loc.nome + ' (CPA ' + ct.cpa + ')', 'NBR 17160 | Anexo F', 'Meio ambiente / Engenharia', 'Antes do primeiro recebimento');
         else add('Informar a área do setor e a categoria de segurança de ' + loc.nome + ' para estimar a retenção da água de extinção (Anexo F)', 'NBR 17160 | Anexo F', 'Meio ambiente', 'Antes do primeiro recebimento');
@@ -24891,6 +25110,31 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
   function D_STATUS(p) { return STATUS[p.status] || STATUS.em_analise; }
 
+
+
+  // ---------------------------------------------------------------- Checklist do local (NBR 17160)
+  function checklistLocal(local, produtos) {
+    const RQ = O.NBR17160REQ; const r = E.requisitosLocal(local, produtos);
+    const pseudo = { nome: local.nome, dec: { numero: '' } };
+    const RESP = { c: 'Conforme', nc: 'NÃO CONFORME', na: 'Não se aplica', '': 'Sem resposta' };
+    const B = [capa('Checklist de requisitos da NBR 17160', 'QUIM 360 | Armazenamento seguro | ' + local.nome, pseudo, [['Local', local.nome + ' (' + local.tipo + ')' + (local.aoArLivre ? ', ao ar livre' : '') + (local.armarioSeg ? ', armário de segurança' : '')], ['Requisitos aplicáveis', String(r.cont.total)]])];
+    B.push({ t: 'callout', tone: r.cont.nc ? 'crit' : r.cont.aberto ? 'warn' : 'ok', title: r.cont.nc ? r.cont.nc + ' requisito(s) não conforme(s)' : r.cont.aberto ? 'Checklist incompleto' : 'Sem não conformidades', text: r.cont.c + ' conformes, ' + r.cont.nc + ' não conformes, ' + r.cont.na + ' não se aplicam, ' + r.cont.aberto + ' sem resposta.' });
+    if (r.gatilhos.exige.length) { B.push({ t: 'h2', text: 'Por que estes requisitos se aplicam' }); B.push({ t: 'list', items: r.gatilhos.exige }); }
+    const nc = r.itens.filter((i) => i.resp === 'nc');
+    if (nc.length) { B.push({ t: 'h1', text: 'Não conformidades' }); B.push({ t: 'table', head: ['Item', 'Requisito', 'Observação'], widths: [10, 60, 30], rows: nc.map((i) => [i.id, i.texto, i.obs || '—']) }); }
+    let n = 0;
+    Object.keys(RQ.GRUPOS).forEach((gk) => {
+      const it = r.itens.filter((i) => i.grupo === gk); if (!it.length) return;
+      B.push({ t: 'h1', text: (++n) + ' ' + RQ.GRUPOS[gk] });
+      B.push({ t: 'table', head: ['Item', 'Requisito', 'Situação', 'Observação'], widths: [9, 53, 14, 24], rows: it.map((i) => [i.id, i.texto + (i.semTexto ? ' [texto não transcrito]' : ''), RESP[i.resp], i.obs || '—']) });
+    });
+    B.push({ t: 'h1', text: (++n) + ' Inspeções (6.3.9)' });
+    B.push({ t: 'p', small: true, text: 'Intervalo definido pelo empregador: ' + (r.periodo ? r.periodo + ' dias' : 'não informado') + (r.proxima ? '. Próxima inspeção até ' + fmtData(r.proxima) + (r.vencida ? ' (vencida)' : '') : '') + '.' });
+    B.push({ t: 'table', head: ['Data', 'Responsável', 'Resultado', 'Itens verificados', 'Observações'], widths: [14, 22, 16, 18, 30], rows: r.inspecoes.length ? r.inspecoes.map((x) => [fmtData(x.data), x.resp, x.resultado === 'conforme' ? 'Conforme' : 'Com pendências', (x.itens || []).length + ' de ' + RQ.INSPECAO.length, x.obs || '—']) : [['Sem inspeção registrada', '', '', '', '']] });
+    B.push({ t: 'p', small: true, text: 'Requisitos condensados da ABNT NBR 17160:2024, com o número do item. A norma vigente prevalece; itens marcados "texto não transcrito" devem ser verificados diretamente na norma.' });
+    B.push({ t: 'sign', rows: [[signer(null).nome, signer(null).funcao], ['Gestor do local', '']] });
+    return B;
+  }
 
   // ---------------------------------------------------------------- Inventário do local (NBR 17160, 6.1.5)
   const ST_TXT = { dentro: 'Dentro do limite', armazem: 'Exige armazém (6.3.1)', analise: 'Definir pela análise de risco', secoes: 'Seções adicionais' };
@@ -25037,7 +25281,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});
 </script>
 <script>/* Renderizadores de blocos: HTML (pré-visualização e PDF por impressão) e Word (.docx). */
@@ -26303,6 +26547,54 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return c;
   };
 
+  // ------------------------------------------------------------ checklist da NBR 17160 por local
+  V.checklistCard = (l) => {
+    const RQ = O.NBR17160REQ;
+    const card = h('div', { class: 'card' }, h('h3', {}, 'Checklist de requisitos da NBR 17160 ', U.disc('PSM')));
+    const r0 = E.requisitosLocal(l, S.produtos());
+    const resumo = h('p', { class: 'small' });
+    const pinta = () => { const r = E.requisitosLocal(l, S.produtos()); resumo.textContent = r.cont.total + ' requisitos aplicáveis: ' + r.cont.c + ' conformes, ' + r.cont.nc + ' não conformes, ' + r.cont.na + ' não se aplicam, ' + r.cont.aberto + ' sem resposta.'; };
+    card.appendChild(h('p', { class: 'small' }, 'Requisitos que se aplicam a este local conforme o que está armazenado, as quantidades e as características marcadas (ar livre, armário de segurança). Texto condensado, com o número do item da norma; a norma vigente prevalece. Itens não conformes viram ações no plano de ação dos produtos do local.'));
+    card.appendChild(resumo); pinta();
+    Object.keys(RQ.GRUPOS).forEach((gk) => {
+      const itens = r0.itens.filter((i) => i.grupo === gk);
+      if (!itens.length) return;
+      const det = h('details', { class: 'ck' }, h('summary', {}, RQ.GRUPOS[gk] + ' (' + itens.length + ')'));
+      itens.forEach((it) => {
+        const nome = 'rq-' + l.id + '-' + it.id;
+        const salva = (patch) => { l.check = l.check || {}; l.check[it.id] = Object.assign({ r: '', obs: '' }, l.check[it.id], patch); S.salvarLocal(l); pinta(); };
+        const grupoOp = h('div', { class: 'row', style: 'margin-top:4px' });
+        const op = (v, rot) => { const inp = h('input', { type: 'radio', name: nome, value: v, style: 'display:none', ...(it.resp === v ? { checked: true } : {}) }); const lab = h('label', { class: 'ro ' + v + (it.resp === v ? ' sel' : '') }, inp, rot); inp.addEventListener('change', () => { grupoOp.querySelectorAll('.ro').forEach((x) => x.classList.remove('sel')); lab.classList.add('sel'); salva({ r: v }); }); return lab; };
+        grupoOp.append(op('c', 'Conforme'), op('nc', 'Não conforme'), op('na', 'Não se aplica'));
+        const obs = h('input', { type: 'text', placeholder: 'Observação ou evidência (opcional)', value: it.obs }); obs.addEventListener('input', () => salva({ obs: obs.value }));
+        det.appendChild(h('div', { style: 'padding:8px 0;border-top:1px solid var(--line,#26324d)' }, h('div', {}, h('b', { class: 'sky' }, it.id + ' '), it.texto, it.semTexto ? U.badge('warn', 'texto não transcrito') : null), grupoOp, obs));
+      });
+      card.appendChild(det);
+    });
+    card.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, V.docBotoes({ nome: l.nome, id: 'chk' }, { id: 'checklist', nome: 'Checklist NBR 17160', fn: () => D.checklistLocal(l, S.produtos()) }, true)));
+    return card;
+  };
+
+  V.inspecaoCard = (l) => {
+    const RQ = O.NBR17160REQ; const holder = { l };
+    const r = E.requisitosLocal(l, S.produtos());
+    const hoje = new Date().toISOString().slice(0, 10);
+    const novo = { data: hoje, resp: '', resultado: 'conforme', obs: '', lista: [] };
+    const card = h('div', { class: 'card' }, h('h3', {}, 'Inspeções do armazém (NBR 17160, 6.3.9) ', U.disc('PSM')),
+      h('p', { class: 'small' }, 'Verificação antes da primeira utilização e depois em intervalos regulares, com registro do resultado. O intervalo é definido pelo empregador (6.3.2.5).'),
+      U.input(holder, 'l.periodoInspecaoDias', { type: 'number', label: 'Intervalo entre inspeções (dias)', onInput: () => S.salvarLocal(l) }));
+    if (r.semInspecao) card.appendChild(U.alert('warn', 'Nenhuma inspeção registrada', 'A norma pede inspeção antes da primeira utilização do armazém.'));
+    else if (r.proxima) card.appendChild(U.alert(r.vencida ? 'crit' : 'ok', r.vencida ? 'Inspeção vencida' : 'Inspeção em dia', 'Última: ' + D.fmtData(r.inspecoes[0].data) + '. Próxima até ' + D.fmtData(r.proxima) + '.'));
+    const form = h('details', {}, h('summary', {}, 'Registrar inspeção'),
+      U.input({ n: novo }, 'n.data', { type: 'date', label: 'Data' }), U.input({ n: novo }, 'n.resp', { label: 'Responsável pela inspeção' }),
+      h('p', { class: 'q' }, 'Itens verificados (6.3.9.2)'), U.checks({ n: novo }, 'n.lista', RQ.INSPECAO.map((x) => ({ v: x[0], label: x[1] }))),
+      U.select({ n: novo }, 'n.resultado', [['conforme', 'Conforme'], ['pendencias', 'Com pendências']], { label: 'Resultado', empty: false }), U.input({ n: novo }, 'n.obs', { rows: 2, label: 'Observações e pendências' }),
+      h('button', { class: 'btn', onclick: () => { if (!novo.data || !(novo.resp || '').trim()) { U.toast('Informe a data e o responsável.'); return; } l.inspecoes = l.inspecoes || []; l.inspecoes.push({ data: novo.data, resp: novo.resp.trim(), resultado: novo.resultado || 'conforme', obs: novo.obs || '', itens: novo.lista || [] }); S.salvarLocal(l); O.route(); } }, 'Registrar'));
+    card.appendChild(form);
+    if (r.inspecoes.length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Data', 'Responsável', 'Resultado', 'Itens', 'Observações', ''].map((x) => h('th', {}, x)))), h('tbody', {}, r.inspecoes.map((x, i) => h('tr', {}, h('td', {}, D.fmtData(x.data)), h('td', {}, x.resp), h('td', {}, x.resultado === 'conforme' ? 'Conforme' : 'Com pendências'), h('td', {}, String((x.itens || []).length) + ' de ' + RQ.INSPECAO.length), h('td', {}, x.obs || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.inspecoes = l.inspecoes.filter((y) => y !== x); S.salvarLocal(l); O.route(); } }, 'Remover'))))))));
+    return card;
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -26623,6 +26915,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.nome', { label: 'Nome', onInput: () => S.salvarLocal(l) }), U.input(holder, 'l.espacoM', { type: 'number', label: 'Distância livre disponível entre ácidos e bases (m)', hint: 'A NBR 17160 exige 5 m (ou segregação física) entre corrosivos ácidos e básicos.', onInput: () => S.salvarLocal(l) })));
       card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.areaM2', { type: 'number', label: 'Área do setor de armazenamento (m²)', hint: 'Usada no cálculo da água de extinção (Anexo F).', onInput: () => S.salvarLocal(l) }),
         U.select(holder, 'l.catK', O.NBR17160.CATK, { label: 'Categoria de segurança contra incêndio (Anexo F, F.2.1)', empty: 'Não informada (usa K1/K2)', onChange: () => S.salvarLocal(l) })));
+      card.appendChild(h('div', { class: 'opts' }, U.flag(holder, 'l.aoArLivre', 'Armazenamento ao ar livre', 'Ativa os requisitos de distâncias e paredes para áreas externas (Seções 10, 11, 14 e Anexo E).', () => { S.salvarLocal(l); O.route(); }), U.flag(holder, 'l.armarioSeg', 'Armário de segurança', 'Ativa os requisitos do Anexo C.', () => { S.salvarLocal(l); O.route(); })));
       card.appendChild(U.input(holder, 'l.volMaterialM3', { type: 'number', label: 'Volume de material que pode vazar (m³), opcional', hint: 'Somado ao da água de extinção (F.1 a).', onInput: () => S.salvarLocal(l) }));
       card.appendChild(U.input(holder, 'l.descricao', { rows: 2, label: 'Descrição, contenção e condições do local', onInput: () => S.salvarLocal(l) }));
       card.appendChild(h('h4', {}, 'Itens armazenados'));
@@ -26650,6 +26943,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         card.appendChild(h('div', { class: 'row', style: 'margin-bottom:8px' }, V.docBotoes(ps0, { id: 'inventario', nome: 'Inventário de produtos perigosos', fn: () => D.inventarioLocal(l, S.produtos()) }, true)));
         card.appendChild(V.gatilhos(gat, 'Situação do local'));
         card.appendChild(V.contencao(l));
+        card.appendChild(V.checklistCard(l)); card.appendChild(V.inspecaoCard(l));
       } else card.appendChild(h('p', { class: 'muted' }, 'Cadastre itens ou vincule produtos homologados ao local para montar o inventário.'));
       root.appendChild(card);
     });

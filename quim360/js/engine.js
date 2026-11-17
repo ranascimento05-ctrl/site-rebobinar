@@ -342,6 +342,45 @@
     return { linhas, semDados, cpa, vol, catK: local.catK || '', areaM2: Number(local.areaM2) || 0, material: mat, total: vol ? vol.total + mat : null };
   }
 
+
+  // ---------- Checklist de requisitos da NBR 17160 por local ----------
+  // Aplica cada requisito conforme o que está armazenado (quantidades) e as características do local.
+  function requisitosLocal(local, produtos, extra) {
+    const RQ = O.NBR17160REQ;
+    const g = gatilhosLocal(local, produtos, extra);
+    const secoes = {};
+    g.cats.filter((c) => c.status === 'secoes').forEach((c) => { (c.secoes.match(/\b(7|8|10|11|12|13|14)\b/g) || []).forEach((n) => { secoes['sec' + n] = true; }); });
+    const tem = (...ks) => g.cats.some((c) => ks.includes(c.k) && c.qtd > 0);
+    const prods = itensDoLocal(local, produtos, extra && extra.id).map((i) => (produtos || []).find((x) => x.id === i.pid)).filter(Boolean);
+    if (extra) prods.push(extra);
+    const cond = {
+      sempre: true,
+      inflam: tem('inf12', 'inf3'),
+      toxcmr: tem('tox', 'cmr'),
+      p405: prods.some((x) => (x.ghs.p || []).includes('P405')),
+      conjunto: g.itens.length > 1,
+      aerosol: tem('aer'),
+      arlivre: !!local.aoArLivre,
+      armario: !!local.armarioSeg,
+    };
+    Object.assign(cond, secoes);
+    const chk = local.check || {};
+    const itens = RQ.REQ.filter((r) => {
+      if (r.quando !== 'arlivre') return !!cond[r.quando];
+      // itens de armazenamento ao ar livre: local externo e a seção do item aplicável
+      const sec = { '10': 'sec10', '11': 'sec11', '14': 'sec14', 'E': 'sec14' }[r.id.split('.')[0]];
+      return cond.arlivre && !!cond[sec];
+    }).map((r) => Object.assign({}, r, { resp: (chk[r.id] || {}).r || '', obs: (chk[r.id] || {}).obs || '' }));
+    const cont = { total: itens.length, c: 0, nc: 0, na: 0, aberto: 0 };
+    itens.forEach((i) => { if (i.resp === 'c') cont.c++; else if (i.resp === 'nc') cont.nc++; else if (i.resp === 'na') cont.na++; else cont.aberto++; });
+    // inspeções (6.3.9)
+    const insp = (local.inspecoes || []).slice().sort((a, b) => String(b.data).localeCompare(String(a.data)));
+    const per = Number(local.periodoInspecaoDias) || 0;
+    let proxima = null, vencida = false;
+    if (insp[0] && per) { const d = new Date(insp[0].data + 'T00:00:00'); d.setDate(d.getDate() + per); proxima = d.toISOString().slice(0, 10); vencida = proxima < new Date().toISOString().slice(0, 10); }
+    return { itens, cont, cond, inspecoes: insp, periodo: per, proxima, vencida, semInspecao: !insp.length, gatilhos: g };
+  }
+
   // ---------- Compatibilidade entre dois produtos (aplicação prática da matriz) ----------
   function compatPar(a, b) {
     const A = { nome: a.nome, arm: classeArm(a).id, grupos: a.comp.grupos || [], incompativeis: a.comp.incompativeis || [] };
@@ -522,5 +561,5 @@
     return r;
   }
 
-  O.Engine = { gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});

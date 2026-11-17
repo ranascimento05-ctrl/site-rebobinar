@@ -393,6 +393,11 @@
         }
       }
       if (loc && p.armazenamento !== 'granel') {
+        const rq = E.requisitosLocal(loc, produtos, p);
+        rq.itens.filter((i) => i.resp === 'nc').forEach((i) => add('Local ' + loc.nome + ', item ' + i.id + ': ' + i.texto.split(/;|:/)[0] + (i.obs ? ' (' + i.obs + ')' : ''), 'NBR 17160 | ' + i.id, 'Gestor do local / Engenharia', 'Antes do primeiro recebimento'));
+        if (rq.cont.aberto) add('Concluir o checklist da NBR 17160 de ' + loc.nome + ': ' + rq.cont.aberto + ' requisito(s) sem resposta', 'NBR 17160 | Checklist do local', 'Responsável técnico', 'Antes do primeiro recebimento');
+        if (rq.semInspecao) add('Registrar a inspeção de ' + loc.nome + ' antes da primeira utilização', 'NBR 17160 | 6.3.9.1', 'Gestor do local', 'Antes do primeiro recebimento');
+        else if (rq.vencida) add('Inspeção de ' + loc.nome + ' vencida: realizar nova inspeção', 'NBR 17160 | 6.3.9', 'Gestor do local', 'Imediato');
         const ct = E.contencaoLocal(loc, produtos, p);
         if (ct.vol) add('Garantir a retenção da água de extinção de incêndio: cerca de ' + (Math.round(ct.total * 10) / 10).toLocaleString('pt-BR') + ' m³ em ' + loc.nome + ' (CPA ' + ct.cpa + ')', 'NBR 17160 | Anexo F', 'Meio ambiente / Engenharia', 'Antes do primeiro recebimento');
         else add('Informar a área do setor e a categoria de segurança de ' + loc.nome + ' para estimar a retenção da água de extinção (Anexo F)', 'NBR 17160 | Anexo F', 'Meio ambiente', 'Antes do primeiro recebimento');
@@ -417,6 +422,31 @@
   }
   function D_STATUS(p) { return STATUS[p.status] || STATUS.em_analise; }
 
+
+
+  // ---------------------------------------------------------------- Checklist do local (NBR 17160)
+  function checklistLocal(local, produtos) {
+    const RQ = O.NBR17160REQ; const r = E.requisitosLocal(local, produtos);
+    const pseudo = { nome: local.nome, dec: { numero: '' } };
+    const RESP = { c: 'Conforme', nc: 'NÃO CONFORME', na: 'Não se aplica', '': 'Sem resposta' };
+    const B = [capa('Checklist de requisitos da NBR 17160', 'QUIM 360 | Armazenamento seguro | ' + local.nome, pseudo, [['Local', local.nome + ' (' + local.tipo + ')' + (local.aoArLivre ? ', ao ar livre' : '') + (local.armarioSeg ? ', armário de segurança' : '')], ['Requisitos aplicáveis', String(r.cont.total)]])];
+    B.push({ t: 'callout', tone: r.cont.nc ? 'crit' : r.cont.aberto ? 'warn' : 'ok', title: r.cont.nc ? r.cont.nc + ' requisito(s) não conforme(s)' : r.cont.aberto ? 'Checklist incompleto' : 'Sem não conformidades', text: r.cont.c + ' conformes, ' + r.cont.nc + ' não conformes, ' + r.cont.na + ' não se aplicam, ' + r.cont.aberto + ' sem resposta.' });
+    if (r.gatilhos.exige.length) { B.push({ t: 'h2', text: 'Por que estes requisitos se aplicam' }); B.push({ t: 'list', items: r.gatilhos.exige }); }
+    const nc = r.itens.filter((i) => i.resp === 'nc');
+    if (nc.length) { B.push({ t: 'h1', text: 'Não conformidades' }); B.push({ t: 'table', head: ['Item', 'Requisito', 'Observação'], widths: [10, 60, 30], rows: nc.map((i) => [i.id, i.texto, i.obs || '—']) }); }
+    let n = 0;
+    Object.keys(RQ.GRUPOS).forEach((gk) => {
+      const it = r.itens.filter((i) => i.grupo === gk); if (!it.length) return;
+      B.push({ t: 'h1', text: (++n) + ' ' + RQ.GRUPOS[gk] });
+      B.push({ t: 'table', head: ['Item', 'Requisito', 'Situação', 'Observação'], widths: [9, 53, 14, 24], rows: it.map((i) => [i.id, i.texto + (i.semTexto ? ' [texto não transcrito]' : ''), RESP[i.resp], i.obs || '—']) });
+    });
+    B.push({ t: 'h1', text: (++n) + ' Inspeções (6.3.9)' });
+    B.push({ t: 'p', small: true, text: 'Intervalo definido pelo empregador: ' + (r.periodo ? r.periodo + ' dias' : 'não informado') + (r.proxima ? '. Próxima inspeção até ' + fmtData(r.proxima) + (r.vencida ? ' (vencida)' : '') : '') + '.' });
+    B.push({ t: 'table', head: ['Data', 'Responsável', 'Resultado', 'Itens verificados', 'Observações'], widths: [14, 22, 16, 18, 30], rows: r.inspecoes.length ? r.inspecoes.map((x) => [fmtData(x.data), x.resp, x.resultado === 'conforme' ? 'Conforme' : 'Com pendências', (x.itens || []).length + ' de ' + RQ.INSPECAO.length, x.obs || '—']) : [['Sem inspeção registrada', '', '', '', '']] });
+    B.push({ t: 'p', small: true, text: 'Requisitos condensados da ABNT NBR 17160:2024, com o número do item. A norma vigente prevalece; itens marcados "texto não transcrito" devem ser verificados diretamente na norma.' });
+    B.push({ t: 'sign', rows: [[signer(null).nome, signer(null).funcao], ['Gestor do local', '']] });
+    return B;
+  }
 
   // ---------------------------------------------------------------- Inventário do local (NBR 17160, 6.1.5)
   const ST_TXT = { dentro: 'Dentro do limite', armazem: 'Exige armazém (6.3.1)', analise: 'Definir pela análise de risco', secoes: 'Seções adicionais' };
@@ -563,5 +593,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});
