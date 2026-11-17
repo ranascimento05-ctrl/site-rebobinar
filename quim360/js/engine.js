@@ -362,13 +362,15 @@
       aerosol: tem('aer'),
       arlivre: !!local.aoArLivre,
       armario: !!local.armarioSeg,
+      vendasInflam: !!local.areaVendas && tem('inf12', 'inf3'),
+      vendasAer: !!local.areaVendas && tem('aer'),
     };
     Object.assign(cond, secoes);
     const chk = local.check || {};
     const itens = RQ.REQ.filter((r) => {
       if (r.quando !== 'arlivre') return !!cond[r.quando];
       // itens de armazenamento ao ar livre: local externo e a seção do item aplicável
-      const sec = { '10': 'sec10', '11': 'sec11', '14': 'sec14', 'E': 'sec14' }[r.id.split('.')[0]];
+      const sec = { '10': 'sec10', '11': 'sec11', '12': 'sec12', '14': 'sec14', 'E': 'sec14' }[r.id.split('.')[0]];
       return cond.arlivre && !!cond[sec];
     }).map((r) => Object.assign({}, r, { resp: (chk[r.id] || {}).r || '', obs: (chk[r.id] || {}).obs || '' }));
     const cont = { total: itens.length, c: 0, nc: 0, na: 0, aberto: 0 };

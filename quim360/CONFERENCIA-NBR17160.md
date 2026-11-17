@@ -14,7 +14,13 @@ Registro do que foi conferido contra o PDF da norma (exemplar licenciado) e do q
 | Tabela F.2 | Páginas 54 e 55 | Regra de prioridade corrigida (antes usava o maior valor por grupo, o que não é o que a tabela diz); F.2.3.3 (ensaio) incluído |
 
 ## Checklist por local (`js/data/nbr17160-req.js`)
-Requisitos condensados, cada um com o número do item, das Seções 5, 6, 7, 8, 9 (9.1.1.3 e 9.1.1.4), 10, 11 e 14 e dos Anexos C e E, transcritos do texto da norma lido durante o desenvolvimento. Ainda não foram conferidos por uma segunda pessoa.
+142 requisitos condensados, cada um com o número do item, das Seções 5 a 14 (inclui 9.1.1.3 e 9.1.1.4) e dos Anexos B, C e E.
 
-## Não transcrito ainda
-Seção 12 (gases pressurizados), Seção 13 (aerossóis e cartuchos de gás) e Anexo B (áreas de vendas): aparecem no checklist como itens "texto não transcrito", para verificação direta na norma. Também ficaram de fora 7.1.2, 10.1.2 e 14.2 (quantidades) como itens do checklist, já tratados em `gatilhosLocal`.
+Conferência contra o PDF (reenviado em 17/11/2026):
+- Todos os números e unidades dos itens das Seções 5 a 11, 14 e dos Anexos C e E foram comparados por programa com o parágrafo correspondente da norma: coincidem (as únicas diferenças são referências cruzadas a outros itens).
+- Seções 12 e 13 e Anexo B, antes sem texto, foram transcritas e conferidas da mesma forma. A Tabela B.1 foi lida na imagem da página (a extração de texto a embaralha).
+- Um item do app agrupa 14.3.8 e 14.3.9 a 14.3.11 (rotulado "14.3.8 e 14.3.9"); 6.2.8, 7.1.2, 10.1.2 e 14.2 (quantidades) ficam em `gatilhosLocal`, não no checklist.
+
+Divergência da própria norma: o texto de 13.1.1 manda aplicar a Seção 13 a aerossóis acima de 20 kg, e a Tabela 1 diz 200 kg para H222 e H223. O app usa 20 kg (mais conservador) e mostra a nota.
+
+Ainda não houve conferência por uma segunda pessoa, e os textos são condensados, não literais.

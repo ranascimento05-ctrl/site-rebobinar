@@ -1,8 +1,8 @@
 /* ABNT NBR 17160:2024 | requisitos verificáveis por local (checklist).
    Cada item traz o número do item da norma e o texto condensado, mantendo a condição exigida.
-   Transcrito das Seções 5 a 11 e 14 e dos Anexos C e E. Seções 12 e 13 e Anexo B: texto ainda não transcrito (itens "semTexto").
+   Transcrito das Seções 5 a 14 e dos Anexos B, C e E. Seções 12 e 13 e Anexo B transcritos em 17/11/2026 a partir do exemplar enviado.
    Uso interno do licenciado da norma: não redistribuir. A norma vigente prevalece.
-   quando: sempre | inflam | toxcmr | p405 | conjunto | aerosol | sec7 | sec8 | sec10 | sec11 | sec12 | sec13 | sec14 | arlivre | armario */
+   quando: sempre | inflam | toxcmr | p405 | conjunto | aerosol | sec7 | sec8 | sec10 | sec11 | sec12 | sec13 | sec14 | arlivre | armario | vendasInflam | vendasAer */
 (function (O) {
   const G = {
     s5: 'Análise de risco (Seção 5)',
@@ -118,9 +118,37 @@
     ['11.3.4', 's11', 'arlivre', 'Ao ar livre, setores separados por prédios ou paredes corta-fogo não combustíveis (ao menos 90 min) ou por distância mínima de 5 m.'],
     ['11.3.5', 's11', 'arlivre', 'Paredes de 11.3.4 estendidas ao menos 1 m acima do topo do depósito e 0,5 m à frente das partes abertas.'],
 
-    ['12', 's12', 'sec12', 'Requisitos das Seções 12.2 a 12.4 (gases pressurizados): texto ainda não transcrito neste app. Verificar na norma.', true],
-    ['13', 's13', 'sec13', 'Requisitos das Seções 13.1 e 13.2 (aerossóis e cartuchos de gás pressurizado): texto ainda não transcrito neste app. Verificar na norma.', true],
-    ['B', 'aB', 'aerosol', 'Anexo B (áreas de vendas e instalações residenciais): texto ainda não transcrito neste app. Verificar na norma se o local for área de vendas.', true],
+    ['12.2.1', 's12', 'sec12', 'Recipientes de gases comprimidos protegidos contra tombamentos e quedas e com as válvulas protegidas por acessórios adequados (ex.: capacetes de proteção). Proteção especial é dispensável se o desenho do recipiente, a colocação em grandes grupos ou o tipo de armazenamento assegurarem proteção suficiente.'],
+    ['12.2.2', 's12', 'sec12', 'Dentro do depósito não são reenvasados gases nem feitos reparos nos recipientes sob pressão; para isso há salas dedicadas.'],
+    ['12.2.3', 's12', 'sec12', 'Gases com toxicidade aguda das categorias 1 a 3 (H330 ou H331) estocados em locais trancados ou com acesso somente de pessoas competentes e confiáveis.'],
+    ['12.2.4', 's12', 'sec12', 'Gases H330 somente em áreas com sistema de detecção de gases que acione alarme sonoro ou ótico quando os valores permitidos no local de trabalho forem excedidos; medidas como o porte de aparato de respiração definidas nas instruções de trabalho; aparatos mantidos fora das áreas perigosas, de acesso rápido.'],
+    ['12.2.5', 's12', 'sec12', 'Áreas de recipientes não estacionários com gases H220 ou H221, ou tóxicos categoria 1 ou 2 (H330), próximas a locais de tráfego de pessoas: paredes sem portas, janelas ou outras aberturas, com altura mínima de 2 m, separando do local de passagem (exceto portas autofechantes com resistência ao fogo mínima de 90 min); saída rápida dessas áreas.'],
+    ['12.3.1', 's12', 'sec12', 'Armazenamento em salas: separadas das adjacentes por componentes retardantes de fogo (mínimo 30 min), ou resistentes ao fogo (mínimo 90 min) se houver risco de incêndio ou explosão nas salas adjacentes; paredes externas ao menos retardantes de fogo (30 min), podendo ser não combustíveis se a distância de instalações vizinhas perigosas for ≥ 5 m; telhado resistente à propagação do fogo e ao calor radiado; piso no mínimo resistente ao fogo.'],
+    ['12.3.2', 's12', 'arlivre', 'Armazenamento ao ar livre com recipientes a distâncias ≥ 5 m de instalações vizinhas com risco de incêndio, salvo paredes não combustíveis com altura mínima de 2 m e largura suficiente.'],
+    ['12.3.3', 's12', 'sec12', 'Recipientes sob pressão em locais de trabalho somente em armários de segurança com resistência ao fogo mínima de 30 min; gases tóxicos categorias 1 a 3 (H330 ou H331) somente em armários ventilados com 120 trocas de ar por hora; gases oxidantes (H270) e inflamáveis (H220 ou H221) em armários ventilados com 10 trocas de ar por hora.'],
+    ['12.3.4', 's12', 'sec12', 'Sem poços, canais ou drenos para canais sem selo líquido, entradas de porões ou outras conexões abertas com porões, nem orifícios de limpeza ou orifícios em canaletas no depósito (ao ar livre, só na área de perigo de recipientes não estacionários com gases mais pesados que o ar e gases liquefeitos).'],
+    ['12.3.5', 's12', 'sec12', 'Áreas subterrâneas: no máximo 50 recipientes cheios de gases comprimidos, com ventilação forçada de 2 trocas de ar por hora (constante ou acionada por detecção de gases, com alarme se a ventilação falhar), ou ventilação natural com aberturas de seção mínima de 10 % da área do piso e piso a no máximo 1,5 m abaixo do solo, ou armários de segurança conforme norma nacional ou internacional.'],
+    ['12.3.7', 's12', 'sec12', 'Salas de recipientes de gases comprimidos suficientemente ventiladas: ventilação natural suficiente se houver aberturas diretas à área externa com seção total de ao menos 1/100 da área do piso, considerando a densidade dos gases; se não for possível, aplicar a ventilação de 12.3.5 a).'],
+    ['12.3.8', 's12', 'sec12', 'Mais de cinco recipientes de gases oxidantes (H270) ou inflamáveis (H220 ou H221): piso de material não combustível.'],
+    ['12.3.9', 's12', 'sec12', 'Salas com mais de 25 cilindros ou dois botijões cheios de gases inflamáveis, ou mais de cinco cilindros ou um botijão cheios de gases tóxicos categorias 1 ou 2, não abaixo nem acima de salas de ocupação permanente de pessoas; conexões com salas adjacentes só se estas tiverem rotas de emergência próprias (vazios não limpos em até o dobro da quantidade).'],
+    ['12.4.1', 's12', 'sec12', 'Para gases tóxicos H330 ou inflamáveis H220 ou H221, zonas de segurança no entorno dos recipientes, de tamanho conforme a densidade dos gases e consideradas na análise de risco.'],
+    ['12.4.3', 's12', 'sec12', 'Proteção contra explosões nas zonas de segurança de gases inflamáveis; zonas de gases tóxicos sem se estender às rotas de fuga e de emergência; além da proteção das válvulas, contraporca para gases tóxicos das categorias 1 ou 2 e gases pirofóricos.'],
+    ['12.4.4', 's12', 'sec12', 'Zonas de segurança de 2 m em cada direção em salas (1 m para cima para gases mais pesados que o ar); ao ar livre, metade; salas com área ≤ 20 m² inteiras designadas como zona de segurança.'],
+    ['13.1.2', 's13', 'sec13', 'Aerossóis e cartuchos sem frases de perigo e com massa ≥ 200 kg também sujeitos à Seção 13, salvo se armazenados em caixas de tela de arame fechadas que impeçam a liberação em caso de ruptura.'],
+    ['13.2.1', 's13', 'sec13', 'Líquidos combustíveis e volume líquido do conteúdo dos aerossóis e cartuchos, em conjunto, não excedem 100 t por área de armazenamento (salas de recipientes não estacionários).'],
+    ['13.2.2', 's13', 'sec13', 'Áreas de armazenamento fora de prédios residenciais, separadas de outras salas por componentes resistentes ao fogo (ao menos 90 min), com pisos de materiais não combustíveis, ventilação suficiente e proteção contra explosão conforme o Anexo E.'],
+    ['13.2.3', 's13', 'sec13', 'Áreas de armazenamento acima de 1 600 m² separadas de outras por paredes corta-fogo.'],
+    ['13.2.4', 's13', 'sec13', 'Cartuchos de gás pressurizado já abertos, especialmente em salas de trabalho, acondicionados de forma adequada.'],
+    ['B.1a', 'aB', 'vendasInflam', 'Líquidos inflamáveis dentro da Tabela B.1, em kg e por classificação (não por produto). Porões de prédios residenciais, outras embalagens: H224/H225 10, H226 20. Vendas e armazéns até 200 m²: frágeis 10/20, outras 60/120. De 200 a 500 m²: frágeis 20/40, outras 200/400. Acima de 500 m²: frágeis 30/60, outras 300/600. Quantidades acima de 200 L atendem à legislação vigente. Embalagens frágeis: vidro, porcelana, cerâmica ou similares.'],
+    ['B.1b', 'aB', 'vendasInflam', 'Quantidades de H224/H225 e de H226 usadas cumulativamente (as não usadas de H224/H225 somam às de H226, não o contrário); frágeis junto com outras embalagens seguem o limite de outras embalagens, sem exceder o limite das frágeis.'],
+    ['B.1c', 'aB', 'vendasInflam', 'Proibido armazenar líquidos inflamáveis em residências, em salas ligadas a residências que não possam ser fechadas de forma resistente ao fogo e em embalagens frágeis em porões de prédios residenciais.'],
+    ['B.1d', 'aB', 'vendasInflam', 'Embalagens com líquidos inflamáveis não dispostas para venda perto das saídas.'],
+    ['B.1e', 'aB', 'vendasInflam', 'Quantidades maiores em áreas de vendas somente se divididas em compartimentos contrafogo e com sistema automático de extinção de incêndios, ou em armários de segurança (Anexo C).'],
+    ['B.2a', 'aB', 'vendasAer', 'Em áreas de vendas, aerossóis e cartuchos não excedem a quantidade de um dia de venda ou a necessária para exibir a gama de produtos; em áreas de armazenamento, não ocupam mais de 20 m² (supermercados de piso térreo e andar único podem ter mais, conforme a autoridade de proteção contra incêndio).'],
+    ['B.2b', 'aB', 'vendasAer', 'Aerossóis e cartuchos não exibidos para venda perto das saídas.'],
+    ['B.2c', 'aB', 'vendasAer', 'Extintores classe A, B e C com capacidade mínima de 6 kg perto de cada vitrine de aerossóis e cartuchos, e nas áreas de armazenamento.'],
+    ['B.2d', 'aB', 'vendasAer', 'Substâncias facilmente inflamáveis, como itens pirotécnicos, fora das áreas de armazenamento e vitrines de aerossóis e cartuchos.'],
+    ['B.2e', 'aB', 'vendasAer', 'Sem demonstrações práticas de dispositivos de chama aberta perto de aerossóis e cartuchos.'],
 
     ['14.1.5', 's14', 'sec14', 'Recipientes vazios e não limpos tratados como cheios quanto às medidas de proteção.'],
     ['14.3.1', 's14', 'sec14', 'Paredes, tetos e portas do armazém de materiais de construção não inflamáveis.'],
@@ -130,7 +158,7 @@
     ['14.3.5', 's14', 'sec14', 'Drenos, aberturas e dutos para níveis inferiores, porões, poços e canais protegidos contra penetração de líquidos e vapores.'],
     ['14.3.6', 's14', 'sec14', 'Chaminés sem nenhuma abertura dentro do armazém.'],
     ['14.3.7', 's14', 'sec14', 'Armazém não utilizado para outros fins.'],
-    ['14.3.8', 's14', 'sec14', 'Armazém não localizado ao lado de salas de convivência, quartos ou dormitórios; acima de 10 t, também não ao lado de salas de uso geral, salvo as exceções de 14.3.10 e 14.3.11.'],
+    ['14.3.8 e 14.3.9', 's14', 'sec14', 'Armazém não localizado ao lado de salas de convivência, quartos ou dormitórios; acima de 10 t, também não ao lado de salas de uso geral, salvo as exceções de 14.3.10 e 14.3.11.'],
     ['14.3.12', 's14', 'sec14', 'Acima de 20 t de líquidos inflamáveis, sistema automático de extinção de incêndios (8.2.9); abaixo de 20 t, alarme automático de incêndio se a análise de risco exigir.'],
     ['14.4.1', 's14', 'sec14', 'Recipientes instalados em espaços de contenção resistentes aos líquidos e impermeáveis, de componentes de suporte não combustíveis, considerando a estabilidade em caso de incêndio.'],
     ['14.4.3', 's14', 'sec14', 'Áreas de contenção abertas na parte superior (ventilação suficiente) e sem qualquer drenagem.'],
