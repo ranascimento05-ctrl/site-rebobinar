@@ -105,6 +105,20 @@
     return card;
   };
 
+  // alternativas e orientações de substituição (gatilho CMR ou PFC)
+  V.alternativasCard = (p, aberto) => {
+    const a = E.alternativas(p);
+    if (!a.aplica) return null;
+    const d = h('details', { class: 'card' + (aberto ? '' : ''), ...(aberto ? { open: true } : {}) }, h('summary', { style: 'cursor:pointer;font-weight:600' }, 'Alternativas e orientações de substituição ', U.disc('SST')));
+    d.appendChild(h('p', { class: 'small' }, 'Pontos de partida para buscar alternativa ao produto ou à composição que acionou o gatilho. Não são especificação: todo substituto precisa de FDS própria, teste de desempenho e nova triagem. A decisão é do responsável técnico.' + (a.carga ? ' Para a carga do terminal a substituição não se aplica; o foco é reduzir a exposição.' : '')));
+    a.itens.forEach((i) => d.appendChild(h('div', { style: 'margin:8px 0' }, h('b', {}, i.nome + ' (CAS ' + i.cas + ')'), h('ul', { style: 'margin:4px 0 0 18px' }, i.sug.map((x) => h('li', {}, x))), i.nota ? h('p', { class: 'small' }, 'Observação: ' + i.nota) : null)));
+    a.porTipo.forEach((t) => d.appendChild(h('div', { style: 'margin:8px 0' }, h('b', {}, t.rotulo + ' (por tipo de perigo)'), h('ul', { style: 'margin:4px 0 0 18px' }, t.sug.map((x) => h('li', {}, x))))));
+    d.appendChild(h('b', {}, 'Como conduzir a substituição'));
+    d.appendChild(h('ol', { style: 'margin:4px 0 8px 18px' }, a.gerais.map((x) => h('li', {}, x))));
+    d.appendChild(U.input(p, 'cmr.alternativas', { rows: 3, label: 'Alternativas avaliadas e resultado', ph: 'Ex.: avaliado diluente isoparafínico; desempenho insuficiente para a resina X; fornecedor Y testará nova formulação.' }));
+    return d;
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -260,6 +274,7 @@
         h('div', { class: 'card' }, h('h3', {}, 'Perigos GHS ', U.disc('SST')), h('div', { class: 'pictos' }, (p.ghs.pictos || []).map((c) => h('span', { html: O.Pic.ghs(c, 52), title: G.PICTO[c] }))), h('p', {}, h('b', {}, p.ghs.palavra || 'Sem palavra de advertência')), h('div', {}, (p.ghs.h || []).map((x) => h('span', { class: 'chip' + (av.tri.criticos.some((c) => c.fonte === x) ? ' crit' : ''), title: G.hText(x) || '' }, x)))),
         h('div', { class: 'card' }, h('h3', {}, 'Transporte ', U.disc('PSM')), kv([['ONU', p.imdg.onu], ['Nome', p.imdg.nome], ['Classe', p.imdg.classe], ['Grupo de embalagem', p.imdg.pg], ['Número de risco', p.imdg.numeroRisco], ['NR-20', n20.aplica ? n20.categoria : 'Não aplicável pelo ponto de fulgor']])),
         h('div', { class: 'card' }, h('h3', {}, 'Triagem CMR e PFC'), av.tri.criticos.length ? U.alert('warn', 'Gatilho de reprovação automática (CMR ou PFC)', av.tri.criticos.map((c) => c.detalhe).concat(['Apenas sinalizado: a decisão é do responsável técnico, com justificativa, controles de exposição e parecer de Higiene Ocupacional.'])) : U.alert('ok', 'Sem evidência de cancerígeno, mutagênico, teratogênico ou PFC', 'Com base nas frases H, nos CAS e no texto da FDS analisada.'))));
+      { const alt = V.alternativasCard(p, false); if (alt) root.appendChild(alt); }
     } else if (tab === 'fds') {
       root.appendChild(O.Wizard.fdsPanel(p, () => O.route()));
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Seções da FDS (editáveis)'), h('p', { class: 'small' }, 'O texto das seções 4, 5, 6, 8, 9, 12, 13 e 14 alimenta a ficha de emergência, o envelope e o checklist.'),
@@ -405,6 +420,7 @@
         h('div', {}, (p.ghs.h || []).map((x) => h('div', {}, h('span', { class: 'chip' }, x), G.hText(x)))),
         h('div', { class: 'row', style: 'margin-top:10px' }, h('button', { class: 'btn', onclick: () => { p.ctx.area = ''; U.salvarJa(p); location.hash = '#/homologar/' + p.id; } }, 'Iniciar a homologação com estes dados')),
         h('h4', { style: 'margin-top:14px' }, 'Relatório da análise da FDS'), V.docBotoes(p, V.catalogo(p).find((x) => x.id === 'analise'))));
+      const alt = V.alternativasCard(p, true); if (alt) out.appendChild(alt);
     };
     root.appendChild(O.Wizard.fdsPanel(p, rerender)); root.appendChild(out);
   };

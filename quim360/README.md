@@ -20,6 +20,8 @@ Abrir `quim360/index.html` por um servidor estático (ex.: `python3 -m http.serv
 - **Relatório da análise da FDS**: leitura completa da FDS (validade, 16 seções, GHS, composição e triagem, transporte, classe de armazenamento, controles sugeridos), disponível antes da decisão.
 - **Documentos em Word (.docx) e PDF** (arquivos gerados direto, mais pacote .zip com tudo): relatório de homologação, plano de ação, ficha de emergência, rotulagem (GHS e rótulos de risco), envelope de transporte e checklist de treinamento. O envelope segue a estrutura da ABNT NBR 7503 (face do envelope e ficha de emergência), a validar contra o texto licenciado da norma.
 
+- **Alternativas e orientações de substituição**: quando o gatilho de CMR ou PFC é acionado, o app mostra e leva ao relatório orientações para buscar alternativa ao produto ou à composição (por componente identificado e por tipo de perigo), os passos para conduzir a substituição e um campo para registrar as alternativas avaliadas e o resultado. São pontos de partida, não especificação.
+
 ## Base técnico-legal
 
 Resolução ANTT 5.947/21 e IMDG; ABNT NBR 17160:2024; NR-20; Manual ABIQUIM; ABNT NBR 14725 e GHS; NR-29 e ABNT NBR 7500; NBR 7503; NR-26; NR-01 e NR-15.

@@ -23503,6 +23503,64 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   O.NBR17160REQ = { GRUPOS: G, REQ: R.map((r) => ({ id: r[0], grupo: r[1] === 'a5' ? 's5' : r[1], quando: r[2], texto: r[3], semTexto: !!r[4] })), INSPECAO };
 })(window.O360 = window.O360 || {});
 </script>
+<script>/* Orientações para buscar alternativa a produto ou composição com gatilho de reprovação (CMR e PFC).
+   São pontos de partida genéricos, sem marca: toda alternativa precisa de FDS própria, teste de desempenho e nova triagem no app.
+   Lista não exaustiva; a escolha e a decisão são do responsável técnico. */
+(function (O) {
+  // por componente (CAS da lista de alerta)
+  const CAS = {
+    '71-43-2': { nome: 'Benzeno', sug: ['Exigir do fornecedor produto isento de benzeno ou com teor comprovadamente abaixo do limite legal (especificação de pureza e laudo).', 'Solventes alifáticos desaromatizados ou isoparafínicos, quando o poder de solvência exigido permitir.', 'Para limpeza e desengraxe, sistemas aquosos (alcalinos ou neutros) ou emulsões.'], nota: 'Verifique a NR-15, Anexo 13-A (benzeno), e o programa de vigilância da saúde aplicável.' },
+    '108-88-3': { nome: 'Tolueno', sug: ['Diluentes e solventes sem aromáticos: hidrocarbonetos alifáticos desaromatizados ou isoparafínicos.', 'Ésteres (como acetato de etila ou de butila) e cetonas, escolhidos conforme a resina ou o revestimento, conferindo a classificação de cada candidato na FDS.', 'Limpeza de equipamentos e ferramentas: desengraxantes de base aquosa ou limpeza mecânica quando o processo permitir.', 'Reduzir o consumo: dosagem controlada, recipientes fechados e reaproveitamento do solvente de limpeza.'], nota: 'Compare a FDS do substituto com a triagem do app: ésteres e cetonas costumam ser inflamáveis e podem agravar o risco de incêndio.' },
+    '79-01-6': { nome: 'Tricloroetileno', sug: ['Desengraxantes aquosos (alcalinos ou neutros) com lavagem por imersão, jato ou ultrassom.', 'Biossolventes e hidrocarbonetos isoparafínicos, quando o resíduo e a inflamabilidade puderem ser controlados.'], nota: '' },
+    '127-18-4': { nome: 'Tetracloroetileno', sug: ['Limpeza aquosa com ultrassom ou jato.', 'Hidrocarbonetos isoparafínicos em equipamento fechado, quando a inflamabilidade puder ser controlada.'], nota: '' },
+    '75-09-2': { nome: 'Diclorometano', sug: ['Removedores de tinta e verniz à base de álcool benzílico ou de ésteres dibásicos, conferindo a FDS de cada candidato.', 'Remoção mecânica (jato, lixamento com aspiração) ou térmica, quando o substrato permitir.'], nota: '' },
+    '56-23-5': { nome: 'Tetracloreto de carbono', sug: ['Sem uso técnico que justifique a manutenção: buscar o solvente ou o processo que cumpra a mesma função (limpeza aquosa, solventes de menor perigo).'], nota: '' },
+    '107-06-2': { nome: '1,2-Dicloroetano', sug: ['Buscar solvente de menor perigo para a mesma função, ou alteração de processo com sistema fechado.'], nota: 'Se for matéria-prima de processo, a substituição exige mudança de processo; priorize contenção e controle de exposição.' },
+    '50-00-0': { nome: 'Formaldeído', sug: ['Produtos (resinas, adesivos, conservantes) sem formaldeído adicionado ou de baixa emissão com laudo.', 'Para uso como biocida ou preservante, avaliar alternativas conforme o sistema, com a FDS do substituto.'], nota: '' },
+    '1333-82-0': { nome: 'Cromo hexavalente (trióxido de cromo)', sug: ['Tratamentos de superfície com cromo trivalente ou sistemas sem cromo (por exemplo à base de zircônio ou titânio).', 'Primers e tintas isentos de cromatos.'], nota: '' },
+    '109-86-4': { nome: '2-Metoxietanol', sug: ['Éteres de glicol da série do propileno (por exemplo 1-metoxi-2-propanol), conferindo a classificação na FDS.', 'Ésteres ou álcoois de menor perigo, conforme a função na formulação.'], nota: '' },
+    '110-80-5': { nome: '2-Etoxietanol', sug: ['Éteres de glicol da série do propileno, conferindo a classificação na FDS.', 'Ésteres ou álcoois de menor perigo, conforme a função na formulação.'], nota: '' },
+    '872-50-4': { nome: 'N-Metil-2-pirrolidona (NMP)', sug: ['Solventes apróticos polares sem classificação de toxicidade à reprodução, avaliados caso a caso com o fornecedor.', 'Para remoção de tintas, formulações à base de ésteres dibásicos ou de álcool benzílico.'], nota: 'Confira cada candidato: alguns solventes análogos têm o mesmo perigo.' },
+    '68-12-2': { nome: 'N,N-Dimetilformamida (DMF)', sug: ['Solventes apróticos polares sem classificação de toxicidade à reprodução, avaliados caso a caso com o fornecedor.'], nota: 'Confira cada candidato: alguns solventes análogos têm o mesmo perigo.' },
+    '7439-92-1': { nome: 'Chumbo', sug: ['Ligas, soldas e pigmentos isentos de chumbo.'], nota: '' },
+    '10043-35-3': { nome: 'Ácido bórico', sug: ['Avaliar, conforme a função (tampão, preservante, fluxo), alternativa de menor perigo com a FDS do fornecedor.'], nota: '' },
+    '1303-96-4': { nome: 'Bórax', sug: ['Avaliar, conforme a função, alternativa de menor perigo com a FDS do fornecedor.'], nota: '' },
+    '80-05-7': { nome: 'Bisfenol A', sug: ['Resinas e revestimentos sem bisfenol A.'], nota: 'Confira que o substituto não é um análogo de bisfenol com perfil de perigo semelhante.' },
+    '1332-21-4': { nome: 'Amianto (asbesto)', sug: ['Materiais isentos de amianto, com laudo do fornecedor.'], nota: 'O uso do amianto é vedado no Brasil.' },
+    '75-21-8': { nome: 'Óxido de etileno', sug: ['Esterilização por vapor, radiação ou peróxido de hidrogênio vaporizado, conforme o material.'], nota: '' },
+    '79-06-1': { nome: 'Acrilamida', sug: ['Polímeros com teor residual de monômero comprovadamente baixo, com laudo, ou sistema que dispense o monômero.'], nota: '' },
+    '302-01-2': { nome: 'Hidrazina', sug: ['Desoxigenantes de tratamento de água de caldeira como sulfito, eritorbato ou dietilhidroxilamina, avaliados com o fornecedor do sistema.'], nota: '' },
+    '75-01-4': { nome: 'Cloreto de vinila', sug: ['Matéria-prima de processo: a substituição depende de mudança de processo; priorize sistema fechado e controle de exposição.'], nota: '' },
+    '106-99-0': { nome: '1,3-Butadieno', sug: ['Matéria-prima de processo: a substituição depende de mudança de processo; priorize sistema fechado e controle de exposição.'], nota: '' },
+  };
+  // PFAS por CAS
+  ['335-67-1', '1763-23-1', '355-46-4', '375-95-1', '9002-84-0', '27619-97-2', '13252-13-6', '375-73-5', '307-24-4'].forEach((c) => {
+    CAS[c] = { nome: 'PFAS (per e polifluorados)', sug: ['Espumas de combate a incêndio sem flúor.', 'Revestimentos antiaderentes, repelentes e antiaderentes de papel e têxteis sem flúor (silicones, ceras, hidrocarbonetos), conforme o desempenho exigido.', 'Exigir declaração de ausência de PFAS na composição e no processo de fabricação.'], nota: 'Há exceções de desempenho em usos críticos; documente a justificativa se não houver substituto.' };
+  });
+
+  // por tipo de perigo (quando não há componente conhecido)
+  const TIPO = {
+    cancerigeno: { rotulo: 'Cancerígeno', sug: ['Pedir ao fornecedor versão da formulação sem o agente cancerígeno ou com teor residual abaixo do limite aplicável.', 'Identificar qual componente da Seção 3 causa a classificação (frases H350 ou H351) e buscar produto equivalente sem ele.'] },
+    mutagenico: { rotulo: 'Mutagênico', sug: ['Pedir ao fornecedor versão da formulação sem o agente mutagênico.', 'Identificar na Seção 3 o componente que causa a classificação (H340 ou H341) e buscar produto equivalente sem ele.'] },
+    teratogenico: { rotulo: 'Teratogênico ou tóxico ao desenvolvimento', sug: ['Pedir ao fornecedor versão da formulação sem o agente tóxico à reprodução.', 'Identificar na Seção 3 o componente que causa a classificação (H360 ou H361) e buscar produto equivalente sem ele.', 'Se o uso continuar, considere o efeito sobre trabalhadoras gestantes e lactantes na avaliação do PGR.'] },
+    reprodutivo: { rotulo: 'Tóxico à fertilidade', sug: ['Pedir ao fornecedor versão da formulação sem o agente tóxico à fertilidade.', 'Identificar na Seção 3 o componente que causa a classificação (H360F ou H361f) e buscar produto equivalente sem ele.'] },
+    pfc: { rotulo: 'PFAS ou PFC', sug: ['Exigir declaração de ausência de PFAS e buscar formulação sem flúor.', 'Revisar a função do componente fluorado (repelência, antiaderência, espuma) para escolher a tecnologia alternativa.'] },
+  };
+
+  // passos gerais de substituição
+  const GERAIS = [
+    'Defina a função do produto no processo (o que ele precisa fazer) antes de procurar o substituto.',
+    'Peça ao fornecedor uma versão sem o agente ou uma formulação alternativa, com FDS completa.',
+    'Passe a FDS do candidato pelo Analisador de FDS do app: não aceite substituto que acione outro gatilho de CMR ou PFC.',
+    'Confira os perigos novos do candidato (inflamabilidade, corrosividade, toxicidade, perigo ao ambiente) e a compatibilidade de armazenamento pela NBR 17160 e pela matriz do local.',
+    'Teste o desempenho em pequena escala e registre o resultado.',
+    'Se não houver substituto viável, registre a justificativa e mantenha os controles (PGR, PCMSO, plano de emergência) e reavalie a viabilidade de substituição periodicamente.',
+    'Reduza a exposição enquanto isso: menor quantidade, recipientes fechados, transferência em sistema fechado, ventilação local e EPI adequado.',
+  ];
+
+  O.ALTERNATIVAS = { CAS, TIPO, GERAIS };
+})(window.O360 = window.O360 || {});
+</script>
 <script>/* FDS fictícias para demonstração e teste. Não representam produtos reais. */
 (function (O) { O.SAMPLES = {
  "solvente": "FICHA DE INFORMAÇÕES DE SEGURANÇA DE PRODUTOS QUÍMICOS (FDS)\nData da revisão: 12/03/2025\nVersão: 3\n\nSEÇÃO 1 - Identificação do produto e da empresa\nNome do produto: Solvente de limpeza SL-30 (demonstração)\nFabricante: Química Exemplo Ltda.\nTelefone de emergência: 0800 000 0000\nCódigo do produto: DEMO-001\n\nSEÇÃO 2 - Identificação de perigos\nClassificação: Líquidos inflamáveis categoria 2; Irritação ocular categoria 2A; Toxicidade para órgãos-alvo categoria 3.\nPalavra de advertência: Perigo\nPictogramas: GHS02, GHS07\nFrases de perigo: H225 Líquido e vapores altamente inflamáveis. H319 Provoca irritação ocular grave. H336 Pode provocar sonolência ou vertigem.\nFrases de precaução: P210 P233 P240 P241 P261 P280 P305+P351+P338 P370+P378 P403+P235 P501\n\nSEÇÃO 3 - Composição e informações sobre os ingredientes\nMistura.\nAcetato de etila - CAS 141-78-6 - 60 a 80 %\nIsopropanol - CAS 67-63-0 - 10 a 20 %\n\nSEÇÃO 4 - Medidas de primeiros socorros\nInalação: remova a pessoa para local ventilado e mantenha em repouso.\nContato com a pele: lave com água e sabão em abundância.\nContato com os olhos: enxágue com água por 15 minutos e retire lentes de contato.\nIngestão: não provoque vômito; procure atendimento médico.\n\nSEÇÃO 5 - Medidas de combate a incêndio\nMeios de extinção: espuma resistente a álcool, pó químico e dióxido de carbono. Não usar jato d'água direto.\nPerigos: vapores formam mistura explosiva com o ar e podem se deslocar até fonte de ignição.\nProteção dos bombeiros: aparelho de respiração autônomo e roupa de combate a incêndio.\n\nSEÇÃO 6 - Medidas de controle para derramamento ou vazamento\nEliminar fontes de ignição e isolar a área. Conter com material absorvente inerte (areia, vermiculita). Não descartar em rede pluvial ou corpos d'água. Usar ferramentas antifaiscantes.\n\nSEÇÃO 7 - Manuseio e armazenamento\nManuseio: aterrar recipientes na transferência, evitar o acúmulo de vapores, usar em local ventilado.\nArmazenamento: local fresco, ventilado e ao abrigo do sol, longe de fontes de ignição. Incompatível com oxidantes fortes, ácidos fortes e bases fortes.\n\nSEÇÃO 8 - Controle de exposição e proteção individual\nControle de engenharia: exaustão local.\nProteção respiratória: respirador com filtro para vapores orgânicos.\nLuvas: nitrila.\nOlhos: óculos de ampla visão.\nLimites de exposição: acetato de etila TLV-TWA 400 ppm (ACGIH); NR-15: 310 ppm.\n\nSEÇÃO 9 - Propriedades físicas e químicas\nEstado físico: líquido. Cor: incolor. Ponto de fulgor: 8 °C (vaso fechado). pH: não aplicável.\n\nSEÇÃO 10 - Estabilidade e reatividade\nEstabilidade: estável nas condições recomendadas.\nMateriais a evitar: agentes oxidantes fortes, ácidos fortes e bases fortes. Evitar calor, faíscas e chamas.\n\nSEÇÃO 11 - Informações toxicológicas\nToxicidade aguda: baixa. Irritante para os olhos. Vapores podem causar narcose.\n\nSEÇÃO 12 - Informações ecológicas\nTóxico para organismos aquáticos em altas concentrações. Não são esperados efeitos persistentes.\n\nSEÇÃO 13 - Considerações sobre tratamento e disposição\nDestinar como resíduo perigoso conforme ABNT NBR 10004 em incinerador licenciado. Embalagens vazias devem ser tríplice lavadas.\n\nSEÇÃO 14 - Informações sobre transporte\nTerrestre (ANTT 5.947/21): Número ONU: 1993\nNome apropriado para embarque: LÍQUIDO INFLAMÁVEL, N.E. (acetato de etila, isopropanol)\nClasse de risco: 3\nGrupo de embalagem: II\nNúmero de risco: 33\nMarítimo (IMDG): Classe 3, Grupo de embalagem II, EmS F-E, S-D. Não é poluente marinho.\n\nSEÇÃO 15 - Informações sobre regulamentações\nProduto sujeito à legislação de produtos perigosos, ABNT NBR 14725 e NR-26.\n\nSEÇÃO 16 - Outras informações\nDados de demonstração. Documento fictício para teste do sistema.\n\n",
@@ -23621,7 +23679,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       nome: '', fornecedor: '', codigoFornecedor: '',
       assina: { nome: '', registro: '', funcao: '' },
       cpa: { semToxAguda: false, semAmbiental: false, biodegradavel: false, ensaio: '' },
-      natureza: '', armazenamento: '', cmr: { justificativa: '', controles: [], controlesOk: false },
+      natureza: '', armazenamento: '', cmr: { justificativa: '', alternativas: '', controles: [], controlesOk: false },
       finalidade: '', aplicacao: '',
       lista: { naLista: null, numero: '' },
       sim: { ativa: null, refId: '', familia: false, forma: false, componentes: false, parecerCitaFamilia: false, divergencia: '', encerrada: false },
@@ -23989,6 +24047,22 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return { itens, cont, cond, inspecoes: insp, periodo: per, proxima, vencida, semInspecao: !insp.length, gatilhos: g };
   }
 
+
+  // ---------- Alternativas e orientações de substituição para quem aciona o gatilho CMR ou PFC ----------
+  function alternativas(p) {
+    const A = O.ALTERNATIVAS; const tri = triagem(p);
+    const res = { aplica: tri.criticos.length > 0, carga: ehCarga(p), itens: [], porTipo: [], gerais: A.GERAIS, avaliadas: (p.cmr && p.cmr.alternativas) || '' };
+    if (!res.aplica) return res;
+    const vistos = {};
+    const cas = (p.fds.cas || []).filter((c) => A.CAS[c]);
+    // componentes declarados que têm orientação própria (mesmo que o gatilho tenha vindo pela frase H)
+    const dosGatilho = tri.criticos.map((c) => (c.fonte.match(/CAS (\S+)/) || [])[1]).filter(Boolean);
+    dosGatilho.concat(cas).forEach((c) => { if (A.CAS[c] && !vistos[c]) { vistos[c] = 1; res.itens.push({ cas: c, nome: A.CAS[c].nome, sug: A.CAS[c].sug, nota: A.CAS[c].nota }); } });
+    const tipos = [...new Set(tri.criticos.map((c) => c.tipo))];
+    tipos.forEach((t) => { if (A.TIPO[t]) res.porTipo.push({ tipo: t, rotulo: A.TIPO[t].rotulo, sug: A.TIPO[t].sug }); });
+    return res;
+  }
+
   // ---------- Compatibilidade entre dois produtos (aplicação prática da matriz) ----------
   function compatPar(a, b) {
     const A = { nome: a.nome, arm: classeArm(a).id, grupos: a.comp.grupos || [], incompativeis: a.comp.incompativeis || [] };
@@ -24169,7 +24243,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return r;
   }
 
-  O.Engine = { requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});
 </script>
 <script>/* Analisador de FDS (ABNT NBR 14725): extrai dados do texto colado ou de arquivo .txt/.pdf.
@@ -24804,6 +24878,20 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return location.href.split('#')[0] + '#/produto/' + p.id;
   }
 
+
+  // blocos "Alternativas e orientações de substituição" (relatório e relatório da análise)
+  function blocosAlternativas(p) {
+    const a = E.alternativas(p); if (!a.aplica) return [];
+    const B = [{ t: 'h2', text: 'Alternativas e orientações de substituição' }];
+    B.push({ t: 'p', small: true, text: 'Pontos de partida para buscar alternativa ao produto ou à composição que acionou o gatilho. Não são especificação: todo substituto precisa de FDS própria, teste de desempenho e nova triagem. A decisão é do responsável técnico.' + (a.carga ? ' Para a carga do terminal a substituição não se aplica; o foco é reduzir a exposição.' : '') });
+    const rows = a.itens.map((i) => [i.nome + ' (CAS ' + i.cas + ')', i.sug.join('\n') + (i.nota ? '\nObservação: ' + i.nota : '')]).concat(a.porTipo.map((t) => [t.rotulo + ' (por tipo de perigo)', t.sug.join('\n')]));
+    if (rows.length) B.push({ t: 'table', head: ['Componente ou perigo', 'Orientações'], widths: [30, 70], rows });
+    B.push({ t: 'p', bold: true, text: 'Como conduzir a substituição' });
+    B.push({ t: 'list', ordered: true, items: a.gerais });
+    B.push({ t: 'kv', rows: [['Alternativas avaliadas e resultado', nz(a.avaliadas, 'Não registrado')]] });
+    return B;
+  }
+
   // ---------------------------------------------------------------- Relatório
   function relatorio(p, produtos) {
     const av = E.avaliar(p, produtos);
@@ -24874,6 +24962,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         ['Controles implantados e verificados', sn(!!cm.controlesOk)],
       ] });
     }
+    blocosAlternativas(p).forEach((b) => B.push(b));
     B.push({ t: 'kv', rows: [
       ['Palavra de advertência', nz(p.ghs.palavra)],
       ['Frases H', (p.ghs.h || []).length ? p.ghs.h.map((h) => h + ' ' + (G.hText(h) || '')).join('; ') : '—'],
@@ -25125,6 +25214,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     av.pendencias.forEach((x) => add(x, 'Pendência da análise', 'Responsável técnico', '', 'Pendente'));
     av.condicionantes.forEach((x) => add(x, 'Condicionante de liberação', 'Responsável técnico', '', 'Pendente'));
     if (p.par.pgrIndicador === 'requer') add('Atualizar o PGR e o Inventário de Riscos com este produto antes da liberação de uso', 'NR-01 | Etapa 12', p.par.pgrResponsavel, p.par.pgrPrazo ? fmtData(p.par.pgrPrazo) : '', 'Pendente');
+    if (E.cmrCarga(p) && !E.ehCarga(p)) { E.alternativas(p).itens.forEach((i) => add('Avaliar com o fornecedor e o solicitante alternativa a ' + i.nome + ' (orientações no relatório) e registrar o resultado', 'Etapa 7 | Substituição', 'Solicitante / SST', 'Em até 90 dias', 'Pendente')); add('Reavaliar periodicamente a viabilidade de substituição do agente CMR ou PFC', 'NR-01 | Hierarquia de controle', 'SST', 'A cada revisão do PGR', 'Pendente'); }
     if (E.cmrCarga(p)) {
       (p.cmr.controles || []).forEach((k) => add('Controle de exposição CMR ou PFC: ' + ((O.CMR_CONTROLES || []).find((x) => x[0] === k) || [k, k])[1], 'Etapa 7 | SST', 'SST / Higiene Ocupacional', 'Antes da liberação', p.cmr.controlesOk ? 'Implantado' : 'Pendente'));
       add('Obter e arquivar o parecer de Higiene Ocupacional para o agente CMR ou PFC', 'NR-01 | NR-15', 'Higiene Ocupacional', 'Antes da liberação', p.hig.parecerExigidoOk ? 'Concluído' : 'Pendente');
@@ -25282,6 +25372,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       ['Contém PFCs / PFAS', tri.criticos.some((c) => c.tipo === 'pfc') ? 'Identificado' : 'Não identificado'],
     ] });
     if (tri.criticos.length) B.push({ t: 'list', items: tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']') });
+    blocosAlternativas(p).forEach((b) => B.push(b));
     B.push({ t: 'p', small: true, text: 'Cancerígeno, mutagênico, teratogênico e PFC acionam o gatilho de reprovação automática: o app sinaliza e a decisão é do responsável técnico, com justificativa, controles de exposição e parecer de Higiene Ocupacional.' });
 
     B.push({ t: 'h1', text: '4 Transporte e armazenamento' });
@@ -26162,7 +26253,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         w.appendChild(h('div', { class: 'grid g2' }, listaInput(p, 'ghs.h', 'Frases H (Seção 2 da FDS)', 'H', 'Separe por espaço. Ex.: H225 H319 H336'), listaInput(p, 'ghs.p', 'Frases P (Seção 2 da FDS)', 'P', 'Usadas na rotulagem.')));
         w.appendChild(h('label', { class: 'f' }, h('span', {}, 'Componentes (CAS) da Seção 3'), (() => { const el = h('input', { type: 'text', value: (p.fds.cas || []).join(', ') }); el.addEventListener('change', () => { p.fds.cas = el.value.split(/[\s,;]+/).filter((x) => /^\d{2,7}-\d{2}-\d$/.test(x)); U.salvar(p); }); return el; })()));
         const tri = E.triagem(p);
-        if (tri.criticos.length) { w.appendChild(U.alert('crit', 'Gatilho de reprovação automática: ' + tri.criticos.length + ' evidência(s) CMR ou PFC', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']').concat(['O app apenas sinaliza. Você, como responsável técnico, decide: homologar com condicionantes (PGR, PCMSO, plano de emergência e demais controles abaixo) ou reprovar.']))); w.appendChild(cmrCard(p, api)); }
+        if (tri.criticos.length) { w.appendChild(U.alert('crit', 'Gatilho de reprovação automática: ' + tri.criticos.length + ' evidência(s) CMR ou PFC', tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']').concat(['O app apenas sinaliza. Você, como responsável técnico, decide: homologar com condicionantes (PGR, PCMSO, plano de emergência e demais controles abaixo) ou reprovar.']))); w.appendChild(cmrCard(p, api)); { const alt = O.Views.alternativasCard(p, true); if (alt) w.appendChild(alt); } }
         tri.suspeitos.forEach((c) => w.appendChild(U.alert('warn', 'Alerta', c.detalhe)));
         tri.informativos.forEach((c) => w.appendChild(U.alert('', null, c)));
         w.appendChild(h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: () => { const c = tri.criticos; p.ghs.cancerigeno = c.some((x) => x.tipo === 'cancerigeno'); p.ghs.mutagenico = c.some((x) => x.tipo === 'mutagenico'); p.ghs.teratogenico = c.some((x) => x.tipo === 'teratogenico' || x.tipo === 'reprodutivo'); p.ghs.pfc = c.some((x) => x.tipo === 'pfc'); p.ghs.nenhum = !c.length; U.salvarJa(p); api.rerender(); } }, 'Marcar conforme a análise')));
@@ -26409,6 +26500,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           h('table', { class: 't' }, h('tbody', {}, autoIds.map((x) => h('tr', {}, h('td', {}, TITLES[x][0].replace(/^\d+ /, '')), h('td', {}, O.Auto.resumo(p, x)), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => api.ir(x) }, 'Revisar'))))))));
         const opts = [{ v: 'sim', label: av.sugestao === 'condicionado' ? 'Sim, com condicionantes' : 'Sim, homologar', hint: 'Gera relatório, cadastro e QR Code' }, { v: 'nao', label: 'Não homologar', hint: 'Informar justificativa técnica ou legal' }, { v: 'pendente', label: 'Manter pendente', hint: 'Aguardar fornecedor ou parecer' }];
         w.appendChild(U.radio(p, 'dec.valor', opts, { onChange: api.rerender }));
+        { const alt = O.Views.alternativasCard(p, false); if (alt) w.appendChild(alt); }
         if (p.dec.valor === 'sim' && (av.reprovacoes.length || av.pendencias.length || (av.gatilhos || []).length)) w.appendChild(U.alert('warn', 'Decisão do responsável técnico', 'O app sinaliza ' + (av.gatilhos || []).concat(av.reprovacoes, av.pendencias).length + ' ponto(s) que normalmente impediriam a homologação, mas não bloqueia. Registre abaixo a justificativa técnica e as condições. Os pontos em aberto viram condicionantes e ações do plano.'));
         if (p.dec.valor === 'nao' && !p.dec.justificativa) { p.dec.justificativa = av.reprovacoes.join(' '); }
         w.appendChild(U.input(p, 'dec.justificativa', { rows: 3, label: p.dec.valor === 'sim' ? ((av.reprovacoes.length || av.pendencias.length || (av.gatilhos || []).length) ? 'Justificativa técnica para homologar apesar dos gatilhos e pendências' : 'Observações da decisão') : 'Justificativa técnica ou legal' }));
@@ -26670,6 +26762,20 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return card;
   };
 
+  // alternativas e orientações de substituição (gatilho CMR ou PFC)
+  V.alternativasCard = (p, aberto) => {
+    const a = E.alternativas(p);
+    if (!a.aplica) return null;
+    const d = h('details', { class: 'card' + (aberto ? '' : ''), ...(aberto ? { open: true } : {}) }, h('summary', { style: 'cursor:pointer;font-weight:600' }, 'Alternativas e orientações de substituição ', U.disc('SST')));
+    d.appendChild(h('p', { class: 'small' }, 'Pontos de partida para buscar alternativa ao produto ou à composição que acionou o gatilho. Não são especificação: todo substituto precisa de FDS própria, teste de desempenho e nova triagem. A decisão é do responsável técnico.' + (a.carga ? ' Para a carga do terminal a substituição não se aplica; o foco é reduzir a exposição.' : '')));
+    a.itens.forEach((i) => d.appendChild(h('div', { style: 'margin:8px 0' }, h('b', {}, i.nome + ' (CAS ' + i.cas + ')'), h('ul', { style: 'margin:4px 0 0 18px' }, i.sug.map((x) => h('li', {}, x))), i.nota ? h('p', { class: 'small' }, 'Observação: ' + i.nota) : null)));
+    a.porTipo.forEach((t) => d.appendChild(h('div', { style: 'margin:8px 0' }, h('b', {}, t.rotulo + ' (por tipo de perigo)'), h('ul', { style: 'margin:4px 0 0 18px' }, t.sug.map((x) => h('li', {}, x))))));
+    d.appendChild(h('b', {}, 'Como conduzir a substituição'));
+    d.appendChild(h('ol', { style: 'margin:4px 0 8px 18px' }, a.gerais.map((x) => h('li', {}, x))));
+    d.appendChild(U.input(p, 'cmr.alternativas', { rows: 3, label: 'Alternativas avaliadas e resultado', ph: 'Ex.: avaliado diluente isoparafínico; desempenho insuficiente para a resina X; fornecedor Y testará nova formulação.' }));
+    return d;
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -26825,6 +26931,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         h('div', { class: 'card' }, h('h3', {}, 'Perigos GHS ', U.disc('SST')), h('div', { class: 'pictos' }, (p.ghs.pictos || []).map((c) => h('span', { html: O.Pic.ghs(c, 52), title: G.PICTO[c] }))), h('p', {}, h('b', {}, p.ghs.palavra || 'Sem palavra de advertência')), h('div', {}, (p.ghs.h || []).map((x) => h('span', { class: 'chip' + (av.tri.criticos.some((c) => c.fonte === x) ? ' crit' : ''), title: G.hText(x) || '' }, x)))),
         h('div', { class: 'card' }, h('h3', {}, 'Transporte ', U.disc('PSM')), kv([['ONU', p.imdg.onu], ['Nome', p.imdg.nome], ['Classe', p.imdg.classe], ['Grupo de embalagem', p.imdg.pg], ['Número de risco', p.imdg.numeroRisco], ['NR-20', n20.aplica ? n20.categoria : 'Não aplicável pelo ponto de fulgor']])),
         h('div', { class: 'card' }, h('h3', {}, 'Triagem CMR e PFC'), av.tri.criticos.length ? U.alert('warn', 'Gatilho de reprovação automática (CMR ou PFC)', av.tri.criticos.map((c) => c.detalhe).concat(['Apenas sinalizado: a decisão é do responsável técnico, com justificativa, controles de exposição e parecer de Higiene Ocupacional.'])) : U.alert('ok', 'Sem evidência de cancerígeno, mutagênico, teratogênico ou PFC', 'Com base nas frases H, nos CAS e no texto da FDS analisada.'))));
+      { const alt = V.alternativasCard(p, false); if (alt) root.appendChild(alt); }
     } else if (tab === 'fds') {
       root.appendChild(O.Wizard.fdsPanel(p, () => O.route()));
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Seções da FDS (editáveis)'), h('p', { class: 'small' }, 'O texto das seções 4, 5, 6, 8, 9, 12, 13 e 14 alimenta a ficha de emergência, o envelope e o checklist.'),
@@ -26970,6 +27077,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         h('div', {}, (p.ghs.h || []).map((x) => h('div', {}, h('span', { class: 'chip' }, x), G.hText(x)))),
         h('div', { class: 'row', style: 'margin-top:10px' }, h('button', { class: 'btn', onclick: () => { p.ctx.area = ''; U.salvarJa(p); location.hash = '#/homologar/' + p.id; } }, 'Iniciar a homologação com estes dados')),
         h('h4', { style: 'margin-top:14px' }, 'Relatório da análise da FDS'), V.docBotoes(p, V.catalogo(p).find((x) => x.id === 'analise'))));
+      const alt = V.alternativasCard(p, true); if (alt) out.appendChild(alt);
     };
     root.appendChild(O.Wizard.fdsPanel(p, rerender)); root.appendChild(out);
   };

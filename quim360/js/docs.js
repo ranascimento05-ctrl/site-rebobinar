@@ -41,6 +41,20 @@
     return location.href.split('#')[0] + '#/produto/' + p.id;
   }
 
+
+  // blocos "Alternativas e orientações de substituição" (relatório e relatório da análise)
+  function blocosAlternativas(p) {
+    const a = E.alternativas(p); if (!a.aplica) return [];
+    const B = [{ t: 'h2', text: 'Alternativas e orientações de substituição' }];
+    B.push({ t: 'p', small: true, text: 'Pontos de partida para buscar alternativa ao produto ou à composição que acionou o gatilho. Não são especificação: todo substituto precisa de FDS própria, teste de desempenho e nova triagem. A decisão é do responsável técnico.' + (a.carga ? ' Para a carga do terminal a substituição não se aplica; o foco é reduzir a exposição.' : '') });
+    const rows = a.itens.map((i) => [i.nome + ' (CAS ' + i.cas + ')', i.sug.join('\n') + (i.nota ? '\nObservação: ' + i.nota : '')]).concat(a.porTipo.map((t) => [t.rotulo + ' (por tipo de perigo)', t.sug.join('\n')]));
+    if (rows.length) B.push({ t: 'table', head: ['Componente ou perigo', 'Orientações'], widths: [30, 70], rows });
+    B.push({ t: 'p', bold: true, text: 'Como conduzir a substituição' });
+    B.push({ t: 'list', ordered: true, items: a.gerais });
+    B.push({ t: 'kv', rows: [['Alternativas avaliadas e resultado', nz(a.avaliadas, 'Não registrado')]] });
+    return B;
+  }
+
   // ---------------------------------------------------------------- Relatório
   function relatorio(p, produtos) {
     const av = E.avaliar(p, produtos);
@@ -111,6 +125,7 @@
         ['Controles implantados e verificados', sn(!!cm.controlesOk)],
       ] });
     }
+    blocosAlternativas(p).forEach((b) => B.push(b));
     B.push({ t: 'kv', rows: [
       ['Palavra de advertência', nz(p.ghs.palavra)],
       ['Frases H', (p.ghs.h || []).length ? p.ghs.h.map((h) => h + ' ' + (G.hText(h) || '')).join('; ') : '—'],
@@ -362,6 +377,7 @@
     av.pendencias.forEach((x) => add(x, 'Pendência da análise', 'Responsável técnico', '', 'Pendente'));
     av.condicionantes.forEach((x) => add(x, 'Condicionante de liberação', 'Responsável técnico', '', 'Pendente'));
     if (p.par.pgrIndicador === 'requer') add('Atualizar o PGR e o Inventário de Riscos com este produto antes da liberação de uso', 'NR-01 | Etapa 12', p.par.pgrResponsavel, p.par.pgrPrazo ? fmtData(p.par.pgrPrazo) : '', 'Pendente');
+    if (E.cmrCarga(p) && !E.ehCarga(p)) { E.alternativas(p).itens.forEach((i) => add('Avaliar com o fornecedor e o solicitante alternativa a ' + i.nome + ' (orientações no relatório) e registrar o resultado', 'Etapa 7 | Substituição', 'Solicitante / SST', 'Em até 90 dias', 'Pendente')); add('Reavaliar periodicamente a viabilidade de substituição do agente CMR ou PFC', 'NR-01 | Hierarquia de controle', 'SST', 'A cada revisão do PGR', 'Pendente'); }
     if (E.cmrCarga(p)) {
       (p.cmr.controles || []).forEach((k) => add('Controle de exposição CMR ou PFC: ' + ((O.CMR_CONTROLES || []).find((x) => x[0] === k) || [k, k])[1], 'Etapa 7 | SST', 'SST / Higiene Ocupacional', 'Antes da liberação', p.cmr.controlesOk ? 'Implantado' : 'Pendente'));
       add('Obter e arquivar o parecer de Higiene Ocupacional para o agente CMR ou PFC', 'NR-01 | NR-15', 'Higiene Ocupacional', 'Antes da liberação', p.hig.parecerExigidoOk ? 'Concluído' : 'Pendente');
@@ -519,6 +535,7 @@
       ['Contém PFCs / PFAS', tri.criticos.some((c) => c.tipo === 'pfc') ? 'Identificado' : 'Não identificado'],
     ] });
     if (tri.criticos.length) B.push({ t: 'list', items: tri.criticos.map((c) => c.detalhe + ' [' + c.fonte + ']') });
+    blocosAlternativas(p).forEach((b) => B.push(b));
     B.push({ t: 'p', small: true, text: 'Cancerígeno, mutagênico, teratogênico e PFC acionam o gatilho de reprovação automática: o app sinaliza e a decisão é do responsável técnico, com justificativa, controles de exposição e parecer de Higiene Ocupacional.' });
 
     B.push({ t: 'h1', text: '4 Transporte e armazenamento' });

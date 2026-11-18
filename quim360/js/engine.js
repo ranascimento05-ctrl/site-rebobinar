@@ -15,7 +15,7 @@
       nome: '', fornecedor: '', codigoFornecedor: '',
       assina: { nome: '', registro: '', funcao: '' },
       cpa: { semToxAguda: false, semAmbiental: false, biodegradavel: false, ensaio: '' },
-      natureza: '', armazenamento: '', cmr: { justificativa: '', controles: [], controlesOk: false },
+      natureza: '', armazenamento: '', cmr: { justificativa: '', alternativas: '', controles: [], controlesOk: false },
       finalidade: '', aplicacao: '',
       lista: { naLista: null, numero: '' },
       sim: { ativa: null, refId: '', familia: false, forma: false, componentes: false, parecerCitaFamilia: false, divergencia: '', encerrada: false },
@@ -383,6 +383,22 @@
     return { itens, cont, cond, inspecoes: insp, periodo: per, proxima, vencida, semInspecao: !insp.length, gatilhos: g };
   }
 
+
+  // ---------- Alternativas e orientações de substituição para quem aciona o gatilho CMR ou PFC ----------
+  function alternativas(p) {
+    const A = O.ALTERNATIVAS; const tri = triagem(p);
+    const res = { aplica: tri.criticos.length > 0, carga: ehCarga(p), itens: [], porTipo: [], gerais: A.GERAIS, avaliadas: (p.cmr && p.cmr.alternativas) || '' };
+    if (!res.aplica) return res;
+    const vistos = {};
+    const cas = (p.fds.cas || []).filter((c) => A.CAS[c]);
+    // componentes declarados que têm orientação própria (mesmo que o gatilho tenha vindo pela frase H)
+    const dosGatilho = tri.criticos.map((c) => (c.fonte.match(/CAS (\S+)/) || [])[1]).filter(Boolean);
+    dosGatilho.concat(cas).forEach((c) => { if (A.CAS[c] && !vistos[c]) { vistos[c] = 1; res.itens.push({ cas: c, nome: A.CAS[c].nome, sug: A.CAS[c].sug, nota: A.CAS[c].nota }); } });
+    const tipos = [...new Set(tri.criticos.map((c) => c.tipo))];
+    tipos.forEach((t) => { if (A.TIPO[t]) res.porTipo.push({ tipo: t, rotulo: A.TIPO[t].rotulo, sug: A.TIPO[t].sug }); });
+    return res;
+  }
+
   // ---------- Compatibilidade entre dois produtos (aplicação prática da matriz) ----------
   function compatPar(a, b) {
     const A = { nome: a.nome, arm: classeArm(a).id, grupos: a.comp.grupos || [], incompativeis: a.comp.incompativeis || [] };
@@ -563,5 +579,5 @@
     return r;
   }
 
-  O.Engine = { requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});
