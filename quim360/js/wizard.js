@@ -506,6 +506,14 @@
         w.appendChild(U.input(p, 'comp.qtdKg', { type: 'number', label: 'Quantidade a armazenar no local (kg; gases em L)', hint: 'Massa líquida. Inflamáveis: volume nominal da embalagem (6.2.8). Com ela, o app soma o que já está no local e aponta as seções da NBR 17160 que passam a valer.', onInput: drawQ }));
         drawQ(); w.appendChild(boxQ);
         const boxC = h('div'); const drawC = () => { boxC.innerHTML = ''; if (loc) boxC.appendChild(O.Views.contencao(loc, p)); };
+        if (loc) {
+          const hl = { l: loc };
+          w.appendChild(h('h4', {}, 'Dados do local para a contenção da água de extinção (Anexo F)'));
+          w.appendChild(h('p', { class: 'small' }, 'Estes dados ficam no cadastro de ' + loc.nome + ' e valem para todos os produtos do local (também em Locais de armazenamento).'));
+          w.appendChild(h('div', { class: 'grid g2' }, U.input(hl, 'l.areaM2', { type: 'number', label: 'Área do setor de armazenamento (m²)', onInput: () => { S.salvarLocal(loc); drawC(); } }),
+            U.select(hl, 'l.catK', O.NBR17160.CATK, { label: 'Categoria de segurança contra incêndio (F.2.1)', empty: 'Não informada (usa K1/K2)', onChange: () => { S.salvarLocal(loc); drawC(); } })));
+          w.appendChild(U.input(hl, 'l.volMaterialM3', { type: 'number', label: 'Volume de material que pode vazar (m³), opcional', onInput: () => { S.salvarLocal(loc); drawC(); } }));
+        } else w.appendChild(U.alert('', 'Local não selecionado', 'Escolha o local de armazenamento na etapa "Onde será usado e armazenado" para informar a área do setor.'));
         w.appendChild(h('h4', {}, 'Dados para a classe de perigo à água (Anexo F)'));
         w.appendChild(h('div', { class: 'opts' },
           U.flag(p, 'cpa.semToxAguda', 'A FDS não traz dados de toxicidade aguda oral e dérmica', 'Soma 4 pontos de precaução (F.2.3.1).', drawC),
