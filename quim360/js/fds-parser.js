@@ -21,6 +21,10 @@
   ];
 
   function norm(s) { return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  // título de seção: minúsculas, sem acento, hífen entre palavras vira espaço e espaços repetidos viram um
+  function normTitulo(s) { return norm(s).replace(/\s*[-–]\s*/g, ' ').replace(/\s+/g, ' ').trim(); }
+  // texto extraído de PDF: junta espaços repetidos e remove espaço antes de pontuação
+  function limpaLinha(l) { return l.replace(/[ \t\u00a0]{2,}/g, ' ').replace(/\s+([:;,.)])/g, '$1').replace(/\(\s+/g, '(').trim(); }
 
   // Divide o texto em seções 1..16
   function splitSections(text) {
@@ -31,25 +35,25 @@
       const m = ln.match(re);
       if (!m) return;
       const n = +m[1];
-      const t = norm(m[2]);
+      const t = normTitulo(m[2]);
       // confere o título esperado por palavra-chave
       const keys = {
-        1: ['identificacao do produto', 'identificacao da substancia', 'identificacao do produto e da empresa'],
-        2: ['identificacao de perigo', 'identificacao dos perigo'],
+        1: ['identificacao do produto', 'identificacao da substancia', 'identificacao da empresa', 'identificacao'],
+        2: ['identificacao de perigo', 'identificacao dos perigo', 'perigos'],
         3: ['composicao', 'informacoes sobre os ingredientes'],
         4: ['primeiros socorros'],
         5: ['combate a incendio', 'combate ao incendio'],
-        6: ['derramamento', 'vazamento', 'liberacao acidental'],
-        7: ['manuseio', 'armazenamento'],
-        8: ['controle de exposicao', 'protecao individual'],
-        9: ['propriedades fisico', 'propriedades fisicas'],
+        6: ['derramamento', 'vazamento', 'liberacao acidental', 'medidas de controle'],
+        7: ['manuseio', 'armazenamento', 'armazenagem'],
+        8: ['controle de exposicao', 'protecao individual', 'exposicao'],
+        9: ['propriedades fisico', 'propriedades fisicas', 'propriedades'],
         10: ['estabilidade', 'reatividade'],
         11: ['toxicologic'],
         12: ['ecologic'],
-        13: ['tratamento', 'disposicao', 'destinacao final', 'eliminacao'],
+        13: ['tratamento', 'disposicao', 'destinacao', 'eliminacao', 'descarte'],
         14: ['transporte'],
         15: ['regulament'],
-        16: ['outras informacoes'],
+        16: ['outras informacoes', 'outras'],
       };
       if ((keys[n] || []).some((k) => t.includes(k))) marks.push({ n, i });
     });
@@ -87,8 +91,49 @@
     return { pt, en, portugues: pt >= en * 1.5 && pt > 8 };
   }
 
-  function parse(text) {
+  // Prepara o texto antes da análise: limpa espaços, remove o cabeçalho repetido de cada página (guardando data e versão)
+  // e junta rótulos quebrados em várias linhas ("Classe ou subclasse de / risco principal: / 3" vira "Classe ou subclasse de risco principal: 3").
+  function prepara(texto) {
+    let L = String(texto || '').replace(/\r/g, '').split('\n').map(limpaLinha);
+    // cabeçalho de página: "<NOME> Produto:" seguido de "Página: n/m Data: dd/mm/aaaa Versão: nn"
+    let data = '', versao = '', nome = '';
+    const sem = [];
+    for (let i = 0; i < L.length; i++) {
+      const l = L[i];
+      if (/^p[aá]gina:?\s*\d+\s*\/\s*\d+/i.test(l)) {
+        const m = l.match(/data:?\s*(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{4})/i); const v = l.match(/vers[aã]o:?\s*([\w.\-]+)/i);
+        if (m && !data) data = m[1]; if (v && !versao) versao = v[1];
+        continue;
+      }
+      if (/^(.+?)\s+produto:$/i.test(l) && /^p[aá]gina:?\s*\d+/i.test(L[i + 1] || '')) { if (!nome) nome = l.replace(/\s+produto:$/i, ''); continue; }
+      if (/^FDS$/i.test(l) || /^em conformidade com (?:a )?(?:abnt )?nbr\s*14725/i.test(l) || /^ficha com dados de seguran[cç]a$/i.test(l)) continue;
+      sem.push(l);
+    }
+    L = sem;
+    // junta rótulos quebrados: linha terminada em conectivo + linha seguinte em minúscula (continuação)
+    const conect = /\b(?:de|do|da|dos|das|e|ou|para|em|no|na|nos|nas|sobre|por|a|o|ao)$/i;
+    const out = [];
+    for (let i = 0; i < L.length; i++) {
+      let l = L[i];
+      while (i + 1 < L.length && l.length < 70 && !/[.:;]$/.test(l) && conect.test(l) && /^[a-zà-ÿ]/.test(L[i + 1]) && L[i + 1].length < 70) { l += ' ' + L[i + 1]; i++; }
+      out.push(l);
+    }
+    // rótulo sozinho na linha ("Identificação do produto:") recebe o valor da linha seguinte
+    const fim = [];
+    for (let i = 0; i < out.length; i++) {
+      const l = out[i];
+      if (/^[A-Za-zÀ-ÿ][^:]{2,70}:$/.test(l) && i + 1 < out.length && out[i + 1] && !/:$/.test(out[i + 1]) && !/^\d{1,2}\s*[-–.]\s*[A-ZÀ-Ý]/.test(out[i + 1]) && !/^[•\-–·]/.test(out[i + 1])) { fim.push(l + ' ' + out[i + 1]); i++; } else fim.push(l);
+    }
+    const cab = [];
+    if (nome) cab.push('Nome do produto: ' + nome);
+    if (data) cab.push('Data da revisão: ' + data);
+    if (versao) cab.push('Versão: ' + versao);
+    return cab.concat(fim).join('\n');
+  }
+
+  function parse(textoOriginal) {
     const T = O.TRANSPORT, G = O.GHS;
+    const text = prepara(textoOriginal);
     const res = { avisos: [], campos: {} };
     const { secoes, encontradas } = splitSections(text);
     res.secoes = secoes;
@@ -218,10 +263,10 @@
         let lastY = null; let line = '';
         tc.items.forEach((it) => {
           const y = Math.round(it.transform[5]);
-          if (lastY !== null && Math.abs(y - lastY) > 2) { out += line.trim() + '\n'; line = ''; }
+          if (lastY !== null && Math.abs(y - lastY) > 2) { out += limpaLinha(line) + '\n'; line = ''; }
           line += it.str + ' '; lastY = y;
         });
-        out += line.trim() + '\n';
+        out += limpaLinha(line) + '\n';
       }
       if (out.replace(/\s/g, '').length < 200) throw new Error('O PDF não contém texto selecionável (provável digitalização). Faça OCR ou cole o texto.');
       return out;
@@ -229,5 +274,5 @@
     return await file.text();
   }
 
-  O.FDS = { SEC_TITLES, parse, splitSections, lerArquivo, parseDate };
+  O.FDS = { SEC_TITLES, prepara, parse, splitSections, lerArquivo, parseDate };
 })(window.O360 = window.O360 || {});
