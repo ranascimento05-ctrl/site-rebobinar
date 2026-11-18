@@ -440,6 +440,36 @@
 
 
 
+
+  // ---------------------------------------------------------------- Análise de risco do armazém (NBR 17160, Seção 5 e Anexo A)
+  function analiseRiscoLocal(local, produtos) {
+    const a = E.analiseRiscoLocal(local, produtos); const sg = signer(null);
+    const pseudo = { nome: local.nome, dec: { numero: '' } };
+    const B = [capa('Análise de risco do armazém', 'QUIM 360 | Análise de risco | ABNT NBR 17160:2024, Seção 5 | ' + local.nome, pseudo, [['Local', local.nome + ' (' + local.tipo + ')'], ['Data da análise', a.data ? fmtData(a.data) : fmtData(new Date().toISOString())], ['Próxima revisão', a.revisao ? fmtData(a.revisao) : 'não definida']])];
+    B.push({ t: 'callout', tone: a.resumo.crit || a.resumo.alto ? 'crit' : a.resumo.semAvaliar ? 'warn' : 'ok', title: 'Resumo dos cenários', text: a.cenarios.length + ' cenários: ' + a.resumo.crit + ' crítico(s), ' + a.resumo.alto + ' alto(s), ' + a.resumo.medio + ' médio(s), ' + a.resumo.baixo + ' baixo(s), ' + a.resumo.semAvaliar + ' ainda sem avaliação de severidade e probabilidade.' });
+    B.push({ t: 'h1', text: '1 Identificação do armazém' });
+    B.push({ t: 'kv', rows: [['Local', local.nome], ['Tipo', local.tipo], ['Área do setor', local.areaM2 ? local.areaM2 + ' m²' : 'não informada'], ['Ao ar livre', local.aoArLivre ? 'Sim' : 'Não'], ['Armário de segurança', local.armarioSeg ? 'Sim' : 'Não'], ['Área de vendas ou instalação residencial', local.areaVendas ? 'Sim' : 'Não'], ['Descrição e contenção', nz(local.descricao)], ['Massa líquida total', Math.round(a.gatilhos.total).toLocaleString('pt-BR') + ' kg']] });
+    B.push({ t: 'h1', text: '2 Aspectos da análise (5.1)' });
+    B.push({ t: 'table', head: ['Item', 'Aspecto', 'Constatação'], widths: [8, 36, 56], rows: a.aspectos.map((x) => [x.id, x.texto, [x.auto, x.valor].filter(Boolean).join('\n') || 'Não registrado']) });
+    B.push({ t: 'h1', text: '3 Considerações da análise (5.2)' });
+    B.push({ t: 'table', head: ['Item', 'Consideração', 'Constatação'], widths: [8, 36, 56], rows: a.consid.map((x) => [x.id, x.texto, [x.auto, x.valor].filter(Boolean).join('\n') || 'Não registrado']) });
+    B.push({ t: 'h1', text: '4 Informações adicionais (Anexo A, informativo)' });
+    B.push({ t: 'table', head: ['Item', 'Ponto a considerar'], widths: [8, 92], rows: a.anexoA.map((x) => [x[0], x[1]]) });
+    if (a.ameacas) B.push({ t: 'kv', rows: [['Análise de ameaças e vulnerabilidades (A.8)', a.ameacas]] });
+    B.push({ t: 'h1', text: '5 Cenários de risco' });
+    B.push({ t: 'p', small: true, text: 'Severidade e probabilidade de 1 a 5; risco = severidade x probabilidade (crítico 15 ou mais, alto 10 a 14, médio 5 a 9, baixo até 4). O critério é da organização e pode ser substituído pelo seu. Cenários e medidas são pontos de partida a revisar pelo responsável técnico.' });
+    B.push({ t: 'table', head: ['Cenário', 'Severidade', 'Probabilidade', 'Risco', 'Checklist'], widths: [44, 12, 14, 14, 16], rows: a.cenarios.map((c) => [c.titulo, c.sev ? c.sev + ' ' + O.RISCO.SEV[c.sev - 1][1] : '—', c.prob ? c.prob + ' ' + O.RISCO.PROB[c.prob - 1][1] : '—', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado', c.checklist.total ? c.checklist.c + ' conf., ' + c.checklist.nc + ' não conf., ' + c.checklist.aberto + ' sem resposta' : 'sem itens']) });
+    a.cenarios.forEach((c, i) => {
+      B.push({ t: 'h2', text: '5.' + (i + 1) + ' ' + c.titulo });
+      B.push({ t: 'kv', rows: [['Causas', c.causas], ['Consequências', c.consequencias], ['Medidas de controle', c.medidas.join('\n')], ['Severidade', c.sev ? c.sev + ' ' + O.RISCO.SEV[c.sev - 1][1] : 'não avaliada'], ['Probabilidade', c.prob ? c.prob + ' ' + O.RISCO.PROB[c.prob - 1][1] : 'não avaliada'], ['Nível de risco', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'não avaliado'], ['Medidas adicionais e observações', nz(c.obs)]] });
+    });
+    B.push({ t: 'h1', text: '6 Conclusão' });
+    B.push({ t: 'p', text: a.conclusao || 'Conclusão da análise não registrada.' });
+    B.push({ t: 'p', small: true, text: 'A análise de risco deve ser revista quando houver mudança de produtos, de quantidades, do layout ou após incidentes. Apoio à decisão: a responsabilidade técnica é do profissional que assina.' });
+    B.push({ t: 'sign', rows: [[sg.nome, sg.funcao], ['Gestor do local', '']] });
+    return B;
+  }
+
   // ---------------------------------------------------------------- Checklist do local (NBR 17160)
   function checklistLocal(local, produtos) {
     const RQ = O.NBR17160REQ; const r = E.requisitosLocal(local, produtos);
@@ -610,5 +640,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

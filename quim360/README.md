@@ -22,6 +22,9 @@ Abrir `quim360/index.html` por um servidor estático (ex.: `python3 -m http.serv
 
 - **Alternativas e orientações de substituição**: quando o gatilho de CMR ou PFC é acionado, o app mostra e leva ao relatório orientações para buscar alternativa ao produto ou à composição (por componente identificado e por tipo de perigo), os passos para conduzir a substituição e um campo para registrar as alternativas avaliadas e o resultado. São pontos de partida, não especificação.
 
+- **Análise de risco do armazém (NBR 17160, Seção 5 e Anexo A)**: por local, preenche o que o app sabe (produtos, quantidades, segregação, água de extinção, checklist), registra os aspectos 5.1 e considerações 5.2, avalia cenários por severidade x probabilidade e gera o documento em Word e PDF.
+- **Lista de conferência** (`LISTA-DE-CONFERENCIA.docx`): tabelas e requisitos transcritos da norma e base técnica própria do app, com coluna para o conferente marcar.
+
 ## Base técnico-legal
 
 Resolução ANTT 5.947/21 e IMDG; ABNT NBR 17160:2024; NR-20; Manual ABIQUIM; ABNT NBR 14725 e GHS; NR-29 e ABNT NBR 7500; NBR 7503; NR-26; NR-01 e NR-15.

@@ -399,6 +399,42 @@
     return res;
   }
 
+
+  // ---------- Análise de risco do armazém (NBR 17160, Seção 5 e Anexo A) ----------
+  function analiseRiscoLocal(local, produtos) {
+    const R = O.RISCO; const rq = requisitosLocal(local, produtos); const g = rq.gatilhos;
+    const an = local.analise || {}; const cenAn = an.cenarios || {}; const campos = an.campos || {};
+    const aud = auditoriaLocal(local, produtos); const ct = contencaoLocal(local, produtos);
+    const tem = (ks) => g.cats.some((c) => ks.includes(c.k) && c.qtd > 0);
+    const nomes = (ks) => [...new Set([].concat(...g.cats.filter((c) => ks.includes(c.k) && c.qtd > 0).map((c) => c.itens)))];
+    const prods = itensDoLocal(local, produtos, null).map((i) => (produtos || []).find((x) => x.id === i.pid)).filter(Boolean);
+    const fm = (n) => (Math.round(n * 10) / 10).toLocaleString('pt-BR');
+    const prox = aud.pares.filter((x) => x.nivel === 'incompativel').length, rest = aud.pares.filter((x) => x.nivel === 'restricao').length;
+    const auto = {
+      '5.1.1': nomes(['tox', 'cmr', 'stot', 'corr']).length ? 'Produtos com perigo à saúde: ' + nomes(['tox', 'cmr', 'stot', 'corr']).join('; ') + '.' : 'Nenhum produto com perigo agudo ou crônico à saúde identificado pelas frases H informadas.',
+      '5.1.2': [prods.filter((x) => x.comp.tempMax).map((x) => x.nome + ': temperatura máxima ' + x.comp.tempMax).join('; '), tem(['gasp', 'gasinf', 'gasox']) ? 'Há gases pressurizados (pressão e calor).' : '', tem(['aer']) ? 'Há aerossóis (não aquecer acima de 50 °C).' : '', tem(['h260']) ? 'Há produtos reativos com a água (umidade).' : '', tem(['ox1', 'ox23']) ? 'Há oxidantes (calor e contaminação).' : ''].filter(Boolean).join(' ') || 'Sem condição física crítica identificada nos dados do app: confirme nas Seções 7 e 10 das FDS.',
+      '5.1.4': g.itens.length < 2 ? 'Um só item no local: sem armazenamento conjunto.' : prox + ' par(es) proibido(s) e ' + rest + ' com restrição na auditoria de segregação.' + (prox ? ' Há conflito a resolver.' : ''),
+      '5.1.5': (ct.vol ? 'Classe de perigo à água do local: CPA ' + ct.cpa + '. Volume de água de extinção a reter estimado em ' + fm(ct.total) + ' m³.' : 'Área do setor não informada: volume de água de extinção não calculado (Anexo F).') + ' Contenção de líquidos: ver itens 6.2.10 e 7.2 do checklist.',
+      '5.1.6': tem(['inf12', 'inf3']) ? 'Há líquidos inflamáveis: classificar as áreas com risco de explosão e selecionar equipamentos conforme a série ABNT NBR IEC 60079 (Anexo E).' : 'Sem inflamáveis nas quantidades informadas: confirme se há outra fonte de atmosfera explosiva (poeiras, gases).',
+      '5.2.1': g.itens.length ? g.itens.map((i) => i.nome + ' (classe ' + (i.arm || 'não definida') + (i.aprox ? ', aprox.' : '') + ')').join('; ') + '.' : 'Nenhum item no local.',
+      '5.2.2': g.informado ? g.cats.map((c) => c.rotulo.split(' (')[0] + ': ' + fm(c.qtd) + ' ' + c.unidade).join('; ') + '. Massa líquida total: ' + Math.round(g.total).toLocaleString('pt-BR') + ' kg.' : 'Quantidades não informadas.',
+      '5.2.5': g.itens.length < 2 ? 'Sem armazenamento conjunto.' : prox + ' par(es) proibido(s) e ' + rest + ' com restrição (ver auditoria de segregação do local).',
+    };
+    const chaveCampo = { '5.1.3': 'regulamentacaoEstadual' };
+    const aspectos = R.ASPECTOS.map(([id, texto]) => ({ id, texto, auto: auto[id] || '', valor: campos[chaveCampo[id]] || '', campo: chaveCampo[id] || '' }));
+    const consid = R.CONSIDERACOES.map(([id, texto, campo]) => ({ id, texto, auto: campo === 'auto' ? (auto[id] || '') : '', campo: campo === 'auto' ? '' : campo, valor: campo === 'auto' ? '' : (campos[campo] || '') }));
+    const cenarios = R.CENARIOS.filter((c) => c.quando.some((q) => q === '@sempre' || (q === '@pares' ? aud.pares.length > 0 : tem([q])))).map((c) => {
+      const rel = rq.itens.filter((i) => c.grupos.includes(i.grupo) || c.ids.includes(i.id));
+      const cont = { total: rel.length, c: 0, nc: 0, aberto: 0 };
+      rel.forEach((i) => { if (i.resp === 'c') cont.c++; else if (i.resp === 'nc') cont.nc++; else if (i.resp !== 'na') cont.aberto++; });
+      const a = cenAn[c.k] || {};
+      return Object.assign({}, c, { sev: a.sev || '', prob: a.prob || '', obs: a.obs || '', checklist: cont, risco: R.nivel(a.sev, a.prob) });
+    });
+    const resumo = { crit: 0, alto: 0, medio: 0, baixo: 0, semAvaliar: 0 };
+    cenarios.forEach((c) => { const n = c.risco.nome; if (n === 'Crítico') resumo.crit++; else if (n === 'Alto') resumo.alto++; else if (n === 'Médio') resumo.medio++; else if (n === 'Baixo') resumo.baixo++; else resumo.semAvaliar++; });
+    return { aspectos, consid, anexoA: R.ANEXO_A, cenarios, resumo, campos, ameacas: campos.ameacas || '', conclusao: an.conclusao || '', data: an.data || '', revisao: an.revisao || '', rq, gatilhos: g };
+  }
+
   // ---------- Compatibilidade entre dois produtos (aplicação prática da matriz) ----------
   function compatPar(a, b) {
     const A = { nome: a.nome, arm: classeArm(a).id, grupos: a.comp.grupos || [], incompativeis: a.comp.incompativeis || [] };
@@ -579,5 +615,5 @@
     return r;
   }
 
-  O.Engine = { alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});

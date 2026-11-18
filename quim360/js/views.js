@@ -119,6 +119,49 @@
     return d;
   };
 
+  // ------------------------------------------------------------ análise de risco do armazém (NBR 17160, Seção 5)
+  V.riscoCard = (l) => {
+    const RK = O.RISCO;
+    l.analise = l.analise || { campos: {}, cenarios: {}, conclusao: '', data: '', revisao: '' };
+    l.analise.campos = l.analise.campos || {}; l.analise.cenarios = l.analise.cenarios || {};
+    const holder = { l }; const salva = () => S.salvarLocal(l);
+    const a = E.analiseRiscoLocal(l, S.produtos());
+    const card = h('div', { class: 'card' }, h('h3', {}, 'Análise de risco do armazém (NBR 17160, Seção 5) ', U.disc('PSM')),
+      h('p', { class: 'small' }, 'A norma pede análise de risco do armazém. O app preenche o que já sabe (produtos, quantidades, segregação, água de extinção, checklist) e você completa o restante e avalia cada cenário. Cenários e medidas são pontos de partida a revisar.'));
+    const det = (titulo, corpo, aberto) => h('details', aberto ? { open: true } : {}, h('summary', { style: 'cursor:pointer;font-weight:600;padding:6px 0' }, titulo), corpo);
+    // aspectos 5.1 e considerações 5.2
+    const lista = h('div');
+    a.aspectos.concat(a.consid).forEach((x) => {
+      lista.appendChild(h('div', { style: 'padding:6px 0;border-top:1px solid #26324d' }, h('b', { class: 'sky' }, x.id + ' '), x.texto, x.auto ? h('p', { class: 'small', style: 'margin:4px 0' }, 'App: ' + x.auto) : null, x.campo ? U.input(holder, 'l.analise.campos.' + x.campo, { rows: 2, label: 'Registro do analista', onInput: salva }) : null));
+    });
+    card.appendChild(det('Aspectos (5.1) e considerações (5.2)', lista));
+    // Anexo A
+    const an = h('div', {}, h('ul', { style: 'margin:0 0 6px 18px' }, a.anexoA.map((x) => h('li', {}, h('b', {}, x[0] + ' '), x[1]))), U.input(holder, 'l.analise.campos.ameacas', { rows: 2, label: 'Análise de ameaças e vulnerabilidades (A.8)', onInput: salva }));
+    card.appendChild(det('Informações adicionais (Anexo A)', an));
+    // cenários
+    const nivelTxt = (c) => c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado';
+    const resumo = h('p', { class: 'small' });
+    const pinta = () => { const r = E.analiseRiscoLocal(l, S.produtos()).resumo; resumo.textContent = r.crit + ' crítico(s), ' + r.alto + ' alto(s), ' + r.medio + ' médio(s), ' + r.baixo + ' baixo(s), ' + r.semAvaliar + ' sem avaliação.'; };
+    const cen = h('div');
+    a.cenarios.forEach((c) => {
+      const badge = h('span'); const mostra = () => { const n = RK.nivel(l.analise.cenarios[c.k] && l.analise.cenarios[c.k].sev, l.analise.cenarios[c.k] && l.analise.cenarios[c.k].prob); badge.replaceChildren(n.v ? U.badge(n.tom || 'info', n.nome + ' (' + n.v + ')') : U.badge('info', 'Não avaliado')); };
+      l.analise.cenarios[c.k] = l.analise.cenarios[c.k] || { sev: '', prob: '', obs: '' };
+      const sel = (campo, lista2, rot) => U.select(l.analise.cenarios, c.k + '.' + campo, lista2.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: rot, empty: 'Selecione', onChange: () => { l.analise.cenarios[c.k][campo] = Number(l.analise.cenarios[c.k][campo]) || ''; salva(); mostra(); pinta(); } });
+      cen.appendChild(h('div', { style: 'padding:8px 0;border-top:1px solid #26324d' }, h('div', { class: 'row' }, h('b', {}, c.titulo), h('span', { class: 'spacer' }), badge),
+        h('p', { class: 'small', style: 'margin:4px 0' }, 'Causas: ' + c.causas), h('p', { class: 'small', style: 'margin:4px 0' }, 'Consequências: ' + c.consequencias),
+        h('ul', { style: 'margin:4px 0 4px 18px' }, c.medidas.map((m) => h('li', { class: 'small' }, m))),
+        c.checklist.total ? h('p', { class: 'small', style: 'margin:4px 0' }, 'Checklist relacionado: ' + c.checklist.c + ' conforme(s), ' + c.checklist.nc + ' não conforme(s), ' + c.checklist.aberto + ' sem resposta.') : null,
+        h('div', { class: 'grid g2' }, sel('sev', RK.SEV, 'Severidade'), sel('prob', RK.PROB, 'Probabilidade')),
+        U.input(l.analise.cenarios[c.k], 'obs', { rows: 2, label: 'Medidas adicionais e observações', onInput: salva })));
+      mostra();
+    });
+    card.appendChild(det('Cenários de risco (' + a.cenarios.length + ')', h('div', {}, resumo, cen), true)); pinta();
+    card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.analise.data', { type: 'date', label: 'Data da análise', onInput: salva }), U.input(holder, 'l.analise.revisao', { type: 'date', label: 'Próxima revisão', onInput: salva })));
+    card.appendChild(U.input(holder, 'l.analise.conclusao', { rows: 3, label: 'Conclusão da análise', onInput: salva }));
+    card.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, V.docBotoes({ nome: l.nome, id: 'risco' }, { id: 'analise-risco', nome: 'Análise de risco do armazém', fn: () => D.analiseRiscoLocal(l, S.produtos()) }, true)));
+    return card;
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -469,7 +512,7 @@
         card.appendChild(h('div', { class: 'row', style: 'margin-bottom:8px' }, V.docBotoes(ps0, { id: 'inventario', nome: 'Inventário de produtos perigosos', fn: () => D.inventarioLocal(l, S.produtos()) }, true)));
         card.appendChild(V.gatilhos(gat, 'Situação do local'));
         card.appendChild(V.contencao(l));
-        card.appendChild(V.checklistCard(l)); card.appendChild(V.inspecaoCard(l));
+        card.appendChild(V.riscoCard(l)); card.appendChild(V.checklistCard(l)); card.appendChild(V.inspecaoCard(l));
       } else card.appendChild(h('p', { class: 'muted' }, 'Cadastre itens ou vincule produtos homologados ao local para montar o inventário.'));
       root.appendChild(card);
     });
