@@ -27,11 +27,11 @@
     return {
       t: 'cover', titulo, sub,
       meta: [
-        ['Produto', nz(p.nome)],
-        ['Registro', nz(p.dec.numero, 'sem número de homologação')],
+        [p.rotulo || 'Produto', nz(p.nome)],
+      ].concat(p.pseudo ? [] : [['Registro', nz(p.dec.numero, 'sem número de homologação')]]).concat([
         ['Data', fmtData(new Date().toISOString())],
         [signer(p).funcao, signer(p).linha || 'não informado'],
-      ].concat(extra || []),
+      ].concat(extra || [])),
       org: c.organizacao,
     };
   }
@@ -180,6 +180,7 @@
       }
     }
 
+    cenariosDoProduto(p, produtos).forEach((b) => B.push(b));
     B.push({ t: 'h1', text: '9 Pareceres externos e gatilho do PGR' });
     B.push({ t: 'kv', rows: [
       ['Parecer arquivado', sn(p.par.tem)], ['Descrição / referência', nz(p.par.descricao)],
@@ -457,10 +458,66 @@
     return B;
   }
 
+  // ---------------------------------------------------------------- Cenários de risco (treinamento, brigada, reuniões)
+  const TOM_RISCO = { 'Crítico': 'crit', 'Alto': 'warn', 'Médio': 'info', 'Baixo': 'ok' };
+  // local: cenários do local (ativos e adicionados); sem local: catálogo geral (padrão e biblioteca da organização)
+  // op: { soAltos, umaPorPagina (padrão sim), listaPresenca (padrão sim) }
+  function cenariosDoc(local, produtos, op) {
+    op = op || {}; const R = O.RISCO; const sg = signer(null);
+    let lista;
+    if (local) {
+      lista = E.analiseRiscoLocal(local, produtos).cenarios.slice().sort((x, y) => (y.risco.v || 0) - (x.risco.v || 0));
+      if (op.soAltos) lista = lista.filter((c) => c.risco.v >= 10);
+    } else {
+      const base = R.CENARIOS.map((c) => Object.assign({}, c, { risco: { v: 0, nome: 'Não avaliado' } }));
+      const lib = (O.Store.config().bibliotecaCenarios || []).map((m) => ({ titulo: m.titulo, causas: m.causas, consequencias: m.consequencias, medidas: String(m.medidas || '').split('\n').map((x) => x.trim()).filter(Boolean), discussao: [], proprio: true, origem: m.origem, risco: { v: 0, nome: 'Não avaliado' } }));
+      lista = base.concat(lib);
+    }
+    const pseudo = { nome: local ? local.nome : 'Catálogo geral', dec: { numero: '' }, rotulo: local ? 'Armazém' : 'Documento', pseudo: true };
+    const B = [capa('Cenários de risco', 'QUIM 360 | Cenários para treinamento, DDS e reuniões | ' + pseudo.nome, pseudo, [['Local', local ? local.nome + ' (' + local.tipo + ')' : 'Catálogo geral (cenários padrão e biblioteca da organização)'], ['Cenários', String(lista.length) + (op.soAltos ? ' (somente risco alto e crítico)' : '')]])];
+    B.push({ t: 'p', text: 'Este documento reúne os cenários de risco para treinamento da brigada, diálogo de segurança e discussão em reunião. Cada cenário traz como pode acontecer, o que pode acontecer, como prevenir e perguntas para a discussão, com espaço para anotações.' + (local ? '' : ' Sem local definido, os níveis de risco não são mostrados: eles dependem do que está armazenado e das avaliações de cada local.') });
+    if (local && lista.length) B.push({ t: 'table', head: ['Nº', 'Cenário', 'Severidade', 'Probabilidade', 'Risco'], widths: [6, 52, 14, 14, 14], rows: lista.map((c, i) => [String(i + 1), c.titulo, c.sev ? String(c.sev) : '—', c.prob ? String(c.prob) : '—', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado']) });
+    if (!lista.length) B.push({ t: 'callout', tone: 'info', title: 'Sem cenários', text: 'Nenhum cenário atende ao filtro escolhido.' });
+    lista.forEach((c, i) => {
+      if (op.umaPorPagina !== false) B.push({ t: 'pagebreak' });
+      B.push({ t: 'h1', text: (i + 1) + ' ' + c.titulo });
+      if (c.risco.v) B.push({ t: 'callout', tone: TOM_RISCO[c.risco.nome] || 'info', title: 'Risco: ' + c.risco.nome + ' (' + c.risco.v + ')', text: 'Severidade ' + c.sev + ' (' + R.SEV[c.sev - 1][1] + ') e probabilidade ' + c.prob + ' (' + R.PROB[c.prob - 1][1] + ').' });
+      if (c.proprio && (c.origem || c.ref)) B.push({ t: 'p', small: true, text: 'Origem: ' + nz(c.origem) + (c.ref ? ' | ' + c.ref : '') + (c.data ? ' | ' + fmtData(c.data) : '') });
+      B.push({ t: 'kv', rows: [['Como pode acontecer', nz(c.causas)], ['O que pode acontecer', nz(c.consequencias)]] });
+      B.push({ t: 'p', bold: true, text: 'Como prevenir' });
+      B.push({ t: 'list', items: (c.medidas || []).length ? c.medidas : ['Medidas não registradas.'] });
+      if ((c.discussao || []).length) { B.push({ t: 'p', bold: true, text: 'Para discutir' }); B.push({ t: 'list', ordered: true, items: c.discussao }); }
+      if (c.obs) B.push({ t: 'kv', rows: [['Medidas adicionais e observações', c.obs]] });
+      B.push({ t: 'table', head: ['Anotações e decisões da reunião ou do treinamento'], rows: [[' '], [' '], [' ']], tall: true });
+    });
+    if (op.listaPresenca !== false) {
+      B.push({ t: 'pagebreak' });
+      B.push({ t: 'h1', text: 'Lista de presença' });
+      B.push({ t: 'kv', rows: [['Atividade', ''], ['Data', ''], ['Instrutor ou facilitador', '']] });
+      B.push({ t: 'table', head: ['Nome', 'Função', 'Assinatura'], widths: [38, 28, 34], rows: Array.from({ length: 12 }, () => [' ', ' ', ' ']), tall: true });
+    }
+    B.push({ t: 'p', small: true, text: 'Cenários e medidas são pontos de partida, revistos pelo responsável técnico. Apoio ao treinamento: não substitui o plano de emergência do local.' });
+    B.push({ t: 'sign', rows: [[sg.nome, sg.funcao]] });
+    return B;
+  }
+
+  // seção do relatório de homologação: cenários do local de armazenamento do produto
+  function cenariosDoProduto(p, produtos) {
+    const lc = localDe(p); if (!lc || p.armazenamento === 'granel') return [];
+    const ar = E.analiseRiscoLocal(lc, produtos, p); const R = O.RISCO;
+    const B = [{ t: 'h2', text: 'Cenários de risco do local de armazenamento' }];
+    B.push({ t: 'p', small: true, text: 'Cenários da análise de risco de ' + lc.nome + ', considerando este produto. A análise completa está no documento "Análise de risco do armazém" do local; os níveis dependem das avaliações de severidade e probabilidade ali registradas.' });
+    B.push({ t: 'table', head: ['Cenário', 'Severidade', 'Probabilidade', 'Risco'], widths: [56, 14, 15, 15], rows: ar.cenarios.map((c) => [c.titulo + (c.proprio ? ' (adicionado)' : ''), c.sev ? c.sev + ' ' + R.SEV[c.sev - 1][1] : '—', c.prob ? c.prob + ' ' + R.PROB[c.prob - 1][1] : '—', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado']) });
+    const graves = ar.cenarios.filter((c) => c.risco.v >= 10);
+    if (graves.length) { B.push({ t: 'callout', tone: 'crit', title: graves.length + ' cenário(s) de risco alto ou crítico', text: graves.map((c) => c.titulo).join('; ') + '. Confirme as medidas de controle antes do primeiro recebimento.' }); graves.forEach((c) => B.push({ t: 'kv', rows: [[c.titulo, c.medidas.join('\n')]] })); }
+    else if (ar.resumo.semAvaliar) B.push({ t: 'p', small: true, text: ar.resumo.semAvaliar + ' cenário(s) ainda sem avaliação de severidade e probabilidade.' });
+    return B;
+  }
+
   // ---------------------------------------------------------------- Análise de risco do armazém (NBR 17160, Seção 5 e Anexo A)
   function analiseRiscoLocal(local, produtos) {
     const a = E.analiseRiscoLocal(local, produtos); const sg = signer(null);
-    const pseudo = { nome: local.nome, dec: { numero: '' } };
+    const pseudo = { nome: local.nome, dec: { numero: '' }, rotulo: 'Armazém', pseudo: true };
     const B = [capa('Análise de risco do armazém', 'QUIM 360 | Análise de risco | ABNT NBR 17160:2024, Seção 5 | ' + local.nome, pseudo, [['Local', local.nome + ' (' + local.tipo + ')'], ['Data da análise', a.data ? fmtData(a.data) : fmtData(new Date().toISOString())], ['Próxima revisão', a.revisao ? fmtData(a.revisao) : 'não definida']])];
     B.push({ t: 'callout', tone: a.resumo.crit || a.resumo.alto ? 'crit' : a.resumo.semAvaliar ? 'warn' : 'ok', title: 'Resumo dos cenários', text: a.cenarios.length + ' cenários: ' + a.resumo.crit + ' crítico(s), ' + a.resumo.alto + ' alto(s), ' + a.resumo.medio + ' médio(s), ' + a.resumo.baixo + ' baixo(s), ' + a.resumo.semAvaliar + ' ainda sem avaliação de severidade e probabilidade.' });
     B.push({ t: 'h1', text: '1 Identificação do armazém' });
@@ -492,7 +549,7 @@
   // ---------------------------------------------------------------- Checklist do local (NBR 17160)
   function checklistLocal(local, produtos) {
     const RQ = O.NBR17160REQ; const r = E.requisitosLocal(local, produtos);
-    const pseudo = { nome: local.nome, dec: { numero: '' } };
+    const pseudo = { nome: local.nome, dec: { numero: '' }, rotulo: 'Armazém', pseudo: true };
     const RESP = { c: 'Conforme', nc: 'NÃO CONFORME', na: 'Não se aplica', '': 'Sem resposta' };
     const B = [capa('Checklist de requisitos da NBR 17160', 'QUIM 360 | Armazenamento seguro | ' + local.nome, pseudo, [['Local', local.nome + ' (' + local.tipo + ')' + (local.aoArLivre ? ', ao ar livre' : '') + (local.armarioSeg ? ', armário de segurança' : '')], ['Requisitos aplicáveis', String(r.cont.total)]])];
     B.push({ t: 'callout', tone: r.cont.nc ? 'crit' : r.cont.aberto ? 'warn' : 'ok', title: r.cont.nc ? r.cont.nc + ' requisito(s) não conforme(s)' : r.cont.aberto ? 'Checklist incompleto' : 'Sem não conformidades', text: r.cont.c + ' conformes, ' + r.cont.nc + ' não conformes, ' + r.cont.na + ' não se aplicam, ' + r.cont.aberto + ' sem resposta.' });
@@ -517,7 +574,7 @@
   const ST_TXT = { dentro: 'Dentro do limite', armazem: 'Exige armazém (6.3.1)', analise: 'Definir pela análise de risco', secoes: 'Seções adicionais' };
   function inventarioLocal(local, produtos) {
     const g = E.gatilhosLocal(local, produtos);
-    const pseudo = { nome: local.nome, dec: { numero: '' } };
+    const pseudo = { nome: local.nome, dec: { numero: '' }, rotulo: 'Armazém', pseudo: true };
     const B = [capa('Inventário de produtos perigosos', 'QUIM 360 | Inventário e quantidades-limite | ABNT NBR 17160:2024', pseudo, [['Local', local.nome + ' (' + local.tipo + ')'], ['Itens', String(g.itens.length)], ['Massa líquida total', Math.round(g.total).toLocaleString('pt-BR') + ' kg']])];
     B.push({ t: 'h1', text: '1 Inventário (6.1.5)' });
     B.push({ t: 'table', head: ['Produto', 'Classificação', 'Classe de armazenamento', 'Quantidade', 'Setor'], widths: [28, 22, 18, 14, 18], rows: g.itens.length ? g.itens.map((i) => [i.nome, (i.h || []).join(', ') || 'sem frases H informadas', i.arm || 'não definida' + (i.aprox ? ' (aprox.)' : ''), i.qtd != null ? String(i.qtd).replace('.', ',') + ' kg' : 'não informada', local.nome]) : [['Sem itens', '', '', '', '']] });
@@ -659,5 +716,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

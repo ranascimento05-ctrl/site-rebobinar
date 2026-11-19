@@ -401,10 +401,10 @@
 
 
   // ---------- Análise de risco do armazém (NBR 17160, Seção 5 e Anexo A) ----------
-  function analiseRiscoLocal(local, produtos) {
-    const R = O.RISCO; const rq = requisitosLocal(local, produtos); const g = rq.gatilhos;
+  function analiseRiscoLocal(local, produtos, extra) {
+    const R = O.RISCO; const rq = requisitosLocal(local, produtos, extra); const g = rq.gatilhos;
     const an = local.analise || {}; const cenAn = an.cenarios || {}; const campos = an.campos || {};
-    const aud = auditoriaLocal(local, produtos); const ct = contencaoLocal(local, produtos);
+    const aud = auditoriaLocal(local, produtos); const ct = contencaoLocal(local, produtos, extra);
     const tem = (ks) => g.cats.some((c) => ks.includes(c.k) && c.qtd > 0);
     const nomes = (ks) => [...new Set([].concat(...g.cats.filter((c) => ks.includes(c.k) && c.qtd > 0).map((c) => c.itens)))];
     const prods = itensDoLocal(local, produtos, null).map((i) => (produtos || []).find((x) => x.id === i.pid)).filter(Boolean);

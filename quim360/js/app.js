@@ -3,7 +3,7 @@
   const U = O.UI, h = U.h;
   const NAV = [
     ['#/', 'Início', 'home'], ['#/painel', 'Painel', 'grid'], ['#/produtos', 'Produtos', 'flask'], ['#/nova', 'Nova homologação', 'plus'], ['#/fds', 'Analisador de FDS', 'file'], '-',
-    ['#/locais', 'Locais de armazenamento', 'pin'], ['#/compat', 'Quadro de compatibilidade', 'grid'], ['#/matriz', 'Matriz de segregação', 'grid'], ['#/legal', 'Base técnico-legal', 'scale'], ['#/config', 'Configurações', 'gear'],
+    ['#/locais', 'Locais de armazenamento', 'pin'], ['#/compat', 'Quadro de compatibilidade', 'grid'], ['#/cenarios', 'Cenários de risco', 'scale'], ['#/matriz', 'Matriz de segregação', 'grid'], ['#/legal', 'Base técnico-legal', 'scale'], ['#/config', 'Configurações', 'gear'],
   ];
   const root = document.getElementById('app');
   let main, side;
@@ -40,6 +40,7 @@
         case 'fds': V.fds(main); break;
         case 'locais': V.locais(main); break;
         case 'compat': V.quadro(main); break;
+        case 'cenarios': V.cenarios(main); break;
         case 'matriz': V.matriz(main); break;
         case 'legal': V.legal(main); break;
         case 'config': V.config(main); break;

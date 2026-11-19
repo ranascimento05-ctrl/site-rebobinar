@@ -221,7 +221,39 @@
     card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.analise.data', { type: 'date', label: 'Data da análise', onInput: salva }), U.input(holder, 'l.analise.revisao', { type: 'date', label: 'Próxima revisão', onInput: salva })));
     card.appendChild(U.input(holder, 'l.analise.conclusao', { rows: 3, label: 'Conclusão da análise', onInput: salva }));
     card.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, V.docBotoes({ nome: l.nome, id: 'risco' }, { id: 'analise-risco', nome: 'Análise de risco do armazém', fn: () => D.analiseRiscoLocal(l, S.produtos()) }, true)));
+    card.appendChild(h('p', { class: 'small', style: 'margin:10px 0 4px' }, 'Cenários para treinamento da brigada, diálogo de segurança e reunião (uma ficha por cenário, com perguntas e lista de presença):'));
+    card.appendChild(V.cenariosBotoes(l, {}));
     return card;
+  };
+
+  // ------------------------------------------------------------ cenários de risco para treinamento e reuniões
+  V.cenariosBotoes = (local, op) => {
+    const pseudo = { nome: local ? local.nome : 'catalogo-geral', id: 'cen' };
+    const doc = { id: 'cenarios', nome: 'Cenários de risco', fn: () => D.cenariosDoc(local, S.produtos(), op) };
+    return h('div', { class: 'row' }, V.docBotoes(pseudo, doc, true), h('button', { class: 'btn sm ghost', onclick: () => U.copiar(R.text(doc.fn())) }, 'Copiar texto (e-mail)'));
+  };
+  V.cenarios = (root) => {
+    root.appendChild(head('Cenários de risco', 'Para treinamento da brigada, diálogo de segurança, reuniões e envio por e-mail'));
+    const st = { local: '', soAltos: false, umaPorPagina: true };
+    const area = h('div');
+    const locais = S.locais();
+    const sel = h('select', { 'aria-label': 'Local' }, h('option', { value: '' }, 'Catálogo geral (cenários padrão e biblioteca)'), locais.map((l) => h('option', { value: l.id }, l.nome)));
+    const ckA = h('input', { type: 'checkbox', id: 'cn-a' }), ckP = h('input', { type: 'checkbox', id: 'cn-p', checked: true });
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'O que imprimir ou enviar'),
+      h('p', { class: 'small' }, 'Escolha um local para levar os cenários dele, com os níveis de risco avaliados, ou o catálogo geral. O documento tem uma ficha por cenário, perguntas para discussão, espaço para anotações e lista de presença. Baixe em Word ou PDF, imprima ou copie o texto para colar em um e-mail.'),
+      h('div', { class: 'row' }, h('div', { style: 'flex:1;min-width:240px' }, sel), h('label', { for: 'cn-a', class: 'row small' }, ckA, 'Somente risco alto e crítico'), h('label', { for: 'cn-p', class: 'row small' }, ckP, 'Um cenário por página')),
+      h('div', { id: 'cn-btn', style: 'margin-top:10px' })));
+    root.appendChild(area);
+    const draw = () => {
+      const local = st.local ? S.local(st.local) : null;
+      const op = { soAltos: st.soAltos, umaPorPagina: st.umaPorPagina };
+      const bt = root.querySelector('#cn-btn'); bt.innerHTML = ''; bt.appendChild(V.cenariosBotoes(local, op));
+      area.innerHTML = '';
+      const bl = D.cenariosDoc(local, S.produtos(), op);
+      area.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Pré-visualização'), h('div', { class: 'paper', html: R.html(bl) })));
+    };
+    sel.addEventListener('change', () => { st.local = sel.value; draw(); }); ckA.addEventListener('change', () => { st.soAltos = ckA.checked; draw(); }); ckP.addEventListener('change', () => { st.umaPorPagina = ckP.checked; draw(); });
+    draw();
   };
 
   // ------------------------------------------------------------ catálogo de documentos

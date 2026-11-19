@@ -23597,62 +23597,62 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   // grupos de requisitos do checklist (nbr17160-req.js) e ids avulsos usados para mostrar o estado das medidas de cada cenário
   const CENARIOS = [
-    { k: 'inflam', titulo: 'Incêndio ou explosão de líquidos e vapores inflamáveis', quando: ['inf12', 'inf3'],
+    { k: 'inflam', discussao: ['Quais fontes de ignição existem hoje perto dos inflamáveis e como são controladas?', 'Onde ficam os extintores adequados e quem está treinado para usá-los?', 'Como se faz o desligamento de energia e o isolamento da área em caso de incêndio?'], titulo: 'Incêndio ou explosão de líquidos e vapores inflamáveis', quando: ['inf12', 'inf3'],
       causas: 'Fonte de ignição (elétrica, estática, trabalho a quente, superfície quente), vazamento, ventilação insuficiente, resíduos como panos com solvente.',
       consequencias: 'Incêndio, explosão, queimaduras, danos à instalação, vazamento de água de extinção contaminada.',
       medidas: ['Eliminar fontes de ignição e usar equipamento adequado à área (6.2.5, 6.3.1.5).', 'Ventilação e zoneamento de atmosfera explosiva (Anexo E).', 'Contenção, extinção e separação por resistência ao fogo (Seções 8 e 14).', 'Autorização de trabalho para atividades com risco de ignição (8.2.13).'],
       grupos: ['s8', 's14', 'aE'], ids: ['6.2.5', '6.3.1.5'] },
-    { k: 'tox', titulo: 'Liberação de substância com toxicidade aguda (derramamento, incêndio, ruptura)', quando: ['tox'],
+    { k: 'tox', discussao: ['Quem tem acesso ao setor e como esse acesso é controlado?', 'Quais EPI e equipamentos de respiração estão disponíveis e onde ficam?', 'Qual é o primeiro atendimento previsto e quem aciona o socorro especializado?'], titulo: 'Liberação de substância com toxicidade aguda (derramamento, incêndio, ruptura)', quando: ['tox'],
       causas: 'Ruptura de embalagem, queda de recipiente, manuseio inadequado, incêndio envolvendo o produto.',
       consequencias: 'Intoxicação aguda, necessidade de evacuação e de primeiros socorros especializados, contaminação do ambiente.',
       medidas: ['Setor identificado, com acesso restrito e pessoas treinadas (6.2.12, 7.3, 10.2).', 'EPI, lava-olhos, chuveiro e kit de derramamento (6.3.6 a 6.3.8).', 'Plano de emergência e simulados (7.4).'],
       grupos: ['s10', 's7'], ids: ['6.2.12', '6.2.13', '6.3.6.1', '6.3.7', '6.3.8'] },
-    { k: 'cmr', titulo: 'Exposição crônica a agentes cancerígenos, mutagênicos ou tóxicos à reprodução', quando: ['cmr', 'stot'],
+    { k: 'cmr', discussao: ['Quem está exposto, em quais tarefas e por quanto tempo?', 'Os controles do PGR e a vigilância da saúde (PCMSO) estão em dia?', 'Já foi avaliada alternativa de menor perigo?'], titulo: 'Exposição crônica a agentes cancerígenos, mutagênicos ou tóxicos à reprodução', quando: ['cmr', 'stot'],
       causas: 'Exposição por inalação ou contato na movimentação, fracionamento e vazamentos; falhas de higiene; vigilância da saúde insuficiente.',
       consequencias: 'Doenças ocupacionais de longa latência, efeitos sobre a reprodução, passivo trabalhista e legal.',
       medidas: ['Setor identificado e acesso restrito (6.2.12).', 'Agente no PGR e vigilância da saúde (PCMSO), conforme a avaliação de exposição.', 'Substituição quando viável (ver alternativas na homologação do produto).', 'Higiene e EPI (6.3.6 e 6.3.7).'],
       grupos: ['s7'], ids: ['6.2.12', '6.3.6.1', '6.3.7'] },
-    { k: 'corr', titulo: 'Vazamento de corrosivos (queimaduras, danos às embalagens, estrutura e equipamentos)', quando: ['corr'],
+    { k: 'corr', discussao: ['O dique ou a bacia comporta o maior recipiente?', 'Onde estão o lava-olhos, o chuveiro de emergência e o kit de derramamento?', 'Ácidos e bases estão separados como a norma exige?'], titulo: 'Vazamento de corrosivos (queimaduras, danos às embalagens, estrutura e equipamentos)', quando: ['corr'],
       causas: 'Embalagem inadequada ou danificada, empilhamento instável, mistura de ácidos e bases, infiltração no piso.',
       consequencias: 'Queimaduras químicas, geração de calor e gases na mistura, corrosão de racks e piso, contaminação.',
       medidas: ['Contenção com capacidade do maior recipiente (6.2.10, 7.2.3).', 'Segregação entre ácidos e bases por parede ou 5 m (observação 8).', 'Materiais do armazém resistentes aos produtos (7.2.2).'],
       grupos: [], ids: ['6.2.10', '7.2.2', '7.2.3', '6.3.3.3', '6.3.3.5'] },
-    { k: 'ox', titulo: 'Intensificação de incêndio ou reação por oxidantes em contato com combustíveis', quando: ['ox1', 'ox23'],
+    { k: 'ox', discussao: ['Há materiais combustíveis (paletes, papel, panos) perto dos oxidantes?', 'Como se limpa um derramamento sem usar material combustível?', 'Quais produtos não podem ficar juntos dos oxidantes?'], titulo: 'Intensificação de incêndio ou reação por oxidantes em contato com combustíveis', quando: ['ox1', 'ox23'],
       causas: 'Contato do oxidante com materiais combustíveis (embalagem, paletes, serragem, panos), contaminação, aquecimento.',
       consequencias: 'Incêndio de propagação rápida, explosão, liberação de gases tóxicos.',
       medidas: ['Afastar materiais combustíveis e usar paletes não combustíveis quando exigido (11.2.4).', 'Não limpar derramamento com material combustível (11.2.1).', 'Separação e resistência ao fogo (11.3).'],
       grupos: ['s11'], ids: [] },
-    { k: 'gas', titulo: 'Liberação ou projeção de recipientes de gás pressurizado', quando: ['gasp', 'gasinf', 'gasox'],
+    { k: 'gas', discussao: ['Os cilindros estão presos e com as válvulas protegidas?', 'Há ventilação e detecção adequadas ao gás armazenado?', 'Qual é a conduta ao ouvir o alarme de vazamento?'], titulo: 'Liberação ou projeção de recipientes de gás pressurizado', quando: ['gasp', 'gasinf', 'gasox'],
       causas: 'Queda ou tombamento do recipiente, dano à válvula, aquecimento, vazamento em conexões.',
       consequencias: 'Projeção do cilindro, atmosfera inflamável, tóxica ou asfixiante, incêndio ou explosão.',
       medidas: ['Proteção contra queda e válvulas protegidas (12.2.1).', 'Ventilação, zonas de segurança e proteção contra explosão (12.3 e 12.4).', 'Distância de 2 m entre inflamáveis e oxidantes (observação 3).'],
       grupos: ['s12'], ids: [] },
-    { k: 'aer', titulo: 'Incêndio com projeção de aerossóis e cartuchos de gás', quando: ['aer'],
+    { k: 'aer', discussao: ['Existe área separada e protegida por grade?', 'Há fonte de calor ou sol direto sobre as embalagens?', 'O que fazer se o incêndio atingir o setor?'], titulo: 'Incêndio com projeção de aerossóis e cartuchos de gás', quando: ['aer'],
       causas: 'Aquecimento acima de 50 °C, impacto, incêndio na vizinhança.',
       consequencias: 'Embalagens projetadas pelo armazém, propagação do incêndio.',
       medidas: ['Proteção contra o calor (6.2.6).', 'Área separada e protegida por grades (9.1.1.4 d).', 'Requisitos estruturais e de incêndio (13.2).'],
       grupos: ['s13'], ids: ['6.2.6', '9.1.1.4 d'] },
-    { k: 'agua', titulo: 'Reação com água (inclusive água de extinção) e liberação de gases inflamáveis', quando: ['h260'],
+    { k: 'agua', discussao: ['Quais produtos reagem com água e onde estão?', 'As áreas onde a água não pode ser usada estão sinalizadas?', 'Qual agente extintor deve ser usado nessa área?'], titulo: 'Reação com água (inclusive água de extinção) e liberação de gases inflamáveis', quando: ['h260'],
       causas: 'Contato com água de chuva, umidade ou água de combate a incêndio.',
       consequencias: 'Liberação de gás inflamável ou tóxico, calor, explosão.',
       medidas: ['Avaliar a reatividade com água de cada produto (9.1.1.3 k).', 'Sinalização de áreas onde a água não pode ser usada (8.2.6).'],
       grupos: [], ids: ['9.1.1.3 k', '8.2.6'] },
-    { k: 'conjunto', titulo: 'Reação por incompatibilidade em armazenamento conjunto', quando: ['@pares'],
+    { k: 'conjunto', discussao: ['Quais pares de produtos são proibidos ou restritos neste local?', 'A segregação (parede ou distância) está respeitada na prática?', 'O que acontece se duas embalagens incompatíveis se romperem?'], titulo: 'Reação por incompatibilidade em armazenamento conjunto', quando: ['@pares'],
       causas: 'Produtos incompatíveis no mesmo setor, vazamento ou ruptura que provoque contato.',
       consequencias: 'Incêndio, explosão, calor, gases inflamáveis, tóxicos ou asfixiantes, substâncias corrosivas ou instáveis.',
       medidas: ['Respeitar a matriz de incompatibilidade (Figura 1) e as observações de cada par.', 'Segregação física ou distância; extintores adequados a todos os produtos (9.1.1.4 a).', 'Condições de armazenamento iguais ou semelhantes (9.1.1.4 b).'],
       grupos: ['s9'], ids: [] },
-    { k: 'ambiente', titulo: 'Contaminação do ambiente por vazamento e por água de extinção contaminada', quando: ['@sempre'],
+    { k: 'ambiente', discussao: ['Para onde vai um vazamento? Há ligação com a drenagem de águas pluviais?', 'A retenção da água de extinção está dimensionada e disponível?', 'Quem avisa os órgãos ambientais e como?'], titulo: 'Contaminação do ambiente por vazamento e por água de extinção contaminada', quando: ['@sempre'],
       causas: 'Vazamentos sem contenção, deságue em pluvial, ausência de retenção da água de extinção.',
       consequencias: 'Contaminação do solo e da água, passivo ambiental, interdição.',
       medidas: ['Contenção, sem deságue em águas pluviais ou esgoto (6.2.10, 7.2.6).', 'Retenção da água de extinção dimensionada (Anexo F).', 'Resíduos de vazamento com destinação adequada.'],
       grupos: [], ids: ['6.2.10', '7.2.6', '14.4.10'] },
-    { k: 'empilha', titulo: 'Queda ou tombamento de embalagens e acidentes na movimentação (empilhadeira, racks)', quando: ['@sempre'],
+    { k: 'empilha', discussao: ['Qual é a altura máxima de empilhamento e a capacidade dos racks?', 'Os operadores de empilhadeira estão treinados para produtos perigosos?', 'O que fazer ao encontrar uma embalagem danificada?'], titulo: 'Queda ou tombamento de embalagens e acidentes na movimentação (empilhadeira, racks)', quando: ['@sempre'],
       causas: 'Empilhamento acima da capacidade, embalagens frágeis, operador sem treinamento, colisão com racks.',
       consequencias: 'Ruptura de embalagens, vazamento, lesões nos trabalhadores.',
       medidas: ['Estabilidade, altura máxima e capacidade dos racks sinalizada (6.3.3.3 e 6.3.3.4).', 'Operadores treinados (6.3.3.4).', 'Proteção contra colisão nas áreas de carga (6.3.3.2).'],
       grupos: [], ids: ['6.3.3.2', '6.3.3.3', '6.3.3.4', '6.3.3.5'] },
-    { k: 'emergencia', titulo: 'Falha na resposta a emergência (alarme, fuga, primeiros socorros)', quando: ['@sempre'],
+    { k: 'emergencia', discussao: ['O plano de emergência está atualizado e visível?', 'Todos conhecem as rotas de fuga e o ponto de encontro?', 'Quando foi o último simulado e o que mudou depois dele?'], titulo: 'Falha na resposta a emergência (alarme, fuga, primeiros socorros)', quando: ['@sempre'],
       causas: 'Plano desatualizado, rotas obstruídas, pessoas sem treinamento, ausência de simulados.',
       consequencias: 'Agravamento de acidentes, lesões e atraso no atendimento.',
       medidas: ['Plano de emergência atualizado, rotas de fuga livres e alerta antecipado (6.3.5).', 'Simulados em intervalos regulares (7.4.5).', 'Primeiros socorros, lava-olhos e chuveiros (6.3.7 e 6.3.8).'],
@@ -24222,10 +24222,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
 
   // ---------- Análise de risco do armazém (NBR 17160, Seção 5 e Anexo A) ----------
-  function analiseRiscoLocal(local, produtos) {
-    const R = O.RISCO; const rq = requisitosLocal(local, produtos); const g = rq.gatilhos;
+  function analiseRiscoLocal(local, produtos, extra) {
+    const R = O.RISCO; const rq = requisitosLocal(local, produtos, extra); const g = rq.gatilhos;
     const an = local.analise || {}; const cenAn = an.cenarios || {}; const campos = an.campos || {};
-    const aud = auditoriaLocal(local, produtos); const ct = contencaoLocal(local, produtos);
+    const aud = auditoriaLocal(local, produtos); const ct = contencaoLocal(local, produtos, extra);
     const tem = (ks) => g.cats.some((c) => ks.includes(c.k) && c.qtd > 0);
     const nomes = (ks) => [...new Set([].concat(...g.cats.filter((c) => ks.includes(c.k) && c.qtd > 0).map((c) => c.itens)))];
     const prods = itensDoLocal(local, produtos, null).map((i) => (produtos || []).find((x) => x.id === i.pid)).filter(Boolean);
@@ -25061,11 +25061,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return {
       t: 'cover', titulo, sub,
       meta: [
-        ['Produto', nz(p.nome)],
-        ['Registro', nz(p.dec.numero, 'sem número de homologação')],
+        [p.rotulo || 'Produto', nz(p.nome)],
+      ].concat(p.pseudo ? [] : [['Registro', nz(p.dec.numero, 'sem número de homologação')]]).concat([
         ['Data', fmtData(new Date().toISOString())],
         [signer(p).funcao, signer(p).linha || 'não informado'],
-      ].concat(extra || []),
+      ].concat(extra || [])),
       org: c.organizacao,
     };
   }
@@ -25214,6 +25214,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       }
     }
 
+    cenariosDoProduto(p, produtos).forEach((b) => B.push(b));
     B.push({ t: 'h1', text: '9 Pareceres externos e gatilho do PGR' });
     B.push({ t: 'kv', rows: [
       ['Parecer arquivado', sn(p.par.tem)], ['Descrição / referência', nz(p.par.descricao)],
@@ -25491,10 +25492,66 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return B;
   }
 
+  // ---------------------------------------------------------------- Cenários de risco (treinamento, brigada, reuniões)
+  const TOM_RISCO = { 'Crítico': 'crit', 'Alto': 'warn', 'Médio': 'info', 'Baixo': 'ok' };
+  // local: cenários do local (ativos e adicionados); sem local: catálogo geral (padrão e biblioteca da organização)
+  // op: { soAltos, umaPorPagina (padrão sim), listaPresenca (padrão sim) }
+  function cenariosDoc(local, produtos, op) {
+    op = op || {}; const R = O.RISCO; const sg = signer(null);
+    let lista;
+    if (local) {
+      lista = E.analiseRiscoLocal(local, produtos).cenarios.slice().sort((x, y) => (y.risco.v || 0) - (x.risco.v || 0));
+      if (op.soAltos) lista = lista.filter((c) => c.risco.v >= 10);
+    } else {
+      const base = R.CENARIOS.map((c) => Object.assign({}, c, { risco: { v: 0, nome: 'Não avaliado' } }));
+      const lib = (O.Store.config().bibliotecaCenarios || []).map((m) => ({ titulo: m.titulo, causas: m.causas, consequencias: m.consequencias, medidas: String(m.medidas || '').split('\n').map((x) => x.trim()).filter(Boolean), discussao: [], proprio: true, origem: m.origem, risco: { v: 0, nome: 'Não avaliado' } }));
+      lista = base.concat(lib);
+    }
+    const pseudo = { nome: local ? local.nome : 'Catálogo geral', dec: { numero: '' }, rotulo: local ? 'Armazém' : 'Documento', pseudo: true };
+    const B = [capa('Cenários de risco', 'QUIM 360 | Cenários para treinamento, DDS e reuniões | ' + pseudo.nome, pseudo, [['Local', local ? local.nome + ' (' + local.tipo + ')' : 'Catálogo geral (cenários padrão e biblioteca da organização)'], ['Cenários', String(lista.length) + (op.soAltos ? ' (somente risco alto e crítico)' : '')]])];
+    B.push({ t: 'p', text: 'Este documento reúne os cenários de risco para treinamento da brigada, diálogo de segurança e discussão em reunião. Cada cenário traz como pode acontecer, o que pode acontecer, como prevenir e perguntas para a discussão, com espaço para anotações.' + (local ? '' : ' Sem local definido, os níveis de risco não são mostrados: eles dependem do que está armazenado e das avaliações de cada local.') });
+    if (local && lista.length) B.push({ t: 'table', head: ['Nº', 'Cenário', 'Severidade', 'Probabilidade', 'Risco'], widths: [6, 52, 14, 14, 14], rows: lista.map((c, i) => [String(i + 1), c.titulo, c.sev ? String(c.sev) : '—', c.prob ? String(c.prob) : '—', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado']) });
+    if (!lista.length) B.push({ t: 'callout', tone: 'info', title: 'Sem cenários', text: 'Nenhum cenário atende ao filtro escolhido.' });
+    lista.forEach((c, i) => {
+      if (op.umaPorPagina !== false) B.push({ t: 'pagebreak' });
+      B.push({ t: 'h1', text: (i + 1) + ' ' + c.titulo });
+      if (c.risco.v) B.push({ t: 'callout', tone: TOM_RISCO[c.risco.nome] || 'info', title: 'Risco: ' + c.risco.nome + ' (' + c.risco.v + ')', text: 'Severidade ' + c.sev + ' (' + R.SEV[c.sev - 1][1] + ') e probabilidade ' + c.prob + ' (' + R.PROB[c.prob - 1][1] + ').' });
+      if (c.proprio && (c.origem || c.ref)) B.push({ t: 'p', small: true, text: 'Origem: ' + nz(c.origem) + (c.ref ? ' | ' + c.ref : '') + (c.data ? ' | ' + fmtData(c.data) : '') });
+      B.push({ t: 'kv', rows: [['Como pode acontecer', nz(c.causas)], ['O que pode acontecer', nz(c.consequencias)]] });
+      B.push({ t: 'p', bold: true, text: 'Como prevenir' });
+      B.push({ t: 'list', items: (c.medidas || []).length ? c.medidas : ['Medidas não registradas.'] });
+      if ((c.discussao || []).length) { B.push({ t: 'p', bold: true, text: 'Para discutir' }); B.push({ t: 'list', ordered: true, items: c.discussao }); }
+      if (c.obs) B.push({ t: 'kv', rows: [['Medidas adicionais e observações', c.obs]] });
+      B.push({ t: 'table', head: ['Anotações e decisões da reunião ou do treinamento'], rows: [[' '], [' '], [' ']], tall: true });
+    });
+    if (op.listaPresenca !== false) {
+      B.push({ t: 'pagebreak' });
+      B.push({ t: 'h1', text: 'Lista de presença' });
+      B.push({ t: 'kv', rows: [['Atividade', ''], ['Data', ''], ['Instrutor ou facilitador', '']] });
+      B.push({ t: 'table', head: ['Nome', 'Função', 'Assinatura'], widths: [38, 28, 34], rows: Array.from({ length: 12 }, () => [' ', ' ', ' ']), tall: true });
+    }
+    B.push({ t: 'p', small: true, text: 'Cenários e medidas são pontos de partida, revistos pelo responsável técnico. Apoio ao treinamento: não substitui o plano de emergência do local.' });
+    B.push({ t: 'sign', rows: [[sg.nome, sg.funcao]] });
+    return B;
+  }
+
+  // seção do relatório de homologação: cenários do local de armazenamento do produto
+  function cenariosDoProduto(p, produtos) {
+    const lc = localDe(p); if (!lc || p.armazenamento === 'granel') return [];
+    const ar = E.analiseRiscoLocal(lc, produtos, p); const R = O.RISCO;
+    const B = [{ t: 'h2', text: 'Cenários de risco do local de armazenamento' }];
+    B.push({ t: 'p', small: true, text: 'Cenários da análise de risco de ' + lc.nome + ', considerando este produto. A análise completa está no documento "Análise de risco do armazém" do local; os níveis dependem das avaliações de severidade e probabilidade ali registradas.' });
+    B.push({ t: 'table', head: ['Cenário', 'Severidade', 'Probabilidade', 'Risco'], widths: [56, 14, 15, 15], rows: ar.cenarios.map((c) => [c.titulo + (c.proprio ? ' (adicionado)' : ''), c.sev ? c.sev + ' ' + R.SEV[c.sev - 1][1] : '—', c.prob ? c.prob + ' ' + R.PROB[c.prob - 1][1] : '—', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado']) });
+    const graves = ar.cenarios.filter((c) => c.risco.v >= 10);
+    if (graves.length) { B.push({ t: 'callout', tone: 'crit', title: graves.length + ' cenário(s) de risco alto ou crítico', text: graves.map((c) => c.titulo).join('; ') + '. Confirme as medidas de controle antes do primeiro recebimento.' }); graves.forEach((c) => B.push({ t: 'kv', rows: [[c.titulo, c.medidas.join('\n')]] })); }
+    else if (ar.resumo.semAvaliar) B.push({ t: 'p', small: true, text: ar.resumo.semAvaliar + ' cenário(s) ainda sem avaliação de severidade e probabilidade.' });
+    return B;
+  }
+
   // ---------------------------------------------------------------- Análise de risco do armazém (NBR 17160, Seção 5 e Anexo A)
   function analiseRiscoLocal(local, produtos) {
     const a = E.analiseRiscoLocal(local, produtos); const sg = signer(null);
-    const pseudo = { nome: local.nome, dec: { numero: '' } };
+    const pseudo = { nome: local.nome, dec: { numero: '' }, rotulo: 'Armazém', pseudo: true };
     const B = [capa('Análise de risco do armazém', 'QUIM 360 | Análise de risco | ABNT NBR 17160:2024, Seção 5 | ' + local.nome, pseudo, [['Local', local.nome + ' (' + local.tipo + ')'], ['Data da análise', a.data ? fmtData(a.data) : fmtData(new Date().toISOString())], ['Próxima revisão', a.revisao ? fmtData(a.revisao) : 'não definida']])];
     B.push({ t: 'callout', tone: a.resumo.crit || a.resumo.alto ? 'crit' : a.resumo.semAvaliar ? 'warn' : 'ok', title: 'Resumo dos cenários', text: a.cenarios.length + ' cenários: ' + a.resumo.crit + ' crítico(s), ' + a.resumo.alto + ' alto(s), ' + a.resumo.medio + ' médio(s), ' + a.resumo.baixo + ' baixo(s), ' + a.resumo.semAvaliar + ' ainda sem avaliação de severidade e probabilidade.' });
     B.push({ t: 'h1', text: '1 Identificação do armazém' });
@@ -25526,7 +25583,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   // ---------------------------------------------------------------- Checklist do local (NBR 17160)
   function checklistLocal(local, produtos) {
     const RQ = O.NBR17160REQ; const r = E.requisitosLocal(local, produtos);
-    const pseudo = { nome: local.nome, dec: { numero: '' } };
+    const pseudo = { nome: local.nome, dec: { numero: '' }, rotulo: 'Armazém', pseudo: true };
     const RESP = { c: 'Conforme', nc: 'NÃO CONFORME', na: 'Não se aplica', '': 'Sem resposta' };
     const B = [capa('Checklist de requisitos da NBR 17160', 'QUIM 360 | Armazenamento seguro | ' + local.nome, pseudo, [['Local', local.nome + ' (' + local.tipo + ')' + (local.aoArLivre ? ', ao ar livre' : '') + (local.armarioSeg ? ', armário de segurança' : '')], ['Requisitos aplicáveis', String(r.cont.total)]])];
     B.push({ t: 'callout', tone: r.cont.nc ? 'crit' : r.cont.aberto ? 'warn' : 'ok', title: r.cont.nc ? r.cont.nc + ' requisito(s) não conforme(s)' : r.cont.aberto ? 'Checklist incompleto' : 'Sem não conformidades', text: r.cont.c + ' conformes, ' + r.cont.nc + ' não conformes, ' + r.cont.na + ' não se aplicam, ' + r.cont.aberto + ' sem resposta.' });
@@ -25551,7 +25608,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   const ST_TXT = { dentro: 'Dentro do limite', armazem: 'Exige armazém (6.3.1)', analise: 'Definir pela análise de risco', secoes: 'Seções adicionais' };
   function inventarioLocal(local, produtos) {
     const g = E.gatilhosLocal(local, produtos);
-    const pseudo = { nome: local.nome, dec: { numero: '' } };
+    const pseudo = { nome: local.nome, dec: { numero: '' }, rotulo: 'Armazém', pseudo: true };
     const B = [capa('Inventário de produtos perigosos', 'QUIM 360 | Inventário e quantidades-limite | ABNT NBR 17160:2024', pseudo, [['Local', local.nome + ' (' + local.tipo + ')'], ['Itens', String(g.itens.length)], ['Massa líquida total', Math.round(g.total).toLocaleString('pt-BR') + ' kg']])];
     B.push({ t: 'h1', text: '1 Inventário (6.1.5)' });
     B.push({ t: 'table', head: ['Produto', 'Classificação', 'Classe de armazenamento', 'Quantidade', 'Setor'], widths: [28, 22, 18, 14, 18], rows: g.itens.length ? g.itens.map((i) => [i.nome, (i.h || []).join(', ') || 'sem frases H informadas', i.arm || 'não definida' + (i.aprox ? ' (aprox.)' : ''), i.qtd != null ? String(i.qtd).replace('.', ',') + ' kg' : 'não informada', local.nome]) : [['Sem itens', '', '', '', '']] });
@@ -25693,7 +25750,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});
 </script>
 <script>/* Renderizadores de blocos: HTML (pré-visualização e PDF por impressão) e Word (.docx). */
@@ -27132,7 +27189,39 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.analise.data', { type: 'date', label: 'Data da análise', onInput: salva }), U.input(holder, 'l.analise.revisao', { type: 'date', label: 'Próxima revisão', onInput: salva })));
     card.appendChild(U.input(holder, 'l.analise.conclusao', { rows: 3, label: 'Conclusão da análise', onInput: salva }));
     card.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, V.docBotoes({ nome: l.nome, id: 'risco' }, { id: 'analise-risco', nome: 'Análise de risco do armazém', fn: () => D.analiseRiscoLocal(l, S.produtos()) }, true)));
+    card.appendChild(h('p', { class: 'small', style: 'margin:10px 0 4px' }, 'Cenários para treinamento da brigada, diálogo de segurança e reunião (uma ficha por cenário, com perguntas e lista de presença):'));
+    card.appendChild(V.cenariosBotoes(l, {}));
     return card;
+  };
+
+  // ------------------------------------------------------------ cenários de risco para treinamento e reuniões
+  V.cenariosBotoes = (local, op) => {
+    const pseudo = { nome: local ? local.nome : 'catalogo-geral', id: 'cen' };
+    const doc = { id: 'cenarios', nome: 'Cenários de risco', fn: () => D.cenariosDoc(local, S.produtos(), op) };
+    return h('div', { class: 'row' }, V.docBotoes(pseudo, doc, true), h('button', { class: 'btn sm ghost', onclick: () => U.copiar(R.text(doc.fn())) }, 'Copiar texto (e-mail)'));
+  };
+  V.cenarios = (root) => {
+    root.appendChild(head('Cenários de risco', 'Para treinamento da brigada, diálogo de segurança, reuniões e envio por e-mail'));
+    const st = { local: '', soAltos: false, umaPorPagina: true };
+    const area = h('div');
+    const locais = S.locais();
+    const sel = h('select', { 'aria-label': 'Local' }, h('option', { value: '' }, 'Catálogo geral (cenários padrão e biblioteca)'), locais.map((l) => h('option', { value: l.id }, l.nome)));
+    const ckA = h('input', { type: 'checkbox', id: 'cn-a' }), ckP = h('input', { type: 'checkbox', id: 'cn-p', checked: true });
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'O que imprimir ou enviar'),
+      h('p', { class: 'small' }, 'Escolha um local para levar os cenários dele, com os níveis de risco avaliados, ou o catálogo geral. O documento tem uma ficha por cenário, perguntas para discussão, espaço para anotações e lista de presença. Baixe em Word ou PDF, imprima ou copie o texto para colar em um e-mail.'),
+      h('div', { class: 'row' }, h('div', { style: 'flex:1;min-width:240px' }, sel), h('label', { for: 'cn-a', class: 'row small' }, ckA, 'Somente risco alto e crítico'), h('label', { for: 'cn-p', class: 'row small' }, ckP, 'Um cenário por página')),
+      h('div', { id: 'cn-btn', style: 'margin-top:10px' })));
+    root.appendChild(area);
+    const draw = () => {
+      const local = st.local ? S.local(st.local) : null;
+      const op = { soAltos: st.soAltos, umaPorPagina: st.umaPorPagina };
+      const bt = root.querySelector('#cn-btn'); bt.innerHTML = ''; bt.appendChild(V.cenariosBotoes(local, op));
+      area.innerHTML = '';
+      const bl = D.cenariosDoc(local, S.produtos(), op);
+      area.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Pré-visualização'), h('div', { class: 'paper', html: R.html(bl) })));
+    };
+    sel.addEventListener('change', () => { st.local = sel.value; draw(); }); ckA.addEventListener('change', () => { st.soAltos = ckA.checked; draw(); }); ckP.addEventListener('change', () => { st.umaPorPagina = ckP.checked; draw(); });
+    draw();
   };
 
   // ------------------------------------------------------------ catálogo de documentos
@@ -27749,7 +27838,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   const U = O.UI, h = U.h;
   const NAV = [
     ['#/', 'Início', 'home'], ['#/painel', 'Painel', 'grid'], ['#/produtos', 'Produtos', 'flask'], ['#/nova', 'Nova homologação', 'plus'], ['#/fds', 'Analisador de FDS', 'file'], '-',
-    ['#/locais', 'Locais de armazenamento', 'pin'], ['#/compat', 'Quadro de compatibilidade', 'grid'], ['#/matriz', 'Matriz de segregação', 'grid'], ['#/legal', 'Base técnico-legal', 'scale'], ['#/config', 'Configurações', 'gear'],
+    ['#/locais', 'Locais de armazenamento', 'pin'], ['#/compat', 'Quadro de compatibilidade', 'grid'], ['#/cenarios', 'Cenários de risco', 'scale'], ['#/matriz', 'Matriz de segregação', 'grid'], ['#/legal', 'Base técnico-legal', 'scale'], ['#/config', 'Configurações', 'gear'],
   ];
   const root = document.getElementById('app');
   let main, side;
@@ -27786,6 +27875,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         case 'fds': V.fds(main); break;
         case 'locais': V.locais(main); break;
         case 'compat': V.quadro(main); break;
+        case 'cenarios': V.cenarios(main); break;
         case 'matriz': V.matriz(main); break;
         case 'legal': V.legal(main); break;
         case 'config': V.config(main); break;
