@@ -423,16 +423,20 @@
     const chaveCampo = { '5.1.3': 'regulamentacaoEstadual' };
     const aspectos = R.ASPECTOS.map(([id, texto]) => ({ id, texto, auto: auto[id] || '', valor: campos[chaveCampo[id]] || '', campo: chaveCampo[id] || '' }));
     const consid = R.CONSIDERACOES.map(([id, texto, campo]) => ({ id, texto, auto: campo === 'auto' ? (auto[id] || '') : '', campo: campo === 'auto' ? '' : campo, valor: campo === 'auto' ? '' : (campos[campo] || '') }));
-    const cenarios = R.CENARIOS.filter((c) => c.quando.some((q) => q === '@sempre' || (q === '@pares' ? aud.pares.length > 0 : tem([q])))).map((c) => {
+    const linhas = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    const padrao = R.CENARIOS.filter((c) => c.quando.some((q) => q === '@sempre' || (q === '@pares' ? aud.pares.length > 0 : tem([q])))).map((c) => {
       const rel = rq.itens.filter((i) => c.grupos.includes(i.grupo) || c.ids.includes(i.id));
       const cont = { total: rel.length, c: 0, nc: 0, aberto: 0 };
       rel.forEach((i) => { if (i.resp === 'c') cont.c++; else if (i.resp === 'nc') cont.nc++; else if (i.resp !== 'na') cont.aberto++; });
       const a = cenAn[c.k] || {};
-      return Object.assign({}, c, { sev: a.sev || '', prob: a.prob || '', obs: a.obs || '', checklist: cont, risco: R.nivel(a.sev, a.prob) });
+      return Object.assign({}, c, { padrao: true, causas: a.causas || c.causas, consequencias: a.consequencias || c.consequencias, medidas: a.medidasTxt ? linhas(a.medidasTxt) : c.medidas, editado: !!(a.causas || a.consequencias || a.medidasTxt), off: !!a.off, offJust: a.offJust || '', sev: a.sev || '', prob: a.prob || '', obs: a.obs || '', checklist: cont, sugProb: R.sugestaoProb(cont), risco: R.nivel(a.sev, a.prob) });
     });
+    const proprios = (an.proprios || []).map((x) => Object.assign({}, x, { k: 'p:' + x.id, proprio: true, medidas: linhas(x.medidas), checklist: { total: 0, c: 0, nc: 0, aberto: 0 }, sugProb: null, risco: R.nivel(x.sev, x.prob) }));
+    const desativados = padrao.filter((c) => c.off);
+    const cenarios = padrao.filter((c) => !c.off).concat(proprios);
     const resumo = { crit: 0, alto: 0, medio: 0, baixo: 0, semAvaliar: 0 };
     cenarios.forEach((c) => { const n = c.risco.nome; if (n === 'Crítico') resumo.crit++; else if (n === 'Alto') resumo.alto++; else if (n === 'Médio') resumo.medio++; else if (n === 'Baixo') resumo.baixo++; else resumo.semAvaliar++; });
-    return { aspectos, consid, anexoA: R.ANEXO_A, cenarios, resumo, campos, ameacas: campos.ameacas || '', conclusao: an.conclusao || '', data: an.data || '', revisao: an.revisao || '', rq, gatilhos: g };
+    return { aspectos, consid, anexoA: R.ANEXO_A, cenarios, desativados, resumo, campos, ameacas: campos.ameacas || '', conclusao: an.conclusao || '', data: an.data || '', revisao: an.revisao || '', rq, gatilhos: g };
   }
 
   // ---------- Compatibilidade entre dois produtos (aplicação prática da matriz) ----------

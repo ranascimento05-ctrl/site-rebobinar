@@ -441,6 +441,22 @@
 
 
 
+
+  // matriz 5x5, escalas e situações de enquadramento (usadas na análise de risco)
+  function criterioRisco() {
+    const R = O.RISCO; const B = [];
+    B.push({ t: 'p', small: true, text: 'Risco = severidade x probabilidade. Crítico: 15 a 25 (vermelho). Alto: 10 a 14 (amarelo). Médio: 5 a 9 (cinza). Baixo: 1 a 4 (verde). Linhas: severidade de 1 a 5. Colunas: probabilidade de 1 a 5. O critério pode ser substituído pelo da organização.' });
+    const tom = (v) => (v >= 15 ? 'crit' : v >= 10 ? 'warn' : v >= 5 ? 'info' : 'ok');
+    B.push({ t: 'matrix', labels: ['1', '2', '3', '4', '5'], rows: [1, 2, 3, 4, 5].map((s) => [1, 2, 3, 4, 5].map((p) => ({ txt: String(s * p), tone: tom(s * p) }))) });
+    B.push({ t: 'h2', text: 'Escala de severidade' });
+    B.push({ t: 'table', head: ['Nível', 'Pessoas', 'Meio ambiente', 'Patrimônio e operação'], widths: [14, 34, 30, 22], rows: R.SEV_DESC.map((x) => [x.n + ' ' + x.nome, x.pessoas, x.ambiente, x.patrimonio]) });
+    B.push({ t: 'h2', text: 'Escala de probabilidade' });
+    B.push({ t: 'table', head: ['Nível', 'Descrição'], widths: [18, 82], rows: R.PROB_DESC.map((x) => [x.n + ' ' + x.nome, x.desc]) });
+    B.push({ t: 'h2', text: 'Situações típicas para enquadramento' });
+    B.push({ t: 'table', head: ['Situação', 'Sugestão'], widths: [75, 25], rows: R.EXEMPLOS.map((x) => [x.situacao, x.sev ? 'Severidade ' + x.sev + ' (' + R.SEV_DESC[x.sev - 1].nome + ')' : 'Probabilidade ' + x.prob + ' (' + R.PROB_DESC[x.prob - 1].nome + ')']) });
+    return B;
+  }
+
   // ---------------------------------------------------------------- Análise de risco do armazém (NBR 17160, Seção 5 e Anexo A)
   function analiseRiscoLocal(local, produtos) {
     const a = E.analiseRiscoLocal(local, produtos); const sg = signer(null);
@@ -460,12 +476,15 @@
     B.push({ t: 'p', small: true, text: 'Severidade e probabilidade de 1 a 5; risco = severidade x probabilidade (crítico 15 ou mais, alto 10 a 14, médio 5 a 9, baixo até 4). O critério é da organização e pode ser substituído pelo seu. Cenários e medidas são pontos de partida a revisar pelo responsável técnico.' });
     B.push({ t: 'table', head: ['Cenário', 'Severidade', 'Probabilidade', 'Risco', 'Checklist'], widths: [44, 12, 14, 14, 16], rows: a.cenarios.map((c) => [c.titulo, c.sev ? c.sev + ' ' + O.RISCO.SEV[c.sev - 1][1] : '—', c.prob ? c.prob + ' ' + O.RISCO.PROB[c.prob - 1][1] : '—', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado', c.checklist.total ? c.checklist.c + ' conf., ' + c.checklist.nc + ' não conf., ' + c.checklist.aberto + ' sem resposta' : 'sem itens']) });
     a.cenarios.forEach((c, i) => {
-      B.push({ t: 'h2', text: '5.' + (i + 1) + ' ' + c.titulo });
-      B.push({ t: 'kv', rows: [['Causas', c.causas], ['Consequências', c.consequencias], ['Medidas de controle', c.medidas.join('\n')], ['Severidade', c.sev ? c.sev + ' ' + O.RISCO.SEV[c.sev - 1][1] : 'não avaliada'], ['Probabilidade', c.prob ? c.prob + ' ' + O.RISCO.PROB[c.prob - 1][1] : 'não avaliada'], ['Nível de risco', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'não avaliado'], ['Medidas adicionais e observações', nz(c.obs)]] });
+      B.push({ t: 'h2', text: '5.' + (i + 1) + ' ' + c.titulo + (c.proprio ? ' (cenário adicionado)' : '') });
+      B.push({ t: 'kv', rows: (c.proprio ? [['Origem', nz(c.origem) + (c.ref ? ' | ' + c.ref : '') + (c.data ? ' | ' + fmtData(c.data) : '')]] : []).concat([['Causas', c.causas], ['Consequências', c.consequencias], ['Medidas de controle', c.medidas.join('\n')], ['Severidade', c.sev ? c.sev + ' ' + O.RISCO.SEV[c.sev - 1][1] : 'não avaliada'], ['Probabilidade', c.prob ? c.prob + ' ' + O.RISCO.PROB[c.prob - 1][1] : 'não avaliada'], ['Nível de risco', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'não avaliado'], ['Medidas adicionais e observações', nz(c.obs)]]) });
     });
+    if (a.desativados.length) { B.push({ t: 'h2', text: 'Cenários padrão desativados neste local' }); B.push({ t: 'table', head: ['Cenário', 'Justificativa'], widths: [40, 60], rows: a.desativados.map((c) => [c.titulo, nz(c.offJust)]) }); }
     B.push({ t: 'h1', text: '6 Conclusão' });
     B.push({ t: 'p', text: a.conclusao || 'Conclusão da análise não registrada.' });
     B.push({ t: 'p', small: true, text: 'A análise de risco deve ser revista quando houver mudança de produtos, de quantidades, do layout ou após incidentes. Apoio à decisão: a responsabilidade técnica é do profissional que assina.' });
+    B.push({ t: 'h1', text: '7 Critério de risco: matriz 5x5 e situações de enquadramento' });
+    criterioRisco().forEach((b) => B.push(b));
     B.push({ t: 'sign', rows: [[sg.nome, sg.funcao], ['Gestor do local', '']] });
     return B;
   }
@@ -640,5 +659,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

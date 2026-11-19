@@ -13,6 +13,7 @@
     cat2Reprova: true,
     sharepointBase: '',
     logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false,
+    bibliotecaCenarios: [],
   };
 
   function blank() { return { v: 1, seq: 0, produtos: [], locais: [], config: { ...DEFAULT_CFG } }; }
@@ -25,7 +26,8 @@
     } catch (e) { mem = blank(); }
     mem.config = { ...DEFAULT_CFG, ...(mem.config || {}) };
     if (/CREA-PE\s*1816474835/.test(mem.config.registro || '')) mem.config.registro = '';
-    mem.produtos = mem.produtos || []; mem.locais = mem.locais || [];
+    mem.produtos = (mem.produtos || []).filter((x) => x && x.id && x.ghs); // remove registros fantasmas criados por campos de formulário que não são produtos
+    mem.locais = mem.locais || [];
     return mem;
   }
   function save() {
@@ -41,6 +43,7 @@
     produtos() { return load().produtos; },
     produto(id) { return load().produtos.find((p) => p.id === id); },
     salvarProduto(p) {
+      if (!p || !p.id || !p.ghs) return; // só grava produtos de verdade (campos de Locais e Configurações usam objetos auxiliares)
       const d = load();
       p.atualizadoEm = new Date().toISOString();
       const i = d.produtos.findIndex((x) => x.id === p.id);

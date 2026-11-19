@@ -108,5 +108,46 @@
     return { v, nome: 'Baixo', tom: 'ok' };
   }
 
-  O.RISCO = { ASPECTOS, CONSIDERACOES, ANEXO_A, CENARIOS, SEV, PROB, nivel };
+
+  // Escalas descritivas da matriz 5x5: ajudam a enquadrar severidade e probabilidade. Pontos de partida: a organização pode adotar critérios próprios.
+  const SEV_DESC = [
+    { n: 1, nome: 'Insignificante', pessoas: 'Sem lesão ou lesão tratada com primeiros socorros no local, sem afastamento.', ambiente: 'Sem liberação, ou liberação mínima retida na embalagem ou na contenção.', patrimonio: 'Dano desprezível; sem interrupção da operação.' },
+    { n: 2, nome: 'Leve', pessoas: 'Lesão ou exposição com atendimento ambulatorial, sem afastamento.', ambiente: 'Vazamento pequeno contido na bacia ou no dique do armazém.', patrimonio: 'Dano pequeno e reparável; interrupção curta.' },
+    { n: 3, nome: 'Moderada', pessoas: 'Lesão com afastamento ou exposição que exige acompanhamento médico.', ambiente: 'Vazamento que ultrapassa a contenção, mas é retido dentro da área da empresa.', patrimonio: 'Dano relevante; interrupção parcial da operação.' },
+    { n: 4, nome: 'Grave', pessoas: 'Lesão grave ou incapacitante, doença ocupacional, ou várias pessoas atingidas.', ambiente: 'Liberação para fora da área, atingindo solo, drenagem ou corpo d\'água; comunicação a órgãos ambientais.', patrimonio: 'Dano grande; paralisação prolongada do armazém.' },
+    { n: 5, nome: 'Catastrófica', pessoas: 'Morte ou múltiplas vítimas graves; efeito sobre a vizinhança.', ambiente: 'Contaminação extensa ou irreversível, ou que afete a população.', patrimonio: 'Perda total do armazém ou interdição.' },
+  ];
+  const PROB_DESC = [
+    { n: 1, nome: 'Improvável', desc: 'Não há registro no setor nem em armazéns semelhantes; exige falha simultânea de várias barreiras. Controles do cenário todos conformes e verificados.' },
+    { n: 2, nome: 'Remota', desc: 'Já ocorreu em armazéns semelhantes, mas não aqui; exige falha de pelo menos duas barreiras. Controles em sua maioria conformes.' },
+    { n: 3, nome: 'Possível', desc: 'Pode ocorrer durante a vida útil do armazém, ou já houve quase-acidente aqui. Controles parcialmente implantados ou ainda não verificados.' },
+    { n: 4, nome: 'Provável', desc: 'Ocorre de forma ocasional ou há falhas conhecidas nos controles (não conformidade aberta no checklist ou pendência de inspeção).' },
+    { n: 5, nome: 'Frequente', desc: 'Ocorre rotineiramente ou o controle não existe ou é ignorado na operação.' },
+  ];
+  // situações típicas para apoiar o enquadramento (sugestão de severidade e de probabilidade)
+  const EXEMPLOS = [
+    { situacao: 'Queda de embalagem sem ruptura, sem vazamento', sev: 1 },
+    { situacao: 'Derramamento de uma embalagem pequena de corrosivo ou solvente retido na bacia', sev: 2 },
+    { situacao: 'Vazamento de tambor ou IBC de líquido inflamável retido no dique, sem ignição', sev: 3 },
+    { situacao: 'Exposição de trabalhador a vapor irritante ou corrosivo com atendimento médico', sev: 3 },
+    { situacao: 'Vazamento de produto tóxico ou corrosivo que ultrapassa a contenção e chega à drenagem', sev: 4 },
+    { situacao: 'Intoxicação aguda com internação, ou mistura de incompatíveis liberando gás tóxico', sev: 4 },
+    { situacao: 'Incêndio de líquidos inflamáveis com propagação para outros setores', sev: 5 },
+    { situacao: 'Explosão de atmosfera inflamável ou reação violenta entre incompatíveis com vítimas', sev: 5 },
+    { situacao: 'Controles do cenário conformes e verificados, sem histórico de ocorrência', prob: 1 },
+    { situacao: 'Ocorreu em armazém semelhante, mas nunca no local', prob: 2 },
+    { situacao: 'Houve quase-acidente ou há controle ainda não verificado', prob: 3 },
+    { situacao: 'Há não conformidade aberta ou inspeção vencida relacionada ao cenário', prob: 4 },
+    { situacao: 'Controle inexistente ou desrespeitado na rotina', prob: 5 },
+  ];
+  const ORIGENS = ['Inspeção', 'Incidente ou quase-acidente', 'Mudança de produto', 'Mudança de layout ou processo', 'Auditoria', 'Revisão da análise', 'Outra'];
+  // sugestão de probabilidade a partir do checklist do cenário (apenas orientação)
+  function sugestaoProb(cont) {
+    if (!cont || !cont.total) return null;
+    if (cont.nc) return { n: 4, txt: 'há ' + cont.nc + ' não conformidade(s) relacionada(s) no checklist' };
+    if (cont.aberto) return { n: 3, txt: cont.aberto + ' item(ns) relacionado(s) ainda sem resposta no checklist' };
+    return { n: 2, txt: 'todos os itens relacionados estão conformes no checklist' };
+  }
+
+  O.RISCO = { SEV_DESC, PROB_DESC, EXEMPLOS, ORIGENS, sugestaoProb, ASPECTOS, CONSIDERACOES, ANEXO_A, CENARIOS, SEV, PROB, nivel };
 })(window.O360 = window.O360 || {});

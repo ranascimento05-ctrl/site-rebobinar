@@ -22,7 +22,7 @@ Abrir `quim360/index.html` por um servidor estático (ex.: `python3 -m http.serv
 
 - **Alternativas e orientações de substituição**: quando o gatilho de CMR ou PFC é acionado, o app mostra e leva ao relatório orientações para buscar alternativa ao produto ou à composição (por componente identificado e por tipo de perigo), os passos para conduzir a substituição e um campo para registrar as alternativas avaliadas e o resultado. São pontos de partida, não especificação.
 
-- **Análise de risco do armazém (NBR 17160, Seção 5 e Anexo A)**: por local, preenche o que o app sabe (produtos, quantidades, segregação, água de extinção, checklist), registra os aspectos 5.1 e considerações 5.2, avalia cenários por severidade x probabilidade e gera o documento em Word e PDF.
+- **Análise de risco do armazém (NBR 17160, Seção 5 e Anexo A)**: por local, preenche o que o app sabe (produtos, quantidades, segregação, água de extinção, checklist), registra os aspectos 5.1 e considerações 5.2, avalia cenários por severidade x probabilidade (matriz 5x5 com escalas e situações de enquadramento) e gera o documento em Word e PDF. Os cenários padrão podem ser editados ou desativados por local (com justificativa), e é possível adicionar cenários próprios (origem inspeção, incidente, mudança etc., com severidade e probabilidade obrigatórias) e guardar modelos numa biblioteca da organização.
 - **Lista de conferência** (`LISTA-DE-CONFERENCIA.docx`): tabelas e requisitos transcritos da norma e base técnica própria do app, com coluna para o conferente marcar.
 
 ## Base técnico-legal

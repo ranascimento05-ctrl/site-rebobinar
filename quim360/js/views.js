@@ -101,7 +101,7 @@
       U.select({ n: novo }, 'n.resultado', [['conforme', 'Conforme'], ['pendencias', 'Com pendências']], { label: 'Resultado', empty: false }), U.input({ n: novo }, 'n.obs', { rows: 2, label: 'Observações e pendências' }),
       h('button', { class: 'btn', onclick: () => { if (!novo.data || !(novo.resp || '').trim()) { U.toast('Informe a data e o responsável.'); return; } l.inspecoes = l.inspecoes || []; l.inspecoes.push({ data: novo.data, resp: novo.resp.trim(), resultado: novo.resultado || 'conforme', obs: novo.obs || '', itens: novo.lista || [] }); S.salvarLocal(l); O.route(); } }, 'Registrar'));
     card.appendChild(form);
-    if (r.inspecoes.length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Data', 'Responsável', 'Resultado', 'Itens', 'Observações', ''].map((x) => h('th', {}, x)))), h('tbody', {}, r.inspecoes.map((x, i) => h('tr', {}, h('td', {}, D.fmtData(x.data)), h('td', {}, x.resp), h('td', {}, x.resultado === 'conforme' ? 'Conforme' : 'Com pendências'), h('td', {}, String((x.itens || []).length) + ' de ' + RQ.INSPECAO.length), h('td', {}, x.obs || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.inspecoes = l.inspecoes.filter((y) => y !== x); S.salvarLocal(l); O.route(); } }, 'Remover'))))))));
+    if (r.inspecoes.length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Data', 'Responsável', 'Resultado', 'Itens', 'Observações', ''].map((x) => h('th', {}, x)))), h('tbody', {}, r.inspecoes.map((x, i) => h('tr', {}, h('td', {}, D.fmtData(x.data)), h('td', {}, x.resp), h('td', {}, x.resultado === 'conforme' ? 'Conforme' : 'Com pendências'), h('td', {}, String((x.itens || []).length) + ' de ' + RQ.INSPECAO.length), h('td', {}, x.obs || '—'), h('td', {}, x.resultado !== 'conforme' ? h('button', { class: 'btn sm sec', onclick: () => { V._rascunho[l.id] = { titulo: 'Pendência de inspeção: ' + String(x.obs || 'sem descrição').slice(0, 70), origem: 'Inspeção', ref: 'Inspeção de ' + D.fmtData(x.data) + ', ' + x.resp, causas: x.obs || '' }; U.toast('Cenário iniciado: informe severidade e probabilidade em Análise de risco.'); O.route(); } }, 'Criar cenário') : null, h('button', { class: 'btn sm ghost', onclick: () => { l.inspecoes = l.inspecoes.filter((y) => y !== x); S.salvarLocal(l); O.route(); } }, 'Remover'))))))));
     return card;
   };
 
@@ -120,14 +120,32 @@
   };
 
   // ------------------------------------------------------------ análise de risco do armazém (NBR 17160, Seção 5)
+  // critério de risco: matriz 5x5, escalas e situações de enquadramento
+  V.criterioView = () => {
+    const RK = O.RISCO;
+    const cor = (n) => (n >= 15 ? '#dc2626' : n >= 10 ? '#f59e0b' : n >= 5 ? '#64748b' : '#16a34a');
+    const grade = h('table', { class: 't', style: 'text-align:center;width:auto' }, h('thead', {}, h('tr', {}, h('th', {}, 'Sev. \\ Prob.'), [1, 2, 3, 4, 5].map((p) => h('th', {}, p + ' ' + RK.PROB_DESC[p - 1].nome)))),
+      h('tbody', {}, [5, 4, 3, 2, 1].map((s) => h('tr', {}, h('th', {}, s + ' ' + RK.SEV_DESC[s - 1].nome), [1, 2, 3, 4, 5].map((p) => h('td', { style: 'background:' + cor(s * p) + ';color:#fff;font-weight:700' }, String(s * p)))))));
+    return h('div', {},
+      h('p', { class: 'small' }, 'Risco = severidade x probabilidade. Crítico: 15 a 25 (vermelho). Alto: 10 a 14 (amarelo). Médio: 5 a 9 (cinza). Baixo: 1 a 4 (verde). O critério é ponto de partida: use o da sua organização se for diferente.'),
+      h('div', { class: 'scroll' }, grade),
+      h('h4', { style: 'margin-top:10px' }, 'Escala de severidade'),
+      h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Nível', 'Pessoas', 'Meio ambiente', 'Patrimônio e operação'].map((x) => h('th', {}, x)))), h('tbody', {}, RK.SEV_DESC.map((x) => h('tr', {}, h('td', {}, h('b', {}, x.n + ' ' + x.nome)), h('td', {}, x.pessoas), h('td', {}, x.ambiente), h('td', {}, x.patrimonio)))))),
+      h('h4', { style: 'margin-top:10px' }, 'Escala de probabilidade'),
+      h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Nível', 'Descrição'].map((x) => h('th', {}, x)))), h('tbody', {}, RK.PROB_DESC.map((x) => h('tr', {}, h('td', {}, h('b', {}, x.n + ' ' + x.nome)), h('td', {}, x.desc)))))),
+      h('h4', { style: 'margin-top:10px' }, 'Situações típicas para enquadramento'),
+      h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Situação', 'Sugestão'].map((x) => h('th', {}, x)))), h('tbody', {}, RK.EXEMPLOS.map((x) => h('tr', {}, h('td', {}, x.situacao), h('td', {}, x.sev ? 'Severidade ' + x.sev + ' (' + RK.SEV_DESC[x.sev - 1].nome + ')' : 'Probabilidade ' + x.prob + ' (' + RK.PROB_DESC[x.prob - 1].nome + ')')))))));
+  };
+
+  V._rascunho = V._rascunho || {};
   V.riscoCard = (l) => {
     const RK = O.RISCO;
-    l.analise = l.analise || { campos: {}, cenarios: {}, conclusao: '', data: '', revisao: '' };
-    l.analise.campos = l.analise.campos || {}; l.analise.cenarios = l.analise.cenarios || {};
+    l.analise = l.analise || { campos: {}, cenarios: {}, proprios: [], conclusao: '', data: '', revisao: '' };
+    l.analise.campos = l.analise.campos || {}; l.analise.cenarios = l.analise.cenarios || {}; l.analise.proprios = l.analise.proprios || [];
     const holder = { l }; const salva = () => S.salvarLocal(l);
     const a = E.analiseRiscoLocal(l, S.produtos());
     const card = h('div', { class: 'card' }, h('h3', {}, 'Análise de risco do armazém (NBR 17160, Seção 5) ', U.disc('PSM')),
-      h('p', { class: 'small' }, 'A norma pede análise de risco do armazém. O app preenche o que já sabe (produtos, quantidades, segregação, água de extinção, checklist) e você completa o restante e avalia cada cenário. Cenários e medidas são pontos de partida a revisar.'));
+      h('p', { class: 'small' }, 'A norma pede análise de risco do armazém. O app preenche o que já sabe (produtos, quantidades, segregação, água de extinção, checklist) e você completa o restante e avalia cada cenário. Os cenários padrão podem ser editados ou desativados para este local, e você pode adicionar cenários próprios conforme inspeções, incidentes e mudanças. Cenários e medidas são pontos de partida a revisar.'));
     const det = (titulo, corpo, aberto) => h('details', aberto ? { open: true } : {}, h('summary', { style: 'cursor:pointer;font-weight:600;padding:6px 0' }, titulo), corpo);
     // aspectos 5.1 e considerações 5.2
     const lista = h('div');
@@ -135,27 +153,71 @@
       lista.appendChild(h('div', { style: 'padding:6px 0;border-top:1px solid #26324d' }, h('b', { class: 'sky' }, x.id + ' '), x.texto, x.auto ? h('p', { class: 'small', style: 'margin:4px 0' }, 'App: ' + x.auto) : null, x.campo ? U.input(holder, 'l.analise.campos.' + x.campo, { rows: 2, label: 'Registro do analista', onInput: salva }) : null));
     });
     card.appendChild(det('Aspectos (5.1) e considerações (5.2)', lista));
-    // Anexo A
-    const an = h('div', {}, h('ul', { style: 'margin:0 0 6px 18px' }, a.anexoA.map((x) => h('li', {}, h('b', {}, x[0] + ' '), x[1]))), U.input(holder, 'l.analise.campos.ameacas', { rows: 2, label: 'Análise de ameaças e vulnerabilidades (A.8)', onInput: salva }));
-    card.appendChild(det('Informações adicionais (Anexo A)', an));
-    // cenários
-    const nivelTxt = (c) => c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado';
+    card.appendChild(det('Informações adicionais (Anexo A)', h('div', {}, h('ul', { style: 'margin:0 0 6px 18px' }, a.anexoA.map((x) => h('li', {}, h('b', {}, x[0] + ' '), x[1]))), U.input(holder, 'l.analise.campos.ameacas', { rows: 2, label: 'Análise de ameaças e vulnerabilidades (A.8)', onInput: salva }))));
+    card.appendChild(det('Matriz de risco 5x5 e situações para enquadramento', V.criterioView()));
+
     const resumo = h('p', { class: 'small' });
     const pinta = () => { const r = E.analiseRiscoLocal(l, S.produtos()).resumo; resumo.textContent = r.crit + ' crítico(s), ' + r.alto + ' alto(s), ' + r.medio + ' médio(s), ' + r.baixo + ' baixo(s), ' + r.semAvaliar + ' sem avaliação.'; };
+    const linhasTxt = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    const campoTxt = (obj, chave, rotulo, atual, rows, depois) => { const ta = h('textarea', { rows: rows || 2 }); ta.value = atual || ''; ta.addEventListener('input', () => { obj[chave] = ta.value; salva(); depois && depois(); }); return h('label', { class: 'f' }, h('span', {}, rotulo), ta); };
+    const selSP = (obj, vazio, mostra) => h('div', { class: 'grid g2' },
+      U.select(obj, 'sev', RK.SEV.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Severidade', empty: vazio ? false : 'Selecione', onChange: () => { obj.sev = Number(obj.sev) || ''; salva(); mostra(); pinta(); } }),
+      U.select(obj, 'prob', RK.PROB.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Probabilidade', empty: vazio ? false : 'Selecione', onChange: () => { obj.prob = Number(obj.prob) || ''; salva(); mostra(); pinta(); } }));
+
+    // ---- cenários padrão
     const cen = h('div');
-    a.cenarios.forEach((c) => {
-      const badge = h('span'); const mostra = () => { const n = RK.nivel(l.analise.cenarios[c.k] && l.analise.cenarios[c.k].sev, l.analise.cenarios[c.k] && l.analise.cenarios[c.k].prob); badge.replaceChildren(n.v ? U.badge(n.tom || 'info', n.nome + ' (' + n.v + ')') : U.badge('info', 'Não avaliado')); };
-      l.analise.cenarios[c.k] = l.analise.cenarios[c.k] || { sev: '', prob: '', obs: '' };
-      const sel = (campo, lista2, rot) => U.select(l.analise.cenarios, c.k + '.' + campo, lista2.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: rot, empty: 'Selecione', onChange: () => { l.analise.cenarios[c.k][campo] = Number(l.analise.cenarios[c.k][campo]) || ''; salva(); mostra(); pinta(); } });
+    a.cenarios.filter((c) => c.padrao).forEach((c) => {
+      const o = l.analise.cenarios[c.k] = l.analise.cenarios[c.k] || { sev: '', prob: '', obs: '' };
+      const badge = h('span'); const mostra = () => { const n = RK.nivel(o.sev, o.prob); badge.replaceChildren(n.v ? U.badge(n.tom || 'info', n.nome + ' (' + n.v + ')') : U.badge('info', 'Não avaliado')); };
+      const edit = h('details', {}, h('summary', { class: 'small', style: 'cursor:pointer' }, 'Editar os textos deste cenário' + (c.editado ? ' (editado)' : '')),
+        campoTxt(o, 'causas', 'Causas', c.causas, 2), campoTxt(o, 'consequencias', 'Consequências', c.consequencias, 2), campoTxt(o, 'medidasTxt', 'Medidas de controle (uma por linha)', c.medidas.join('\n'), 4),
+        h('button', { class: 'btn sm ghost', onclick: () => { delete o.causas; delete o.consequencias; delete o.medidasTxt; salva(); O.route(); } }, 'Voltar ao texto padrão'));
+      const sug = c.sugProb ? h('p', { class: 'small', style: 'margin:2px 0' }, 'Sugestão do app para a probabilidade: ' + c.sugProb.n + ' (' + c.sugProb.txt + '). Você decide.') : null;
+      const desat = h('div', { class: 'row' }, h('button', { class: 'btn sm ghost', onclick: () => { o.off = true; salva(); O.route(); } }, 'Desativar neste local'));
       cen.appendChild(h('div', { style: 'padding:8px 0;border-top:1px solid #26324d' }, h('div', { class: 'row' }, h('b', {}, c.titulo), h('span', { class: 'spacer' }), badge),
         h('p', { class: 'small', style: 'margin:4px 0' }, 'Causas: ' + c.causas), h('p', { class: 'small', style: 'margin:4px 0' }, 'Consequências: ' + c.consequencias),
         h('ul', { style: 'margin:4px 0 4px 18px' }, c.medidas.map((m) => h('li', { class: 'small' }, m))),
         c.checklist.total ? h('p', { class: 'small', style: 'margin:4px 0' }, 'Checklist relacionado: ' + c.checklist.c + ' conforme(s), ' + c.checklist.nc + ' não conforme(s), ' + c.checklist.aberto + ' sem resposta.') : null,
-        h('div', { class: 'grid g2' }, sel('sev', RK.SEV, 'Severidade'), sel('prob', RK.PROB, 'Probabilidade')),
-        U.input(l.analise.cenarios[c.k], 'obs', { rows: 2, label: 'Medidas adicionais e observações', onInput: salva })));
+        edit, selSP(o, false, mostra), sug, U.input(o, 'obs', { rows: 2, label: 'Medidas adicionais e observações', onInput: salva }), desat));
       mostra();
     });
-    card.appendChild(det('Cenários de risco (' + a.cenarios.length + ')', h('div', {}, resumo, cen), true)); pinta();
+    card.appendChild(det('Cenários padrão (' + a.cenarios.filter((c) => c.padrao).length + ')', h('div', {}, resumo, cen), true)); pinta();
+    // desativados
+    if (a.desativados.length) card.appendChild(det('Cenários padrão desativados neste local (' + a.desativados.length + ')', h('div', {}, a.desativados.map((c) => { const o = l.analise.cenarios[c.k]; return h('div', { style: 'padding:6px 0;border-top:1px solid #26324d' }, h('b', {}, c.titulo), U.input(o, 'offJust', { label: 'Justificativa para desativar (obrigatória)', onInput: salva }), h('button', { class: 'btn sm ghost', onclick: () => { o.off = false; salva(); O.route(); } }, 'Reativar')); }))));
+
+    // ---- cenários adicionados
+    const cfgLib = () => S.config().bibliotecaCenarios || [];
+    const proprios = h('div');
+    a.cenarios.filter((c) => c.proprio).forEach((c) => {
+      const o = l.analise.proprios.find((x) => x.id === c.id); if (!o) return;
+      const badge = h('span'); const mostra = () => { const n = RK.nivel(o.sev, o.prob); badge.replaceChildren(U.badge(n.tom || 'info', n.nome + ' (' + n.v + ')')); };
+      proprios.appendChild(h('div', { style: 'padding:8px 0;border-top:1px solid #26324d' }, h('div', { class: 'row' }, h('b', {}, o.titulo), h('span', { class: 'spacer' }), badge),
+        h('p', { class: 'small', style: 'margin:2px 0' }, 'Origem: ' + (o.origem || '—') + (o.ref ? ' | ' + o.ref : '') + (o.data ? ' | ' + D.fmtData(o.data) : '')),
+        U.input(o, 'titulo', { label: 'Título', onInput: salva }), campoTxt(o, 'causas', 'Causas', o.causas, 2), campoTxt(o, 'consequencias', 'Consequências', o.consequencias, 2), campoTxt(o, 'medidas', 'Medidas de controle (uma por linha)', o.medidas, 3),
+        selSP(o, true, mostra), U.input(o, 'obs', { rows: 2, label: 'Observações', onInput: salva }),
+        h('div', { class: 'row' }, h('button', { class: 'btn sm', onclick: () => { const lib = cfgLib().slice(); lib.push({ id: 'm' + Date.now().toString(36), titulo: o.titulo, causas: o.causas, consequencias: o.consequencias, medidas: o.medidas, origem: o.origem || '', criadoEm: new Date().toISOString() }); S.setConfig({ bibliotecaCenarios: lib }); U.toast('Salvo na biblioteca de cenários.'); } }, 'Salvar na biblioteca'),
+          h('button', { class: 'btn sm danger', onclick: async () => { if (await U.confirm('Remover cenário', 'O cenário "' + o.titulo + '" será removido deste local.', 'Remover')) { l.analise.proprios = l.analise.proprios.filter((x) => x !== o); salva(); O.route(); } } }, 'Remover'))));
+      mostra();
+    });
+    // formulário de novo cenário
+    const ras = V._rascunho[l.id]; const novo = Object.assign({ titulo: '', origem: RK.ORIGENS[0], ref: '', causas: '', consequencias: '', medidas: '', sev: '', prob: '', obs: '' }, ras || {});
+    const nf = h('details', ras ? { open: true } : {}, h('summary', { style: 'cursor:pointer;font-weight:600;padding:6px 0' }, 'Adicionar cenário'),
+      U.input({ n: novo }, 'n.titulo', { label: 'Título do cenário' }),
+      h('div', { class: 'grid g2' }, U.select({ n: novo }, 'n.origem', RK.ORIGENS.map((x) => [x, x]), { label: 'Origem', empty: false }), U.input({ n: novo }, 'n.ref', { label: 'Referência (inspeção, incidente, produto)', ph: 'Ex.: inspeção de 10/11/2026' })),
+      campoTxt(novo, 'causas', 'Causas', novo.causas, 2), campoTxt(novo, 'consequencias', 'Consequências', novo.consequencias, 2), campoTxt(novo, 'medidas', 'Medidas de controle (uma por linha)', novo.medidas, 3),
+      h('div', { class: 'grid g2' }, U.select({ n: novo }, 'n.sev', RK.SEV.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Severidade (obrigatória)', empty: 'Selecione' }), U.select({ n: novo }, 'n.prob', RK.PROB.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Probabilidade (obrigatória)', empty: 'Selecione' })),
+      U.input({ n: novo }, 'n.obs', { rows: 2, label: 'Observações' }),
+      h('button', { class: 'btn', onclick: () => {
+        if (!(novo.titulo || '').trim()) { U.toast('Informe o título do cenário.'); return; }
+        if (!Number(novo.sev) || !Number(novo.prob)) { U.toast('Informe a severidade e a probabilidade.'); return; }
+        l.analise.proprios.push({ id: 'c' + Date.now().toString(36), titulo: novo.titulo.trim(), origem: novo.origem, ref: novo.ref || '', data: new Date().toISOString().slice(0, 10), causas: novo.causas, consequencias: novo.consequencias, medidas: novo.medidas, sev: Number(novo.sev), prob: Number(novo.prob), obs: novo.obs || '' });
+        delete V._rascunho[l.id]; salva(); O.route(); } }, 'Adicionar cenário'));
+    const lib = cfgLib(); let escolhido = '';
+    const selLib = h('select', {}, h('option', { value: '' }, lib.length ? 'Escolher modelo da biblioteca' : 'Biblioteca vazia'), lib.map((m) => h('option', { value: m.id }, m.titulo)));
+    selLib.addEventListener('change', () => { escolhido = selLib.value; });
+    const usar = h('div', { class: 'row', style: 'margin:6px 0' }, selLib, h('button', { class: 'btn sm sec', onclick: () => { const m = lib.find((x) => x.id === escolhido); if (!m) { U.toast('Escolha um modelo.'); return; } V._rascunho[l.id] = { titulo: m.titulo, causas: m.causas, consequencias: m.consequencias, medidas: m.medidas, origem: m.origem || RK.ORIGENS[0], ref: 'Modelo da biblioteca' }; O.route(); } }, 'Usar modelo (informe severidade e probabilidade)'));
+    card.appendChild(det('Cenários adicionados neste local (' + l.analise.proprios.length + ')', h('div', {}, proprios, usar, nf), !!ras || l.analise.proprios.length > 0));
+
     card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.analise.data', { type: 'date', label: 'Data da análise', onInput: salva }), U.input(holder, 'l.analise.revisao', { type: 'date', label: 'Próxima revisão', onInput: salva })));
     card.appendChild(U.input(holder, 'l.analise.conclusao', { rows: 3, label: 'Conclusão da análise', onInput: salva }));
     card.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, V.docBotoes({ nome: l.nome, id: 'risco' }, { id: 'analise-risco', nome: 'Análise de risco do armazém', fn: () => D.analiseRiscoLocal(l, S.produtos()) }, true)));
@@ -627,6 +689,9 @@
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Padrão da equipe: responsável técnico e organização'), h('p', { class: 'small' }, 'Usado quando a análise não define outro assinante. Cada análise pode ser assinada por outra pessoa na aba Documentos ou na etapa de saída.'), h('div', { class: 'grid g2' }, U.input(holder, 'c.responsavel', { label: 'Responsável técnico', onInput: save }), U.input(holder, 'c.registro', { label: 'Registro profissional', onInput: save }), U.input(holder, 'c.organizacao', { label: 'Organização (aparece na capa dos documentos)', onInput: save }), U.input(holder, 'c.email', { label: 'E-mail', onInput: save }), U.input(holder, 'c.telEmergencia', { label: 'Telefone de emergência da organização', onInput: save }), U.input(holder, 'c.sharepointBase', { label: 'Endereço base do SharePoint (opcional)', onInput: save }))));
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Critérios'), U.input(holder, 'c.anosValidadeFDS', { type: 'number', label: 'Validade da FDS em anos (alerta acima deste valor)', onInput: save }), h('div', { class: 'opts' }, U.flag(holder, 'c.cat2Reprova', 'Tratar categoria 2 (suspeita) como gatilho de reprovação automática', 'H341, H351, H361 e H361d. O app apenas sinaliza; a decisão é do responsável técnico.', save))));
     root.appendChild(V.logoCard());
+    { const lib = S.config().bibliotecaCenarios || [];
+      root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Biblioteca de cenários de risco'), h('p', { class: 'small' }, 'Modelos salvos a partir da análise de risco dos locais. Qualquer local pode usá-los (a severidade e a probabilidade são informadas em cada local). A biblioteca vai junto na exportação e na importação em JSON.'),
+        lib.length ? h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Cenário', 'Origem', 'Causas', ''].map((x) => h('th', {}, x)))), h('tbody', {}, lib.map((m) => h('tr', {}, h('td', {}, m.titulo), h('td', {}, m.origem || '—'), h('td', {}, String(m.causas || '—').slice(0, 120)), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { S.setConfig({ bibliotecaCenarios: lib.filter((x) => x.id !== m.id) }); O.route(); } }, 'Remover'))))))) : h('p', { class: 'muted' }, 'Nenhum modelo salvo ainda.'))); }
     const extra = h('textarea', { rows: 4, placeholder: 'CAS;nome;tipo   (tipo: cancerigeno, reprotoxico, mutagenico ou pfas)' }); extra.value = (c.watchExtra || '');
     extra.addEventListener('change', () => { holder.c.watchExtra = extra.value; save(); V.aplicarWatch(); U.toast('Lista de alerta atualizada.'); });
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Lista de alerta de triagem'), h('p', { class: 'small' }, 'Adicione substâncias de interesse da organização. Já constam ' + Object.values(T.WATCH).reduce((n, a) => n + a.length, 0) + ' registros (benzeno, formaldeído, tricloroetileno, PFOA, PFOS, entre outros).'), extra));

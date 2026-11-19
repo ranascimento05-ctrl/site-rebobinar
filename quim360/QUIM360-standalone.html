@@ -23671,7 +23671,48 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return { v, nome: 'Baixo', tom: 'ok' };
   }
 
-  O.RISCO = { ASPECTOS, CONSIDERACOES, ANEXO_A, CENARIOS, SEV, PROB, nivel };
+
+  // Escalas descritivas da matriz 5x5: ajudam a enquadrar severidade e probabilidade. Pontos de partida: a organização pode adotar critérios próprios.
+  const SEV_DESC = [
+    { n: 1, nome: 'Insignificante', pessoas: 'Sem lesão ou lesão tratada com primeiros socorros no local, sem afastamento.', ambiente: 'Sem liberação, ou liberação mínima retida na embalagem ou na contenção.', patrimonio: 'Dano desprezível; sem interrupção da operação.' },
+    { n: 2, nome: 'Leve', pessoas: 'Lesão ou exposição com atendimento ambulatorial, sem afastamento.', ambiente: 'Vazamento pequeno contido na bacia ou no dique do armazém.', patrimonio: 'Dano pequeno e reparável; interrupção curta.' },
+    { n: 3, nome: 'Moderada', pessoas: 'Lesão com afastamento ou exposição que exige acompanhamento médico.', ambiente: 'Vazamento que ultrapassa a contenção, mas é retido dentro da área da empresa.', patrimonio: 'Dano relevante; interrupção parcial da operação.' },
+    { n: 4, nome: 'Grave', pessoas: 'Lesão grave ou incapacitante, doença ocupacional, ou várias pessoas atingidas.', ambiente: 'Liberação para fora da área, atingindo solo, drenagem ou corpo d\'água; comunicação a órgãos ambientais.', patrimonio: 'Dano grande; paralisação prolongada do armazém.' },
+    { n: 5, nome: 'Catastrófica', pessoas: 'Morte ou múltiplas vítimas graves; efeito sobre a vizinhança.', ambiente: 'Contaminação extensa ou irreversível, ou que afete a população.', patrimonio: 'Perda total do armazém ou interdição.' },
+  ];
+  const PROB_DESC = [
+    { n: 1, nome: 'Improvável', desc: 'Não há registro no setor nem em armazéns semelhantes; exige falha simultânea de várias barreiras. Controles do cenário todos conformes e verificados.' },
+    { n: 2, nome: 'Remota', desc: 'Já ocorreu em armazéns semelhantes, mas não aqui; exige falha de pelo menos duas barreiras. Controles em sua maioria conformes.' },
+    { n: 3, nome: 'Possível', desc: 'Pode ocorrer durante a vida útil do armazém, ou já houve quase-acidente aqui. Controles parcialmente implantados ou ainda não verificados.' },
+    { n: 4, nome: 'Provável', desc: 'Ocorre de forma ocasional ou há falhas conhecidas nos controles (não conformidade aberta no checklist ou pendência de inspeção).' },
+    { n: 5, nome: 'Frequente', desc: 'Ocorre rotineiramente ou o controle não existe ou é ignorado na operação.' },
+  ];
+  // situações típicas para apoiar o enquadramento (sugestão de severidade e de probabilidade)
+  const EXEMPLOS = [
+    { situacao: 'Queda de embalagem sem ruptura, sem vazamento', sev: 1 },
+    { situacao: 'Derramamento de uma embalagem pequena de corrosivo ou solvente retido na bacia', sev: 2 },
+    { situacao: 'Vazamento de tambor ou IBC de líquido inflamável retido no dique, sem ignição', sev: 3 },
+    { situacao: 'Exposição de trabalhador a vapor irritante ou corrosivo com atendimento médico', sev: 3 },
+    { situacao: 'Vazamento de produto tóxico ou corrosivo que ultrapassa a contenção e chega à drenagem', sev: 4 },
+    { situacao: 'Intoxicação aguda com internação, ou mistura de incompatíveis liberando gás tóxico', sev: 4 },
+    { situacao: 'Incêndio de líquidos inflamáveis com propagação para outros setores', sev: 5 },
+    { situacao: 'Explosão de atmosfera inflamável ou reação violenta entre incompatíveis com vítimas', sev: 5 },
+    { situacao: 'Controles do cenário conformes e verificados, sem histórico de ocorrência', prob: 1 },
+    { situacao: 'Ocorreu em armazém semelhante, mas nunca no local', prob: 2 },
+    { situacao: 'Houve quase-acidente ou há controle ainda não verificado', prob: 3 },
+    { situacao: 'Há não conformidade aberta ou inspeção vencida relacionada ao cenário', prob: 4 },
+    { situacao: 'Controle inexistente ou desrespeitado na rotina', prob: 5 },
+  ];
+  const ORIGENS = ['Inspeção', 'Incidente ou quase-acidente', 'Mudança de produto', 'Mudança de layout ou processo', 'Auditoria', 'Revisão da análise', 'Outra'];
+  // sugestão de probabilidade a partir do checklist do cenário (apenas orientação)
+  function sugestaoProb(cont) {
+    if (!cont || !cont.total) return null;
+    if (cont.nc) return { n: 4, txt: 'há ' + cont.nc + ' não conformidade(s) relacionada(s) no checklist' };
+    if (cont.aberto) return { n: 3, txt: cont.aberto + ' item(ns) relacionado(s) ainda sem resposta no checklist' };
+    return { n: 2, txt: 'todos os itens relacionados estão conformes no checklist' };
+  }
+
+  O.RISCO = { SEV_DESC, PROB_DESC, EXEMPLOS, ORIGENS, sugestaoProb, ASPECTOS, CONSIDERACOES, ANEXO_A, CENARIOS, SEV, PROB, nivel };
 })(window.O360 = window.O360 || {});
 </script>
 <script>/* FDS fictícias para demonstração e teste. Não representam produtos reais. */
@@ -23710,6 +23751,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     cat2Reprova: true,
     sharepointBase: '',
     logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false,
+    bibliotecaCenarios: [],
   };
 
   function blank() { return { v: 1, seq: 0, produtos: [], locais: [], config: { ...DEFAULT_CFG } }; }
@@ -23722,7 +23764,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     } catch (e) { mem = blank(); }
     mem.config = { ...DEFAULT_CFG, ...(mem.config || {}) };
     if (/CREA-PE\s*1816474835/.test(mem.config.registro || '')) mem.config.registro = '';
-    mem.produtos = mem.produtos || []; mem.locais = mem.locais || [];
+    mem.produtos = (mem.produtos || []).filter((x) => x && x.id && x.ghs); // remove registros fantasmas criados por campos de formulário que não são produtos
+    mem.locais = mem.locais || [];
     return mem;
   }
   function save() {
@@ -23738,6 +23781,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     produtos() { return load().produtos; },
     produto(id) { return load().produtos.find((p) => p.id === id); },
     salvarProduto(p) {
+      if (!p || !p.id || !p.ghs) return; // só grava produtos de verdade (campos de Locais e Configurações usam objetos auxiliares)
       const d = load();
       p.atualizadoEm = new Date().toISOString();
       const i = d.produtos.findIndex((x) => x.id === p.id);
@@ -24200,16 +24244,20 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const chaveCampo = { '5.1.3': 'regulamentacaoEstadual' };
     const aspectos = R.ASPECTOS.map(([id, texto]) => ({ id, texto, auto: auto[id] || '', valor: campos[chaveCampo[id]] || '', campo: chaveCampo[id] || '' }));
     const consid = R.CONSIDERACOES.map(([id, texto, campo]) => ({ id, texto, auto: campo === 'auto' ? (auto[id] || '') : '', campo: campo === 'auto' ? '' : campo, valor: campo === 'auto' ? '' : (campos[campo] || '') }));
-    const cenarios = R.CENARIOS.filter((c) => c.quando.some((q) => q === '@sempre' || (q === '@pares' ? aud.pares.length > 0 : tem([q])))).map((c) => {
+    const linhas = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    const padrao = R.CENARIOS.filter((c) => c.quando.some((q) => q === '@sempre' || (q === '@pares' ? aud.pares.length > 0 : tem([q])))).map((c) => {
       const rel = rq.itens.filter((i) => c.grupos.includes(i.grupo) || c.ids.includes(i.id));
       const cont = { total: rel.length, c: 0, nc: 0, aberto: 0 };
       rel.forEach((i) => { if (i.resp === 'c') cont.c++; else if (i.resp === 'nc') cont.nc++; else if (i.resp !== 'na') cont.aberto++; });
       const a = cenAn[c.k] || {};
-      return Object.assign({}, c, { sev: a.sev || '', prob: a.prob || '', obs: a.obs || '', checklist: cont, risco: R.nivel(a.sev, a.prob) });
+      return Object.assign({}, c, { padrao: true, causas: a.causas || c.causas, consequencias: a.consequencias || c.consequencias, medidas: a.medidasTxt ? linhas(a.medidasTxt) : c.medidas, editado: !!(a.causas || a.consequencias || a.medidasTxt), off: !!a.off, offJust: a.offJust || '', sev: a.sev || '', prob: a.prob || '', obs: a.obs || '', checklist: cont, sugProb: R.sugestaoProb(cont), risco: R.nivel(a.sev, a.prob) });
     });
+    const proprios = (an.proprios || []).map((x) => Object.assign({}, x, { k: 'p:' + x.id, proprio: true, medidas: linhas(x.medidas), checklist: { total: 0, c: 0, nc: 0, aberto: 0 }, sugProb: null, risco: R.nivel(x.sev, x.prob) }));
+    const desativados = padrao.filter((c) => c.off);
+    const cenarios = padrao.filter((c) => !c.off).concat(proprios);
     const resumo = { crit: 0, alto: 0, medio: 0, baixo: 0, semAvaliar: 0 };
     cenarios.forEach((c) => { const n = c.risco.nome; if (n === 'Crítico') resumo.crit++; else if (n === 'Alto') resumo.alto++; else if (n === 'Médio') resumo.medio++; else if (n === 'Baixo') resumo.baixo++; else resumo.semAvaliar++; });
-    return { aspectos, consid, anexoA: R.ANEXO_A, cenarios, resumo, campos, ameacas: campos.ameacas || '', conclusao: an.conclusao || '', data: an.data || '', revisao: an.revisao || '', rq, gatilhos: g };
+    return { aspectos, consid, anexoA: R.ANEXO_A, cenarios, desativados, resumo, campos, ameacas: campos.ameacas || '', conclusao: an.conclusao || '', data: an.data || '', revisao: an.revisao || '', rq, gatilhos: g };
   }
 
   // ---------- Compatibilidade entre dois produtos (aplicação prática da matriz) ----------
@@ -25427,6 +25475,22 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
 
 
+
+  // matriz 5x5, escalas e situações de enquadramento (usadas na análise de risco)
+  function criterioRisco() {
+    const R = O.RISCO; const B = [];
+    B.push({ t: 'p', small: true, text: 'Risco = severidade x probabilidade. Crítico: 15 a 25 (vermelho). Alto: 10 a 14 (amarelo). Médio: 5 a 9 (cinza). Baixo: 1 a 4 (verde). Linhas: severidade de 1 a 5. Colunas: probabilidade de 1 a 5. O critério pode ser substituído pelo da organização.' });
+    const tom = (v) => (v >= 15 ? 'crit' : v >= 10 ? 'warn' : v >= 5 ? 'info' : 'ok');
+    B.push({ t: 'matrix', labels: ['1', '2', '3', '4', '5'], rows: [1, 2, 3, 4, 5].map((s) => [1, 2, 3, 4, 5].map((p) => ({ txt: String(s * p), tone: tom(s * p) }))) });
+    B.push({ t: 'h2', text: 'Escala de severidade' });
+    B.push({ t: 'table', head: ['Nível', 'Pessoas', 'Meio ambiente', 'Patrimônio e operação'], widths: [14, 34, 30, 22], rows: R.SEV_DESC.map((x) => [x.n + ' ' + x.nome, x.pessoas, x.ambiente, x.patrimonio]) });
+    B.push({ t: 'h2', text: 'Escala de probabilidade' });
+    B.push({ t: 'table', head: ['Nível', 'Descrição'], widths: [18, 82], rows: R.PROB_DESC.map((x) => [x.n + ' ' + x.nome, x.desc]) });
+    B.push({ t: 'h2', text: 'Situações típicas para enquadramento' });
+    B.push({ t: 'table', head: ['Situação', 'Sugestão'], widths: [75, 25], rows: R.EXEMPLOS.map((x) => [x.situacao, x.sev ? 'Severidade ' + x.sev + ' (' + R.SEV_DESC[x.sev - 1].nome + ')' : 'Probabilidade ' + x.prob + ' (' + R.PROB_DESC[x.prob - 1].nome + ')']) });
+    return B;
+  }
+
   // ---------------------------------------------------------------- Análise de risco do armazém (NBR 17160, Seção 5 e Anexo A)
   function analiseRiscoLocal(local, produtos) {
     const a = E.analiseRiscoLocal(local, produtos); const sg = signer(null);
@@ -25446,12 +25510,15 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     B.push({ t: 'p', small: true, text: 'Severidade e probabilidade de 1 a 5; risco = severidade x probabilidade (crítico 15 ou mais, alto 10 a 14, médio 5 a 9, baixo até 4). O critério é da organização e pode ser substituído pelo seu. Cenários e medidas são pontos de partida a revisar pelo responsável técnico.' });
     B.push({ t: 'table', head: ['Cenário', 'Severidade', 'Probabilidade', 'Risco', 'Checklist'], widths: [44, 12, 14, 14, 16], rows: a.cenarios.map((c) => [c.titulo, c.sev ? c.sev + ' ' + O.RISCO.SEV[c.sev - 1][1] : '—', c.prob ? c.prob + ' ' + O.RISCO.PROB[c.prob - 1][1] : '—', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado', c.checklist.total ? c.checklist.c + ' conf., ' + c.checklist.nc + ' não conf., ' + c.checklist.aberto + ' sem resposta' : 'sem itens']) });
     a.cenarios.forEach((c, i) => {
-      B.push({ t: 'h2', text: '5.' + (i + 1) + ' ' + c.titulo });
-      B.push({ t: 'kv', rows: [['Causas', c.causas], ['Consequências', c.consequencias], ['Medidas de controle', c.medidas.join('\n')], ['Severidade', c.sev ? c.sev + ' ' + O.RISCO.SEV[c.sev - 1][1] : 'não avaliada'], ['Probabilidade', c.prob ? c.prob + ' ' + O.RISCO.PROB[c.prob - 1][1] : 'não avaliada'], ['Nível de risco', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'não avaliado'], ['Medidas adicionais e observações', nz(c.obs)]] });
+      B.push({ t: 'h2', text: '5.' + (i + 1) + ' ' + c.titulo + (c.proprio ? ' (cenário adicionado)' : '') });
+      B.push({ t: 'kv', rows: (c.proprio ? [['Origem', nz(c.origem) + (c.ref ? ' | ' + c.ref : '') + (c.data ? ' | ' + fmtData(c.data) : '')]] : []).concat([['Causas', c.causas], ['Consequências', c.consequencias], ['Medidas de controle', c.medidas.join('\n')], ['Severidade', c.sev ? c.sev + ' ' + O.RISCO.SEV[c.sev - 1][1] : 'não avaliada'], ['Probabilidade', c.prob ? c.prob + ' ' + O.RISCO.PROB[c.prob - 1][1] : 'não avaliada'], ['Nível de risco', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'não avaliado'], ['Medidas adicionais e observações', nz(c.obs)]]) });
     });
+    if (a.desativados.length) { B.push({ t: 'h2', text: 'Cenários padrão desativados neste local' }); B.push({ t: 'table', head: ['Cenário', 'Justificativa'], widths: [40, 60], rows: a.desativados.map((c) => [c.titulo, nz(c.offJust)]) }); }
     B.push({ t: 'h1', text: '6 Conclusão' });
     B.push({ t: 'p', text: a.conclusao || 'Conclusão da análise não registrada.' });
     B.push({ t: 'p', small: true, text: 'A análise de risco deve ser revista quando houver mudança de produtos, de quantidades, do layout ou após incidentes. Apoio à decisão: a responsabilidade técnica é do profissional que assina.' });
+    B.push({ t: 'h1', text: '7 Critério de risco: matriz 5x5 e situações de enquadramento' });
+    criterioRisco().forEach((b) => B.push(b));
     B.push({ t: 'sign', rows: [[sg.nome, sg.funcao], ['Gestor do local', '']] });
     return B;
   }
@@ -25626,7 +25693,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});
 </script>
 <script>/* Renderizadores de blocos: HTML (pré-visualização e PDF por impressão) e Word (.docx). */
@@ -26945,7 +27012,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       U.select({ n: novo }, 'n.resultado', [['conforme', 'Conforme'], ['pendencias', 'Com pendências']], { label: 'Resultado', empty: false }), U.input({ n: novo }, 'n.obs', { rows: 2, label: 'Observações e pendências' }),
       h('button', { class: 'btn', onclick: () => { if (!novo.data || !(novo.resp || '').trim()) { U.toast('Informe a data e o responsável.'); return; } l.inspecoes = l.inspecoes || []; l.inspecoes.push({ data: novo.data, resp: novo.resp.trim(), resultado: novo.resultado || 'conforme', obs: novo.obs || '', itens: novo.lista || [] }); S.salvarLocal(l); O.route(); } }, 'Registrar'));
     card.appendChild(form);
-    if (r.inspecoes.length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Data', 'Responsável', 'Resultado', 'Itens', 'Observações', ''].map((x) => h('th', {}, x)))), h('tbody', {}, r.inspecoes.map((x, i) => h('tr', {}, h('td', {}, D.fmtData(x.data)), h('td', {}, x.resp), h('td', {}, x.resultado === 'conforme' ? 'Conforme' : 'Com pendências'), h('td', {}, String((x.itens || []).length) + ' de ' + RQ.INSPECAO.length), h('td', {}, x.obs || '—'), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { l.inspecoes = l.inspecoes.filter((y) => y !== x); S.salvarLocal(l); O.route(); } }, 'Remover'))))))));
+    if (r.inspecoes.length) card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Data', 'Responsável', 'Resultado', 'Itens', 'Observações', ''].map((x) => h('th', {}, x)))), h('tbody', {}, r.inspecoes.map((x, i) => h('tr', {}, h('td', {}, D.fmtData(x.data)), h('td', {}, x.resp), h('td', {}, x.resultado === 'conforme' ? 'Conforme' : 'Com pendências'), h('td', {}, String((x.itens || []).length) + ' de ' + RQ.INSPECAO.length), h('td', {}, x.obs || '—'), h('td', {}, x.resultado !== 'conforme' ? h('button', { class: 'btn sm sec', onclick: () => { V._rascunho[l.id] = { titulo: 'Pendência de inspeção: ' + String(x.obs || 'sem descrição').slice(0, 70), origem: 'Inspeção', ref: 'Inspeção de ' + D.fmtData(x.data) + ', ' + x.resp, causas: x.obs || '' }; U.toast('Cenário iniciado: informe severidade e probabilidade em Análise de risco.'); O.route(); } }, 'Criar cenário') : null, h('button', { class: 'btn sm ghost', onclick: () => { l.inspecoes = l.inspecoes.filter((y) => y !== x); S.salvarLocal(l); O.route(); } }, 'Remover'))))))));
     return card;
   };
 
@@ -26964,14 +27031,32 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   };
 
   // ------------------------------------------------------------ análise de risco do armazém (NBR 17160, Seção 5)
+  // critério de risco: matriz 5x5, escalas e situações de enquadramento
+  V.criterioView = () => {
+    const RK = O.RISCO;
+    const cor = (n) => (n >= 15 ? '#dc2626' : n >= 10 ? '#f59e0b' : n >= 5 ? '#64748b' : '#16a34a');
+    const grade = h('table', { class: 't', style: 'text-align:center;width:auto' }, h('thead', {}, h('tr', {}, h('th', {}, 'Sev. \\ Prob.'), [1, 2, 3, 4, 5].map((p) => h('th', {}, p + ' ' + RK.PROB_DESC[p - 1].nome)))),
+      h('tbody', {}, [5, 4, 3, 2, 1].map((s) => h('tr', {}, h('th', {}, s + ' ' + RK.SEV_DESC[s - 1].nome), [1, 2, 3, 4, 5].map((p) => h('td', { style: 'background:' + cor(s * p) + ';color:#fff;font-weight:700' }, String(s * p)))))));
+    return h('div', {},
+      h('p', { class: 'small' }, 'Risco = severidade x probabilidade. Crítico: 15 a 25 (vermelho). Alto: 10 a 14 (amarelo). Médio: 5 a 9 (cinza). Baixo: 1 a 4 (verde). O critério é ponto de partida: use o da sua organização se for diferente.'),
+      h('div', { class: 'scroll' }, grade),
+      h('h4', { style: 'margin-top:10px' }, 'Escala de severidade'),
+      h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Nível', 'Pessoas', 'Meio ambiente', 'Patrimônio e operação'].map((x) => h('th', {}, x)))), h('tbody', {}, RK.SEV_DESC.map((x) => h('tr', {}, h('td', {}, h('b', {}, x.n + ' ' + x.nome)), h('td', {}, x.pessoas), h('td', {}, x.ambiente), h('td', {}, x.patrimonio)))))),
+      h('h4', { style: 'margin-top:10px' }, 'Escala de probabilidade'),
+      h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Nível', 'Descrição'].map((x) => h('th', {}, x)))), h('tbody', {}, RK.PROB_DESC.map((x) => h('tr', {}, h('td', {}, h('b', {}, x.n + ' ' + x.nome)), h('td', {}, x.desc)))))),
+      h('h4', { style: 'margin-top:10px' }, 'Situações típicas para enquadramento'),
+      h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Situação', 'Sugestão'].map((x) => h('th', {}, x)))), h('tbody', {}, RK.EXEMPLOS.map((x) => h('tr', {}, h('td', {}, x.situacao), h('td', {}, x.sev ? 'Severidade ' + x.sev + ' (' + RK.SEV_DESC[x.sev - 1].nome + ')' : 'Probabilidade ' + x.prob + ' (' + RK.PROB_DESC[x.prob - 1].nome + ')')))))));
+  };
+
+  V._rascunho = V._rascunho || {};
   V.riscoCard = (l) => {
     const RK = O.RISCO;
-    l.analise = l.analise || { campos: {}, cenarios: {}, conclusao: '', data: '', revisao: '' };
-    l.analise.campos = l.analise.campos || {}; l.analise.cenarios = l.analise.cenarios || {};
+    l.analise = l.analise || { campos: {}, cenarios: {}, proprios: [], conclusao: '', data: '', revisao: '' };
+    l.analise.campos = l.analise.campos || {}; l.analise.cenarios = l.analise.cenarios || {}; l.analise.proprios = l.analise.proprios || [];
     const holder = { l }; const salva = () => S.salvarLocal(l);
     const a = E.analiseRiscoLocal(l, S.produtos());
     const card = h('div', { class: 'card' }, h('h3', {}, 'Análise de risco do armazém (NBR 17160, Seção 5) ', U.disc('PSM')),
-      h('p', { class: 'small' }, 'A norma pede análise de risco do armazém. O app preenche o que já sabe (produtos, quantidades, segregação, água de extinção, checklist) e você completa o restante e avalia cada cenário. Cenários e medidas são pontos de partida a revisar.'));
+      h('p', { class: 'small' }, 'A norma pede análise de risco do armazém. O app preenche o que já sabe (produtos, quantidades, segregação, água de extinção, checklist) e você completa o restante e avalia cada cenário. Os cenários padrão podem ser editados ou desativados para este local, e você pode adicionar cenários próprios conforme inspeções, incidentes e mudanças. Cenários e medidas são pontos de partida a revisar.'));
     const det = (titulo, corpo, aberto) => h('details', aberto ? { open: true } : {}, h('summary', { style: 'cursor:pointer;font-weight:600;padding:6px 0' }, titulo), corpo);
     // aspectos 5.1 e considerações 5.2
     const lista = h('div');
@@ -26979,27 +27064,71 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       lista.appendChild(h('div', { style: 'padding:6px 0;border-top:1px solid #26324d' }, h('b', { class: 'sky' }, x.id + ' '), x.texto, x.auto ? h('p', { class: 'small', style: 'margin:4px 0' }, 'App: ' + x.auto) : null, x.campo ? U.input(holder, 'l.analise.campos.' + x.campo, { rows: 2, label: 'Registro do analista', onInput: salva }) : null));
     });
     card.appendChild(det('Aspectos (5.1) e considerações (5.2)', lista));
-    // Anexo A
-    const an = h('div', {}, h('ul', { style: 'margin:0 0 6px 18px' }, a.anexoA.map((x) => h('li', {}, h('b', {}, x[0] + ' '), x[1]))), U.input(holder, 'l.analise.campos.ameacas', { rows: 2, label: 'Análise de ameaças e vulnerabilidades (A.8)', onInput: salva }));
-    card.appendChild(det('Informações adicionais (Anexo A)', an));
-    // cenários
-    const nivelTxt = (c) => c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado';
+    card.appendChild(det('Informações adicionais (Anexo A)', h('div', {}, h('ul', { style: 'margin:0 0 6px 18px' }, a.anexoA.map((x) => h('li', {}, h('b', {}, x[0] + ' '), x[1]))), U.input(holder, 'l.analise.campos.ameacas', { rows: 2, label: 'Análise de ameaças e vulnerabilidades (A.8)', onInput: salva }))));
+    card.appendChild(det('Matriz de risco 5x5 e situações para enquadramento', V.criterioView()));
+
     const resumo = h('p', { class: 'small' });
     const pinta = () => { const r = E.analiseRiscoLocal(l, S.produtos()).resumo; resumo.textContent = r.crit + ' crítico(s), ' + r.alto + ' alto(s), ' + r.medio + ' médio(s), ' + r.baixo + ' baixo(s), ' + r.semAvaliar + ' sem avaliação.'; };
+    const linhasTxt = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    const campoTxt = (obj, chave, rotulo, atual, rows, depois) => { const ta = h('textarea', { rows: rows || 2 }); ta.value = atual || ''; ta.addEventListener('input', () => { obj[chave] = ta.value; salva(); depois && depois(); }); return h('label', { class: 'f' }, h('span', {}, rotulo), ta); };
+    const selSP = (obj, vazio, mostra) => h('div', { class: 'grid g2' },
+      U.select(obj, 'sev', RK.SEV.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Severidade', empty: vazio ? false : 'Selecione', onChange: () => { obj.sev = Number(obj.sev) || ''; salva(); mostra(); pinta(); } }),
+      U.select(obj, 'prob', RK.PROB.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Probabilidade', empty: vazio ? false : 'Selecione', onChange: () => { obj.prob = Number(obj.prob) || ''; salva(); mostra(); pinta(); } }));
+
+    // ---- cenários padrão
     const cen = h('div');
-    a.cenarios.forEach((c) => {
-      const badge = h('span'); const mostra = () => { const n = RK.nivel(l.analise.cenarios[c.k] && l.analise.cenarios[c.k].sev, l.analise.cenarios[c.k] && l.analise.cenarios[c.k].prob); badge.replaceChildren(n.v ? U.badge(n.tom || 'info', n.nome + ' (' + n.v + ')') : U.badge('info', 'Não avaliado')); };
-      l.analise.cenarios[c.k] = l.analise.cenarios[c.k] || { sev: '', prob: '', obs: '' };
-      const sel = (campo, lista2, rot) => U.select(l.analise.cenarios, c.k + '.' + campo, lista2.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: rot, empty: 'Selecione', onChange: () => { l.analise.cenarios[c.k][campo] = Number(l.analise.cenarios[c.k][campo]) || ''; salva(); mostra(); pinta(); } });
+    a.cenarios.filter((c) => c.padrao).forEach((c) => {
+      const o = l.analise.cenarios[c.k] = l.analise.cenarios[c.k] || { sev: '', prob: '', obs: '' };
+      const badge = h('span'); const mostra = () => { const n = RK.nivel(o.sev, o.prob); badge.replaceChildren(n.v ? U.badge(n.tom || 'info', n.nome + ' (' + n.v + ')') : U.badge('info', 'Não avaliado')); };
+      const edit = h('details', {}, h('summary', { class: 'small', style: 'cursor:pointer' }, 'Editar os textos deste cenário' + (c.editado ? ' (editado)' : '')),
+        campoTxt(o, 'causas', 'Causas', c.causas, 2), campoTxt(o, 'consequencias', 'Consequências', c.consequencias, 2), campoTxt(o, 'medidasTxt', 'Medidas de controle (uma por linha)', c.medidas.join('\n'), 4),
+        h('button', { class: 'btn sm ghost', onclick: () => { delete o.causas; delete o.consequencias; delete o.medidasTxt; salva(); O.route(); } }, 'Voltar ao texto padrão'));
+      const sug = c.sugProb ? h('p', { class: 'small', style: 'margin:2px 0' }, 'Sugestão do app para a probabilidade: ' + c.sugProb.n + ' (' + c.sugProb.txt + '). Você decide.') : null;
+      const desat = h('div', { class: 'row' }, h('button', { class: 'btn sm ghost', onclick: () => { o.off = true; salva(); O.route(); } }, 'Desativar neste local'));
       cen.appendChild(h('div', { style: 'padding:8px 0;border-top:1px solid #26324d' }, h('div', { class: 'row' }, h('b', {}, c.titulo), h('span', { class: 'spacer' }), badge),
         h('p', { class: 'small', style: 'margin:4px 0' }, 'Causas: ' + c.causas), h('p', { class: 'small', style: 'margin:4px 0' }, 'Consequências: ' + c.consequencias),
         h('ul', { style: 'margin:4px 0 4px 18px' }, c.medidas.map((m) => h('li', { class: 'small' }, m))),
         c.checklist.total ? h('p', { class: 'small', style: 'margin:4px 0' }, 'Checklist relacionado: ' + c.checklist.c + ' conforme(s), ' + c.checklist.nc + ' não conforme(s), ' + c.checklist.aberto + ' sem resposta.') : null,
-        h('div', { class: 'grid g2' }, sel('sev', RK.SEV, 'Severidade'), sel('prob', RK.PROB, 'Probabilidade')),
-        U.input(l.analise.cenarios[c.k], 'obs', { rows: 2, label: 'Medidas adicionais e observações', onInput: salva })));
+        edit, selSP(o, false, mostra), sug, U.input(o, 'obs', { rows: 2, label: 'Medidas adicionais e observações', onInput: salva }), desat));
       mostra();
     });
-    card.appendChild(det('Cenários de risco (' + a.cenarios.length + ')', h('div', {}, resumo, cen), true)); pinta();
+    card.appendChild(det('Cenários padrão (' + a.cenarios.filter((c) => c.padrao).length + ')', h('div', {}, resumo, cen), true)); pinta();
+    // desativados
+    if (a.desativados.length) card.appendChild(det('Cenários padrão desativados neste local (' + a.desativados.length + ')', h('div', {}, a.desativados.map((c) => { const o = l.analise.cenarios[c.k]; return h('div', { style: 'padding:6px 0;border-top:1px solid #26324d' }, h('b', {}, c.titulo), U.input(o, 'offJust', { label: 'Justificativa para desativar (obrigatória)', onInput: salva }), h('button', { class: 'btn sm ghost', onclick: () => { o.off = false; salva(); O.route(); } }, 'Reativar')); }))));
+
+    // ---- cenários adicionados
+    const cfgLib = () => S.config().bibliotecaCenarios || [];
+    const proprios = h('div');
+    a.cenarios.filter((c) => c.proprio).forEach((c) => {
+      const o = l.analise.proprios.find((x) => x.id === c.id); if (!o) return;
+      const badge = h('span'); const mostra = () => { const n = RK.nivel(o.sev, o.prob); badge.replaceChildren(U.badge(n.tom || 'info', n.nome + ' (' + n.v + ')')); };
+      proprios.appendChild(h('div', { style: 'padding:8px 0;border-top:1px solid #26324d' }, h('div', { class: 'row' }, h('b', {}, o.titulo), h('span', { class: 'spacer' }), badge),
+        h('p', { class: 'small', style: 'margin:2px 0' }, 'Origem: ' + (o.origem || '—') + (o.ref ? ' | ' + o.ref : '') + (o.data ? ' | ' + D.fmtData(o.data) : '')),
+        U.input(o, 'titulo', { label: 'Título', onInput: salva }), campoTxt(o, 'causas', 'Causas', o.causas, 2), campoTxt(o, 'consequencias', 'Consequências', o.consequencias, 2), campoTxt(o, 'medidas', 'Medidas de controle (uma por linha)', o.medidas, 3),
+        selSP(o, true, mostra), U.input(o, 'obs', { rows: 2, label: 'Observações', onInput: salva }),
+        h('div', { class: 'row' }, h('button', { class: 'btn sm', onclick: () => { const lib = cfgLib().slice(); lib.push({ id: 'm' + Date.now().toString(36), titulo: o.titulo, causas: o.causas, consequencias: o.consequencias, medidas: o.medidas, origem: o.origem || '', criadoEm: new Date().toISOString() }); S.setConfig({ bibliotecaCenarios: lib }); U.toast('Salvo na biblioteca de cenários.'); } }, 'Salvar na biblioteca'),
+          h('button', { class: 'btn sm danger', onclick: async () => { if (await U.confirm('Remover cenário', 'O cenário "' + o.titulo + '" será removido deste local.', 'Remover')) { l.analise.proprios = l.analise.proprios.filter((x) => x !== o); salva(); O.route(); } } }, 'Remover'))));
+      mostra();
+    });
+    // formulário de novo cenário
+    const ras = V._rascunho[l.id]; const novo = Object.assign({ titulo: '', origem: RK.ORIGENS[0], ref: '', causas: '', consequencias: '', medidas: '', sev: '', prob: '', obs: '' }, ras || {});
+    const nf = h('details', ras ? { open: true } : {}, h('summary', { style: 'cursor:pointer;font-weight:600;padding:6px 0' }, 'Adicionar cenário'),
+      U.input({ n: novo }, 'n.titulo', { label: 'Título do cenário' }),
+      h('div', { class: 'grid g2' }, U.select({ n: novo }, 'n.origem', RK.ORIGENS.map((x) => [x, x]), { label: 'Origem', empty: false }), U.input({ n: novo }, 'n.ref', { label: 'Referência (inspeção, incidente, produto)', ph: 'Ex.: inspeção de 10/11/2026' })),
+      campoTxt(novo, 'causas', 'Causas', novo.causas, 2), campoTxt(novo, 'consequencias', 'Consequências', novo.consequencias, 2), campoTxt(novo, 'medidas', 'Medidas de controle (uma por linha)', novo.medidas, 3),
+      h('div', { class: 'grid g2' }, U.select({ n: novo }, 'n.sev', RK.SEV.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Severidade (obrigatória)', empty: 'Selecione' }), U.select({ n: novo }, 'n.prob', RK.PROB.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Probabilidade (obrigatória)', empty: 'Selecione' })),
+      U.input({ n: novo }, 'n.obs', { rows: 2, label: 'Observações' }),
+      h('button', { class: 'btn', onclick: () => {
+        if (!(novo.titulo || '').trim()) { U.toast('Informe o título do cenário.'); return; }
+        if (!Number(novo.sev) || !Number(novo.prob)) { U.toast('Informe a severidade e a probabilidade.'); return; }
+        l.analise.proprios.push({ id: 'c' + Date.now().toString(36), titulo: novo.titulo.trim(), origem: novo.origem, ref: novo.ref || '', data: new Date().toISOString().slice(0, 10), causas: novo.causas, consequencias: novo.consequencias, medidas: novo.medidas, sev: Number(novo.sev), prob: Number(novo.prob), obs: novo.obs || '' });
+        delete V._rascunho[l.id]; salva(); O.route(); } }, 'Adicionar cenário'));
+    const lib = cfgLib(); let escolhido = '';
+    const selLib = h('select', {}, h('option', { value: '' }, lib.length ? 'Escolher modelo da biblioteca' : 'Biblioteca vazia'), lib.map((m) => h('option', { value: m.id }, m.titulo)));
+    selLib.addEventListener('change', () => { escolhido = selLib.value; });
+    const usar = h('div', { class: 'row', style: 'margin:6px 0' }, selLib, h('button', { class: 'btn sm sec', onclick: () => { const m = lib.find((x) => x.id === escolhido); if (!m) { U.toast('Escolha um modelo.'); return; } V._rascunho[l.id] = { titulo: m.titulo, causas: m.causas, consequencias: m.consequencias, medidas: m.medidas, origem: m.origem || RK.ORIGENS[0], ref: 'Modelo da biblioteca' }; O.route(); } }, 'Usar modelo (informe severidade e probabilidade)'));
+    card.appendChild(det('Cenários adicionados neste local (' + l.analise.proprios.length + ')', h('div', {}, proprios, usar, nf), !!ras || l.analise.proprios.length > 0));
+
     card.appendChild(h('div', { class: 'grid g2' }, U.input(holder, 'l.analise.data', { type: 'date', label: 'Data da análise', onInput: salva }), U.input(holder, 'l.analise.revisao', { type: 'date', label: 'Próxima revisão', onInput: salva })));
     card.appendChild(U.input(holder, 'l.analise.conclusao', { rows: 3, label: 'Conclusão da análise', onInput: salva }));
     card.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, V.docBotoes({ nome: l.nome, id: 'risco' }, { id: 'analise-risco', nome: 'Análise de risco do armazém', fn: () => D.analiseRiscoLocal(l, S.produtos()) }, true)));
@@ -27471,6 +27600,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Padrão da equipe: responsável técnico e organização'), h('p', { class: 'small' }, 'Usado quando a análise não define outro assinante. Cada análise pode ser assinada por outra pessoa na aba Documentos ou na etapa de saída.'), h('div', { class: 'grid g2' }, U.input(holder, 'c.responsavel', { label: 'Responsável técnico', onInput: save }), U.input(holder, 'c.registro', { label: 'Registro profissional', onInput: save }), U.input(holder, 'c.organizacao', { label: 'Organização (aparece na capa dos documentos)', onInput: save }), U.input(holder, 'c.email', { label: 'E-mail', onInput: save }), U.input(holder, 'c.telEmergencia', { label: 'Telefone de emergência da organização', onInput: save }), U.input(holder, 'c.sharepointBase', { label: 'Endereço base do SharePoint (opcional)', onInput: save }))));
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Critérios'), U.input(holder, 'c.anosValidadeFDS', { type: 'number', label: 'Validade da FDS em anos (alerta acima deste valor)', onInput: save }), h('div', { class: 'opts' }, U.flag(holder, 'c.cat2Reprova', 'Tratar categoria 2 (suspeita) como gatilho de reprovação automática', 'H341, H351, H361 e H361d. O app apenas sinaliza; a decisão é do responsável técnico.', save))));
     root.appendChild(V.logoCard());
+    { const lib = S.config().bibliotecaCenarios || [];
+      root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Biblioteca de cenários de risco'), h('p', { class: 'small' }, 'Modelos salvos a partir da análise de risco dos locais. Qualquer local pode usá-los (a severidade e a probabilidade são informadas em cada local). A biblioteca vai junto na exportação e na importação em JSON.'),
+        lib.length ? h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Cenário', 'Origem', 'Causas', ''].map((x) => h('th', {}, x)))), h('tbody', {}, lib.map((m) => h('tr', {}, h('td', {}, m.titulo), h('td', {}, m.origem || '—'), h('td', {}, String(m.causas || '—').slice(0, 120)), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => { S.setConfig({ bibliotecaCenarios: lib.filter((x) => x.id !== m.id) }); O.route(); } }, 'Remover'))))))) : h('p', { class: 'muted' }, 'Nenhum modelo salvo ainda.'))); }
     const extra = h('textarea', { rows: 4, placeholder: 'CAS;nome;tipo   (tipo: cancerigeno, reprotoxico, mutagenico ou pfas)' }); extra.value = (c.watchExtra || '');
     extra.addEventListener('change', () => { holder.c.watchExtra = extra.value; save(); V.aplicarWatch(); U.toast('Lista de alerta atualizada.'); });
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Lista de alerta de triagem'), h('p', { class: 'small' }, 'Adicione substâncias de interesse da organização. Já constam ' + Object.values(T.WATCH).reduce((n, a) => n + a.length, 0) + ' registros (benzeno, formaldeído, tricloroetileno, PFOA, PFOS, entre outros).'), extra));
