@@ -284,6 +284,20 @@
 
     const lista = S.fila();
     if (!lista.length) { root.appendChild(h('div', { class: 'empty' }, 'A fila está vazia. Importe uma lista para começar.')); return; }
+    // locais da lista: cadastro em lote
+    { const ls = F.locaisDaFila();
+      const falta = ls.filter((l) => !l.cadastrado).length;
+      const escolhas = ls.map((l) => ({ origem: l.nome, nome: l.nome, tipo: l.tipo, marcado: !l.cadastrado && !l.suspeito && l.qtd >= 2 }));
+      const corpo = h('tbody', {}, ls.map((l, i) => { const e = escolhas[i];
+        const ck = h('input', { type: 'checkbox', ...(e.marcado ? { checked: true } : {}), ...(l.cadastrado ? { disabled: true } : {}) }); ck.addEventListener('change', () => { e.marcado = ck.checked; });
+        const nome = h('input', { type: 'text', value: e.nome, ...(l.cadastrado ? { disabled: true } : {}) }); nome.addEventListener('input', () => { e.nome = nome.value; });
+        const tipo = h('select', { ...(l.cadastrado ? { disabled: true } : {}) }, T.LOCAIS_TIPO.map((t) => h('option', { ...(t === e.tipo ? { selected: true } : {}) }, t))); tipo.addEventListener('change', () => { e.tipo = tipo.value; });
+        return h('tr', {}, h('td', {}, ck), h('td', {}, nome, l.suspeito ? h('div', { class: 'small' }, 'Nome suspeito na lista: confira antes de cadastrar.') : null), h('td', {}, tipo), h('td', {}, String(l.qtd)), h('td', {}, l.cadastrado ? U.badge('ok', 'já cadastrado') : U.badge('warn', 'a cadastrar'))); }));
+      root.appendChild(h('details', falta ? { open: true } : {}, h('summary', { style: 'cursor:pointer;font-weight:600;padding:6px 0' }, 'Locais da lista (' + ls.length + '): ' + falta + ' a cadastrar'),
+        h('div', { class: 'card' }, h('p', { class: 'small' }, 'Cadastre os locais para a fila ligar cada produto ao local certo. Ajuste o nome e o tipo se quiser (por exemplo, separe "Contêiner de PQ" em PQ 01, PQ 02). Depois de cadastrar, complete a área, a categoria de segurança e as marcações de cada local em Locais de armazenamento.'),
+          h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['', 'Nome do local', 'Tipo', 'Produtos', 'Situação'].map((x) => h('th', {}, x)))), corpo)),
+          h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'btn', onclick: () => { const sel = escolhas.filter((e) => e.marcado && (e.nome || '').trim()); if (!sel.length) { U.toast('Marque ao menos um local.'); return; } const n = F.cadastrarLocais(sel.map((e) => ({ origem: e.origem, nome: e.nome.trim(), tipo: e.tipo }))); U.toast(n + ' local(is) cadastrado(s).'); O.route(); } }, 'Cadastrar locais marcados'), h('a', { class: 'btn ghost', href: '#/locais' }, 'Ver Locais de armazenamento')))));
+    }
     const st = { q: '', sit: '', pri: '', loc: '' };
     const kpi = h('div', { class: 'grid g4', style: 'margin-bottom:12px' });
     const tabArea = h('div');

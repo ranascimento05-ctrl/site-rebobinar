@@ -128,6 +128,34 @@
     if (it.estado === 'fds_recebida') return { chave: 'fds_recebida', rotulo: 'FDS recebida' };
     return { chave: 'fds_levantar', rotulo: 'FDS a levantar' };
   }
+  // tipo de local sugerido a partir do nome normalizado
+  function tipoSugerido(nome) {
+    const t = norm(nome);
+    if (/conteiner|contêiner/.test(t)) return 'Contêiner de PQ';
+    if (/tanque/.test(t)) return 'Tanques';
+    if (/oficina/.test(t) && !/deposito/.test(t)) return 'Oficina';
+    if (/deposito|armario|almoxarifado|limpeza/.test(t)) return 'Almoxarifado';
+    if (/plataforma|edar|manutencao|estacao|horta/.test(t)) return 'Área operacional';
+    return 'Outro';
+  }
+  // locais distintos da fila (nome normalizado), com contagem e se já existe cadastro com esse nome
+  function locaisDaFila() {
+    const S = O.Store; const mapa = {};
+    S.fila().forEach((i) => { const k = i.local || ''; if (!k) return; (mapa[k] = mapa[k] || { nome: k, qtd: 0 }).qtd++; });
+    const cad = S.locais().map((l) => norm(l.nome));
+    return Object.keys(mapa).map((k) => Object.assign(mapa[k], { tipo: tipoSugerido(k), cadastrado: cad.includes(norm(k)), suspeito: /^(em uso|sem local|na)$/.test(norm(k)) })).sort((a, b) => b.qtd - a.qtd);
+  }
+  // cria os locais escolhidos [{origem, nome, tipo}] e liga os itens da fila a eles
+  function cadastrarLocais(escolhas) {
+    const S = O.Store; let criados = 0;
+    escolhas.forEach((e) => {
+      let l = S.locais().find((x) => norm(x.nome) === norm(e.nome));
+      if (!l) { l = S.novoLocal(e.nome, e.tipo); l.descricao = 'Cadastrado a partir da lista importada. Complete a descrição, a área e a categoria de segurança.'; S.salvarLocal(l); criados++; }
+      S.fila().filter((i) => i.local === e.origem && !i.produtoId).forEach((i) => { i.localId = l.id; S.salvarFila(i); });
+    });
+    return criados;
+  }
+
   // inicia a homologação já com os dados da lista (a FDS lida substitui o que for conflitante)
   function iniciar(it) {
     const E = O.Engine, S = O.Store;
@@ -135,7 +163,7 @@
     p.nome = it.nome; p.fornecedor = it.fabricante;
     p.comp.limite = it.quantidade || '';
     const norml = (s) => norm(s);
-    const loc = it.local ? S.locais().find((l) => norml(l.nome).includes(norml(it.local)) || norml(it.local).includes(norml(l.nome))) : null;
+    const loc = (it.localId && S.local(it.localId)) || (it.local ? S.locais().find((l) => norml(l.nome).includes(norml(it.local)) || norml(it.local).includes(norml(l.nome))) : null);
     if (loc) p.ctx.localId = loc.id;
     p.comp.observacoes = 'Origem: lista importada' + (it.localOriginal ? '. Local informado: ' + it.localOriginal : '') + (it.localUso ? '. Local de utilização: ' + it.localUso : '') + '.';
     p.filaRef = { id: it.id, composicao: it.composicao, classe: it.classe, quantidade: it.quantidade, area: it.area, carimboLista: it.carimboLista };
@@ -144,5 +172,5 @@
     return p;
   }
 
-  O.Fila = { lerArquivo, montar, situacao, iniciar, prioridade, normLocal, ROTULOS };
+  O.Fila = { locaisDaFila, cadastrarLocais, tipoSugerido, lerArquivo, montar, situacao, iniciar, prioridade, normLocal, ROTULOS };
 })(window.O360 = window.O360 || {});

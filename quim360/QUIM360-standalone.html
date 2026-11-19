@@ -25015,6 +25015,34 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     if (it.estado === 'fds_recebida') return { chave: 'fds_recebida', rotulo: 'FDS recebida' };
     return { chave: 'fds_levantar', rotulo: 'FDS a levantar' };
   }
+  // tipo de local sugerido a partir do nome normalizado
+  function tipoSugerido(nome) {
+    const t = norm(nome);
+    if (/conteiner|contêiner/.test(t)) return 'Contêiner de PQ';
+    if (/tanque/.test(t)) return 'Tanques';
+    if (/oficina/.test(t) && !/deposito/.test(t)) return 'Oficina';
+    if (/deposito|armario|almoxarifado|limpeza/.test(t)) return 'Almoxarifado';
+    if (/plataforma|edar|manutencao|estacao|horta/.test(t)) return 'Área operacional';
+    return 'Outro';
+  }
+  // locais distintos da fila (nome normalizado), com contagem e se já existe cadastro com esse nome
+  function locaisDaFila() {
+    const S = O.Store; const mapa = {};
+    S.fila().forEach((i) => { const k = i.local || ''; if (!k) return; (mapa[k] = mapa[k] || { nome: k, qtd: 0 }).qtd++; });
+    const cad = S.locais().map((l) => norm(l.nome));
+    return Object.keys(mapa).map((k) => Object.assign(mapa[k], { tipo: tipoSugerido(k), cadastrado: cad.includes(norm(k)), suspeito: /^(em uso|sem local|na)$/.test(norm(k)) })).sort((a, b) => b.qtd - a.qtd);
+  }
+  // cria os locais escolhidos [{origem, nome, tipo}] e liga os itens da fila a eles
+  function cadastrarLocais(escolhas) {
+    const S = O.Store; let criados = 0;
+    escolhas.forEach((e) => {
+      let l = S.locais().find((x) => norm(x.nome) === norm(e.nome));
+      if (!l) { l = S.novoLocal(e.nome, e.tipo); l.descricao = 'Cadastrado a partir da lista importada. Complete a descrição, a área e a categoria de segurança.'; S.salvarLocal(l); criados++; }
+      S.fila().filter((i) => i.local === e.origem && !i.produtoId).forEach((i) => { i.localId = l.id; S.salvarFila(i); });
+    });
+    return criados;
+  }
+
   // inicia a homologação já com os dados da lista (a FDS lida substitui o que for conflitante)
   function iniciar(it) {
     const E = O.Engine, S = O.Store;
@@ -25022,7 +25050,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     p.nome = it.nome; p.fornecedor = it.fabricante;
     p.comp.limite = it.quantidade || '';
     const norml = (s) => norm(s);
-    const loc = it.local ? S.locais().find((l) => norml(l.nome).includes(norml(it.local)) || norml(it.local).includes(norml(l.nome))) : null;
+    const loc = (it.localId && S.local(it.localId)) || (it.local ? S.locais().find((l) => norml(l.nome).includes(norml(it.local)) || norml(it.local).includes(norml(l.nome))) : null);
     if (loc) p.ctx.localId = loc.id;
     p.comp.observacoes = 'Origem: lista importada' + (it.localOriginal ? '. Local informado: ' + it.localOriginal : '') + (it.localUso ? '. Local de utilização: ' + it.localUso : '') + '.';
     p.filaRef = { id: it.id, composicao: it.composicao, classe: it.classe, quantidade: it.quantidade, area: it.area, carimboLista: it.carimboLista };
@@ -25031,7 +25059,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return p;
   }
 
-  O.Fila = { lerArquivo, montar, situacao, iniciar, prioridade, normLocal, ROTULOS };
+  O.Fila = { locaisDaFila, cadastrarLocais, tipoSugerido, lerArquivo, montar, situacao, iniciar, prioridade, normLocal, ROTULOS };
 })(window.O360 = window.O360 || {});
 </script>
 <script>/* Pictogramas GHS, rótulos de risco de transporte (NBR 7500 / IMDG), painel de segurança, QR Code e logo.
@@ -27436,6 +27464,20 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
     const lista = S.fila();
     if (!lista.length) { root.appendChild(h('div', { class: 'empty' }, 'A fila está vazia. Importe uma lista para começar.')); return; }
+    // locais da lista: cadastro em lote
+    { const ls = F.locaisDaFila();
+      const falta = ls.filter((l) => !l.cadastrado).length;
+      const escolhas = ls.map((l) => ({ origem: l.nome, nome: l.nome, tipo: l.tipo, marcado: !l.cadastrado && !l.suspeito && l.qtd >= 2 }));
+      const corpo = h('tbody', {}, ls.map((l, i) => { const e = escolhas[i];
+        const ck = h('input', { type: 'checkbox', ...(e.marcado ? { checked: true } : {}), ...(l.cadastrado ? { disabled: true } : {}) }); ck.addEventListener('change', () => { e.marcado = ck.checked; });
+        const nome = h('input', { type: 'text', value: e.nome, ...(l.cadastrado ? { disabled: true } : {}) }); nome.addEventListener('input', () => { e.nome = nome.value; });
+        const tipo = h('select', { ...(l.cadastrado ? { disabled: true } : {}) }, T.LOCAIS_TIPO.map((t) => h('option', { ...(t === e.tipo ? { selected: true } : {}) }, t))); tipo.addEventListener('change', () => { e.tipo = tipo.value; });
+        return h('tr', {}, h('td', {}, ck), h('td', {}, nome, l.suspeito ? h('div', { class: 'small' }, 'Nome suspeito na lista: confira antes de cadastrar.') : null), h('td', {}, tipo), h('td', {}, String(l.qtd)), h('td', {}, l.cadastrado ? U.badge('ok', 'já cadastrado') : U.badge('warn', 'a cadastrar'))); }));
+      root.appendChild(h('details', falta ? { open: true } : {}, h('summary', { style: 'cursor:pointer;font-weight:600;padding:6px 0' }, 'Locais da lista (' + ls.length + '): ' + falta + ' a cadastrar'),
+        h('div', { class: 'card' }, h('p', { class: 'small' }, 'Cadastre os locais para a fila ligar cada produto ao local certo. Ajuste o nome e o tipo se quiser (por exemplo, separe "Contêiner de PQ" em PQ 01, PQ 02). Depois de cadastrar, complete a área, a categoria de segurança e as marcações de cada local em Locais de armazenamento.'),
+          h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['', 'Nome do local', 'Tipo', 'Produtos', 'Situação'].map((x) => h('th', {}, x)))), corpo)),
+          h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'btn', onclick: () => { const sel = escolhas.filter((e) => e.marcado && (e.nome || '').trim()); if (!sel.length) { U.toast('Marque ao menos um local.'); return; } const n = F.cadastrarLocais(sel.map((e) => ({ origem: e.origem, nome: e.nome.trim(), tipo: e.tipo }))); U.toast(n + ' local(is) cadastrado(s).'); O.route(); } }, 'Cadastrar locais marcados'), h('a', { class: 'btn ghost', href: '#/locais' }, 'Ver Locais de armazenamento')))));
+    }
     const st = { q: '', sit: '', pri: '', loc: '' };
     const kpi = h('div', { class: 'grid g4', style: 'margin-bottom:12px' });
     const tabArea = h('div');
