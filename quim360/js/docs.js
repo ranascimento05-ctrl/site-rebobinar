@@ -458,6 +458,33 @@
     return B;
   }
 
+  // ---------------------------------------------------------------- Fila de homologação (lista importada, sem FDS)
+  function filaDoc(itens, op) {
+    op = op || {}; const F = O.Fila; const sg = signer(null);
+    const sit = (it) => F.situacao(it);
+    const PRI = { alta: 0, media: 1, normal: 2 }; const PRI_TXT = { alta: 'Alta', media: 'Média', normal: 'Normal' };
+    const ord = itens.slice().sort((a, b) => PRI[a.prioridade.nivel] - PRI[b.prioridade.nivel] || a.local.localeCompare(b.local) || a.nome.localeCompare(b.nome));
+    const conta = (f) => itens.filter(f).length;
+    const pseudo = { nome: 'Fila de homologação', dec: { numero: '' }, rotulo: 'Documento', pseudo: true };
+    const B = [capa('Fila de homologação', 'QUIM 360 | Produtos a homologar | ' + fmtData(new Date().toISOString()), pseudo, [['Produtos na fila', String(itens.length)], ['Origem', 'Lista importada, sem FDS: dados de partida, a confirmar na FDS atual']])];
+    B.push({ t: 'callout', tone: 'warn', title: 'A lista não traz FDS', text: 'Nome, fabricante, classe de transporte, composição e local vêm de um levantamento antigo. Para cada produto, levante a FDS atual: a homologação usa os dados da FDS, não os desta lista.' });
+    B.push({ t: 'h1', text: '1 Resumo' });
+    B.push({ t: 'table', head: ['Situação', 'Produtos'], widths: [70, 30], rows: [['FDS a levantar', conta((i) => sit(i).chave === 'fds_levantar')], ['FDS recebida', conta((i) => sit(i).chave === 'fds_recebida')], ['Em homologação ou pendentes', conta((i) => ['em_analise', 'pendente'].includes(sit(i).chave))], ['Homologados (inclui condicionantes)', conta((i) => ['homologado', 'condicionado', 'na_lista'].includes(sit(i).chave))], ['Reprovados', conta((i) => sit(i).chave === 'reprovado')], ['Descartados', conta((i) => sit(i).chave === 'descartado')]].map((r) => [r[0], String(r[1])]) });
+    B.push({ t: 'table', head: ['Prioridade para levantar a FDS', 'Produtos'], widths: [70, 30], rows: [['Alta: composição cita agente de atenção', String(conta((i) => i.prioridade.nivel === 'alta'))], ['Média: solvente aromático ou classe de risco 3, 4.1, 6 ou 8', String(conta((i) => i.prioridade.nivel === 'media'))], ['Normal', String(conta((i) => i.prioridade.nivel === 'normal'))]] });
+    B.push({ t: 'h1', text: '2 Prioridade alta' });
+    B.push({ t: 'p', small: true, text: 'Produtos cuja composição, como descrita na lista, cita substâncias que costumam acionar o gatilho de CMR ou PFC. É indício de partida: a FDS atual confirma ou não.' });
+    const alta = ord.filter((i) => i.prioridade.nivel === 'alta');
+    B.push({ t: 'table', head: ['Produto', 'Fabricante', 'Local', 'Motivo', 'Situação'], widths: [24, 18, 16, 28, 14], rows: alta.length ? alta.map((i) => [i.nome, nz(i.fabricante), nz(i.local), i.prioridade.motivos.join('; '), sit(i).rotulo]) : [['Nenhum', '', '', '', '']] });
+    B.push({ t: 'h1', text: '3 Qualidade da lista' });
+    const q = [['Possíveis duplicados (mesmo nome e fabricante)', conta((i) => i.duplicado)], ['Sem fabricante', conta((i) => !i.fabricante)], ['Sem composição', conta((i) => !i.composicao)], ['Sem local de armazenamento definido', conta((i) => !i.local)], ['Sem quantidade informada', conta((i) => !i.quantidade)], ['Sem classe de risco informada ou "sem classe de risco" (classe de armazenamento não deduzível)', conta((i) => !i.classe || /^sem classe/i.test(i.classe))], ['Marcados como fora de uso', conta((i) => i.emUso === false)]];
+    B.push({ t: 'table', head: ['Ponto de atenção', 'Produtos'], widths: [80, 20], rows: q.map((r) => [r[0], String(r[1])]) });
+    B.push({ t: 'h1', text: '4 Lista completa, por prioridade e local' });
+    B.push({ t: 'table', head: ['Produto', 'Fabricante', 'Classe (lista)', 'Local', 'Prioridade', 'Situação'], widths: [26, 18, 11, 16, 10, 19], rows: ord.map((i) => [i.nome + (i.duplicado ? ' (possível duplicado)' : ''), nz(i.fabricante), nz(i.classe), nz(i.local), PRI_TXT[i.prioridade.nivel], sit(i).rotulo]) });
+    B.push({ t: 'p', small: true, text: 'Prioridade é apoio para organizar o trabalho e não classifica o perigo do produto. A classificação vem da FDS.' });
+    B.push({ t: 'sign', rows: [[sg.nome, sg.funcao]] });
+    return B;
+  }
+
   // ---------------------------------------------------------------- Cenários de risco (treinamento, brigada, reuniões)
   const TOM_RISCO = { 'Crítico': 'crit', 'Alto': 'warn', 'Médio': 'info', 'Baixo': 'ok' };
   // local: cenários do local (ativos e adicionados); sem local: catálogo geral (padrão e biblioteca da organização)
@@ -716,5 +743,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

@@ -16,7 +16,7 @@
     bibliotecaCenarios: [],
   };
 
-  function blank() { return { v: 1, seq: 0, produtos: [], locais: [], config: { ...DEFAULT_CFG } }; }
+  function blank() { return { v: 1, seq: 0, produtos: [], locais: [], fila: [], config: { ...DEFAULT_CFG } }; }
 
   function load() {
     if (mem) return mem;
@@ -28,6 +28,7 @@
     if (/CREA-PE\s*1816474835/.test(mem.config.registro || '')) mem.config.registro = '';
     mem.produtos = (mem.produtos || []).filter((x) => x && x.id && x.ghs); // remove registros fantasmas criados por campos de formulário que não são produtos
     mem.locais = mem.locais || [];
+    mem.fila = mem.fila || [];
     return mem;
   }
   function save() {
@@ -62,6 +63,11 @@
       load().locais.push(l); save(); return l;
     },
     salvarLocal(l) { const d = load(); const i = d.locais.findIndex((x) => x.id === l.id); if (i >= 0) d.locais[i] = l; else d.locais.push(l); save(); },
+    fila() { return load().fila; },
+    salvarFila(it) { const d = load(); const i = d.fila.findIndex((x) => x.id === it.id); if (i >= 0) d.fila[i] = it; else d.fila.push(it); save(); },
+    adicionarFila(lista) { const d = load(); lista.forEach((it) => d.fila.push(it)); save(); },
+    substituirFila(lista) { load().fila = lista; save(); },
+    removerFila(id) { const d = load(); d.fila = d.fila.filter((x) => x.id !== id); save(); },
     removerLocal(id) { const d = load(); d.locais = d.locais.filter((l) => l.id !== id); save(); },
     uid,
     exportar() { return JSON.stringify(load(), null, 2); },

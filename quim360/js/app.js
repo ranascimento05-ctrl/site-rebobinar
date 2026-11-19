@@ -2,7 +2,7 @@
 (function (O) {
   const U = O.UI, h = U.h;
   const NAV = [
-    ['#/', 'Início', 'home'], ['#/painel', 'Painel', 'grid'], ['#/produtos', 'Produtos', 'flask'], ['#/nova', 'Nova homologação', 'plus'], ['#/fds', 'Analisador de FDS', 'file'], '-',
+    ['#/', 'Início', 'home'], ['#/painel', 'Painel', 'grid'], ['#/produtos', 'Produtos', 'flask'], ['#/fila', 'Fila de homologação', 'file'], ['#/nova', 'Nova homologação', 'plus'], ['#/fds', 'Analisador de FDS', 'file'], '-',
     ['#/locais', 'Locais de armazenamento', 'pin'], ['#/compat', 'Quadro de compatibilidade', 'grid'], ['#/cenarios', 'Cenários de risco', 'scale'], ['#/matriz', 'Matriz de segregação', 'grid'], ['#/legal', 'Base técnico-legal', 'scale'], ['#/config', 'Configurações', 'gear'],
   ];
   const root = document.getElementById('app');
@@ -33,6 +33,7 @@
         case '': V.capa(main); break;
         case 'painel': V.painel(main); break;
         case 'produtos': V.produtos(main); break;
+        case 'fila': V.fila(main); break;
         case 'produto': V.produto(main, parts[1], parts[2]); break;
         case 'doc': V.doc(main, parts[1], parts[2]); break;
         case 'nova': { const p = O.Engine.novoProduto(); O.Store.salvarProduto(p); location.replace('#/homologar/' + p.id); return; }

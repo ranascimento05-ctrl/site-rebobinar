@@ -256,6 +256,83 @@
     draw();
   };
 
+  // ------------------------------------------------------------ fila de homologação (lista importada, sem FDS)
+  V.fila = (root) => {
+    const F = O.Fila;
+    root.appendChild(head('Fila de homologação', 'Produtos de uma lista a homologar: levante a FDS atual de cada um e inicie a análise'));
+    const impBox = h('div');
+    const arq = h('input', { type: 'file', accept: '.xlsx,.csv,.txt', style: 'display:none' });
+    let pendente = null;
+    const mostraPrevia = (itens, nome) => {
+      pendente = itens; impBox.innerHTML = '';
+      const c = (f) => itens.filter(f).length;
+      const jaTem = new Set(S.fila().map((x) => x.chave));
+      const novos = itens.filter((i) => !jaTem.has(i.chave)).length;
+      let modo = 'adicionar';
+      const rad = (v, rot) => { const inp = h('input', { type: 'radio', name: 'modo-fila', value: v, ...(v === modo ? { checked: true } : {}) }); inp.addEventListener('change', () => { modo = v; }); return h('label', { class: 'row small', style: 'gap:6px' }, inp, rot); };
+      impBox.appendChild(h('div', { class: 'alert' }, h('b', {}, nome + ': ' + itens.length + ' produtos lidos'), h('div', { class: 'small' }, 'Prioridade alta: ' + c((i) => i.prioridade.nivel === 'alta') + ' | média: ' + c((i) => i.prioridade.nivel === 'media') + ' | normal: ' + c((i) => i.prioridade.nivel === 'normal') + '. Possíveis duplicados: ' + c((i) => i.duplicado) + '. Marcados fora de uso: ' + c((i) => i.emUso === false) + '. Sem composição: ' + c((i) => !i.composicao) + '. Novos em relação à fila atual: ' + novos + '.')));
+      impBox.appendChild(h('div', { class: 'row' }, rad('adicionar', 'Adicionar só os novos (ignora o que já está na fila)'), rad('substituir', 'Substituir a fila (mantém os que já iniciaram homologação)')));
+      impBox.appendChild(h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'btn', onclick: () => {
+        if (modo === 'substituir') { const mant = S.fila().filter((x) => x.produtoId); const chaves = new Set(mant.map((x) => x.chave)); S.substituirFila(mant.concat(pendente.filter((i) => !chaves.has(i.chave)))); }
+        else S.adicionarFila(pendente.filter((i) => !jaTem.has(i.chave)));
+        U.toast('Fila atualizada.'); O.route(); } }, 'Importar para a fila'), h('button', { class: 'btn ghost', onclick: () => { pendente = null; impBox.innerHTML = ''; } }, 'Cancelar')));
+    };
+    arq.addEventListener('change', async () => { if (!arq.files[0]) return; try { const itens = await F.lerArquivo(arq.files[0]); if (!itens.length) { U.toast('Nenhum produto encontrado na planilha.'); return; } mostraPrevia(itens, arq.files[0].name); } catch (e) { U.toast(e.message); } arq.value = ''; });
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Importar lista de produtos'),
+      h('p', { class: 'small' }, 'Aceita planilha .xlsx ou .csv com as colunas Descrição do Produto, Fabricante, Classe de risco, Composição química, Em uso, Área usuária, Local de Armazenamento, Local de utilização e Quantidade. A lista não traz FDS: serve para organizar o trabalho. Nenhum dado vira produto homologado, e a coluna Empresa não é importada.'),
+      h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => arq.click() }, 'Escolher planilha'), arq), impBox));
+
+    const lista = S.fila();
+    if (!lista.length) { root.appendChild(h('div', { class: 'empty' }, 'A fila está vazia. Importe uma lista para começar.')); return; }
+    const st = { q: '', sit: '', pri: '', loc: '' };
+    const kpi = h('div', { class: 'grid g4', style: 'margin-bottom:12px' });
+    const tabArea = h('div');
+    const locais = [...new Set(lista.map((i) => i.local || 'Sem local'))].sort();
+    const mk = (opts, k) => { const s = h('select', { style: 'max-width:250px' }, opts.map((o) => h('option', { value: o[0] }, o[1]))); s.addEventListener('change', () => { st[k] = s.value; draw(); }); return s; };
+    const busca = h('input', { type: 'text', placeholder: 'Buscar por produto, fabricante ou composição', style: 'max-width:340px' }); busca.addEventListener('input', () => { st.q = busca.value; draw(); });
+    root.appendChild(kpi);
+    root.appendChild(h('div', { class: 'row', style: 'margin-bottom:10px' }, busca,
+      mk([['', 'Todas as situações'], ['fds_levantar', 'FDS a levantar'], ['fds_recebida', 'FDS recebida'], ['em_analise', 'Em homologação'], ['pendente', 'Pendente'], ['homologado', 'Homologado'], ['condicionado', 'Homologado com condicionantes'], ['reprovado', 'Reprovado'], ['descartado', 'Descartado']], 'sit'),
+      mk([['', 'Toda prioridade'], ['alta', 'Prioridade alta'], ['media', 'Prioridade média'], ['normal', 'Prioridade normal']], 'pri'),
+      mk([['', 'Todos os locais']].concat(locais.map((l) => [l, l])), 'loc')));
+    const acoes = h('div', { class: 'row', style: 'margin-bottom:10px' }); root.appendChild(acoes);
+    root.appendChild(tabArea);
+    const PRI_TOM = { alta: 'crit', media: 'warn', normal: 'info' }, PRI_TXT = { alta: 'Alta', media: 'Média', normal: 'Normal' };
+    const SIT_TOM = { fds_levantar: 'warn', fds_recebida: 'info', em_analise: 'info', pendente: 'warn', homologado: 'ok', condicionado: 'warn', reprovado: 'crit', descartado: 'info', na_lista: 'ok' };
+    const filtrados = () => S.fila().filter((i) => { const s = F.situacao(i); const t = (i.nome + ' ' + i.fabricante + ' ' + i.composicao).toLowerCase();
+      return (!st.q || t.includes(st.q.toLowerCase())) && (!st.sit || s.chave === st.sit) && (!st.pri || i.prioridade.nivel === st.pri) && (!st.loc || (i.local || 'Sem local') === st.loc); });
+    const draw = () => {
+      const todos = S.fila(); const cs = (k) => todos.filter((i) => F.situacao(i).chave === k).length;
+      kpi.innerHTML = ''; [['Produtos na fila', todos.length, ''], ['FDS a levantar', cs('fds_levantar'), 'warn'], ['Em homologação', cs('em_analise') + cs('pendente') + cs('fds_recebida'), ''], ['Homologados', cs('homologado') + cs('condicionado') + cs('na_lista'), 'ok']].forEach((k) => kpi.appendChild(h('div', { class: 'kpi ' + k[2] }, h('b', {}, k[1]), h('span', {}, k[0]))));
+      const f = filtrados();
+      acoes.innerHTML = ''; acoes.appendChild(V.docBotoes({ nome: 'fila-de-homologacao', id: 'fila' }, { id: 'fila', nome: 'Fila de homologação', fn: () => D.filaDoc(filtrados()) }, true));
+      acoes.appendChild(h('button', { class: 'btn sm ghost', onclick: () => { const cab = ['Produto', 'Fabricante', 'Classe (lista)', 'Local', 'Prioridade', 'Situação', 'Motivo da prioridade']; const esc = (x) => '"' + String(x == null ? '' : x).replace(/"/g, '""') + '"'; const linhas = [cab.map(esc).join(';')].concat(f.map((i) => [i.nome, i.fabricante, i.classe, i.local, PRI_TXT[i.prioridade.nivel], F.situacao(i).rotulo, i.prioridade.motivos.join('; ')].map(esc).join(';'))); R.baixar(new Blob(['﻿' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' }), 'fila-de-homologacao.csv'); } }, 'Baixar CSV'));
+      tabArea.innerHTML = '';
+      if (!f.length) { tabArea.appendChild(h('div', { class: 'empty' }, 'Nenhum produto com esses filtros.')); return; }
+      const ordem = { alta: 0, media: 1, normal: 2 };
+      const linhas = f.slice().sort((a, b) => ordem[a.prioridade.nivel] - ordem[b.prioridade.nivel] || a.nome.localeCompare(b.nome)).slice(0, 250).map((i) => {
+        const s = F.situacao(i);
+        const det = h('details', {}, h('summary', { class: 'small' }, 'Detalhes'),
+          h('p', { class: 'small', style: 'margin:4px 0' }, 'Composição na lista: ' + (i.composicao || '—')), h('p', { class: 'small', style: 'margin:4px 0' }, 'Local informado: ' + (i.localOriginal || '—') + (i.localUso ? ' | uso: ' + i.localUso : '') + (i.quantidade ? ' | quantidade: ' + i.quantidade : '')),
+          i.prioridade.motivos.length ? h('p', { class: 'small', style: 'margin:4px 0' }, 'Prioridade: ' + i.prioridade.motivos.join('; ')) : null,
+          i.carimboLista === 'sim' ? h('p', { class: 'small', style: 'margin:4px 0' }, 'A lista marca "FDS com carimbo de SSMA", mas refere-se à versão antiga: levante a FDS atual.') : null,
+          U.input(i, 'obs', { rows: 2, label: 'Observações', onInput: () => S.salvarFila(i) }));
+        const bt = h('div', { class: 'row' });
+        if (s.produto) bt.appendChild(h('a', { class: 'btn sm', href: (['em_analise', 'pendente'].includes(s.chave) ? '#/homologar/' : '#/produto/') + s.produto.id }, ['em_analise', 'pendente'].includes(s.chave) ? 'Continuar' : 'Abrir'));
+        else if (s.chave === 'descartado') bt.appendChild(h('button', { class: 'btn sm ghost', onclick: () => { i.estado = ''; S.salvarFila(i); draw(); } }, 'Reativar'));
+        else {
+          bt.appendChild(h('button', { class: 'btn sm', onclick: () => { const p = F.iniciar(i); location.hash = '#/homologar/' + p.id; } }, 'Iniciar homologação'));
+          bt.appendChild(h('button', { class: 'btn sm ghost', onclick: () => { i.estado = s.chave === 'fds_recebida' ? '' : 'fds_recebida'; S.salvarFila(i); draw(); } }, s.chave === 'fds_recebida' ? 'FDS ainda não' : 'FDS recebida'));
+          bt.appendChild(h('button', { class: 'btn sm ghost', onclick: () => { i.estado = 'descartado'; S.salvarFila(i); draw(); } }, 'Descartar'));
+        }
+        return h('tr', {}, h('td', {}, h('b', {}, i.nome), i.duplicado ? U.badge('warn', 'possível duplicado') : null, h('div', { class: 'small' }, i.fabricante || '—'), det), h('td', {}, i.local || '—'), h('td', {}, i.classe || '—'), h('td', {}, U.badge(PRI_TOM[i.prioridade.nivel], PRI_TXT[i.prioridade.nivel])), h('td', {}, U.badge(SIT_TOM[s.chave] || 'info', s.rotulo)), h('td', {}, bt));
+      });
+      tabArea.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Produto', 'Local', 'Classe (lista)', 'Prioridade', 'Situação', ''].map((x) => h('th', {}, x)))), h('tbody', {}, linhas))));
+      if (f.length > 250) tabArea.appendChild(h('p', { class: 'small' }, 'Mostrando 250 de ' + f.length + ' produtos: use os filtros. O documento e o CSV trazem todos os produtos filtrados.'));
+    };
+    draw();
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);

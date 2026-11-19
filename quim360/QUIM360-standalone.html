@@ -23754,7 +23754,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     bibliotecaCenarios: [],
   };
 
-  function blank() { return { v: 1, seq: 0, produtos: [], locais: [], config: { ...DEFAULT_CFG } }; }
+  function blank() { return { v: 1, seq: 0, produtos: [], locais: [], fila: [], config: { ...DEFAULT_CFG } }; }
 
   function load() {
     if (mem) return mem;
@@ -23766,6 +23766,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     if (/CREA-PE\s*1816474835/.test(mem.config.registro || '')) mem.config.registro = '';
     mem.produtos = (mem.produtos || []).filter((x) => x && x.id && x.ghs); // remove registros fantasmas criados por campos de formulário que não são produtos
     mem.locais = mem.locais || [];
+    mem.fila = mem.fila || [];
     return mem;
   }
   function save() {
@@ -23800,6 +23801,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       load().locais.push(l); save(); return l;
     },
     salvarLocal(l) { const d = load(); const i = d.locais.findIndex((x) => x.id === l.id); if (i >= 0) d.locais[i] = l; else d.locais.push(l); save(); },
+    fila() { return load().fila; },
+    salvarFila(it) { const d = load(); const i = d.fila.findIndex((x) => x.id === it.id); if (i >= 0) d.fila[i] = it; else d.fila.push(it); save(); },
+    adicionarFila(lista) { const d = load(); lista.forEach((it) => d.fila.push(it)); save(); },
+    substituirFila(lista) { load().fila = lista; save(); },
+    removerFila(id) { const d = load(); d.fila = d.fila.filter((x) => x.id !== id); save(); },
     removerLocal(id) { const d = load(); d.locais = d.locais.filter((l) => l.id !== id); save(); },
     uid,
     exportar() { return JSON.stringify(load(), null, 2); },
@@ -24879,6 +24885,155 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   O.Auto = { PREP, OK, resumo, lido, faltam, similar, candidato, nomesPorId };
 })(window.O360 = window.O360 || {});
 </script>
+<script>/* Fila de homologação: importa uma lista de produtos (xlsx ou csv) sem FDS e organiza o trabalho.
+   A lista é só ponto de partida (nome, fabricante, local, composição em texto): os dados reais vêm da FDS atual de cada produto. */
+(function (O) {
+  const norm = (s) => String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const limpa = (s) => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+
+  // ---------------------------------------------------------------- leitura de xlsx (JSZip) e de csv
+  async function lerXlsx(file) {
+    if (!window.JSZip) throw new Error('Biblioteca de leitura de planilha indisponível.');
+    const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
+    const xml = async (p) => { const f = zip.file(p); return f ? new DOMParser().parseFromString(await f.async('string'), 'application/xml') : null; };
+    const ss = await xml('xl/sharedStrings.xml');
+    const strs = ss ? [...ss.getElementsByTagName('si')].map((si) => [...si.getElementsByTagName('t')].map((t) => t.textContent).join('')) : [];
+    const wb = await xml('xl/workbook.xml'); const rels = await xml('xl/_rels/workbook.xml.rels');
+    if (!wb || !rels) throw new Error('Arquivo .xlsx inválido.');
+    const alvo = {}; [...rels.getElementsByTagName('Relationship')].forEach((r) => { alvo[r.getAttribute('Id')] = r.getAttribute('Target'); });
+    const NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    const folhas = [];
+    for (const s of [...wb.getElementsByTagName('sheet')]) {
+      let t = alvo[s.getAttributeNS(NS, 'id')] || ''; t = t.replace(/^\//, ''); if (!/^xl\//.test(t)) t = 'xl/' + t;
+      const doc = await xml(t); if (!doc) continue;
+      const linhas = [];
+      [...doc.getElementsByTagName('row')].forEach((row) => {
+        const r = []; let tem = false;
+        [...row.getElementsByTagName('c')].forEach((c) => {
+          const ref = c.getAttribute('r') || ''; const col = ref.replace(/\d+/g, '').split('').reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+          const tipo = c.getAttribute('t'); const v = c.getElementsByTagName('v')[0];
+          let val = '';
+          if (tipo === 's' && v) val = strs[+v.textContent] || ''; else if (tipo === 'inlineStr') val = [...c.getElementsByTagName('t')].map((x) => x.textContent).join(''); else if (v) val = v.textContent;
+          if (val !== '') { r[col] = val; tem = true; }
+        });
+        if (tem) linhas[(+row.getAttribute('r') || linhas.length + 1) - 1] = r;
+      });
+      folhas.push({ nome: s.getAttribute('name'), linhas });
+    }
+    return folhas;
+  }
+  function lerCsv(texto) {
+    const sep = (texto.match(/;/g) || []).length >= (texto.match(/,/g) || []).length ? ';' : ',';
+    const linhas = []; let r = [], c = '', q = false;
+    for (let i = 0; i < texto.length; i++) {
+      const ch = texto[i];
+      if (q) { if (ch === '"' && texto[i + 1] === '"') { c += '"'; i++; } else if (ch === '"') q = false; else c += ch; }
+      else if (ch === '"') q = true; else if (ch === sep) { r.push(c); c = ''; } else if (ch === '\n') { r.push(c); linhas.push(r); r = []; c = ''; } else if (ch !== '\r') c += ch;
+    }
+    if (c !== '' || r.length) { r.push(c); linhas.push(r); }
+    return [{ nome: 'csv', linhas }];
+  }
+
+  // ---------------------------------------------------------------- normalização
+  const COL = [['nome', ['descricao do produto', 'nome do produto', 'produto', 'descricao']], ['fabricante', ['fabricante', 'fornecedor']], ['classe', ['classe de risco', 'classe']], ['composicao', ['composicao quimica', 'composicao']],
+    ['emUso', ['em uso']], ['area', ['area usuaria']], ['localArm', ['local de armazenamento']], ['localUso', ['local de utilizacao', 'local de uso']], ['qtd', ['quantidade']], ['fds', ['fds possui carimbo', 'carimbo']]];
+  function achaCabecalho(folhas) {
+    for (const f of folhas) {
+      for (let i = 0; i < f.linhas.length; i++) {
+        const r = f.linhas[i]; if (!r) continue;
+        if (!r.some((c) => /descri[cç][aã]o do produto|nome do produto/i.test(norm(c)) || norm(c) === 'produto')) continue;
+        const mapa = {};
+        r.forEach((c, j) => { const h = norm(c); COL.forEach(([k, chaves]) => { if (mapa[k] === undefined && chaves.some((x) => h === x || h.startsWith(x))) mapa[k] = j; }); });
+        if (mapa.nome !== undefined) return { folha: f, linha: i, mapa };
+      }
+    }
+    return null;
+  }
+  // locais escritos de várias formas viram um nome único
+  function normLocal(raw) {
+    const t = norm(raw).replace(/['’`´]/g, '');
+    if (!t || /^(na|n\/a|nao se aplica|-)$/.test(t)) return '';
+    if (/cont[ae]i?ner|conteiner/.test(t)) return 'Contêiner de PQ';
+    if (/tanque/.test(t)) return 'Tanques';
+    if (/limpeza/.test(t)) return 'Área de limpeza';
+    if (/deposito.*oficina|oficina.*deposito/.test(t)) return 'Depósito da oficina';
+    if (/oficina/.test(t)) return 'Oficina';
+    return limpa(raw).toLowerCase().replace(/(^|\s)\S/g, (m) => m.toUpperCase()).replace(/ (De|Da|Do|Das|Dos|E) /g, (m) => m.toLowerCase());
+  }
+  function normClasse(raw) {
+    const t = norm(raw); if (!t || t === 'none') return '';
+    if (/^sem classe/.test(t)) return 'Sem classe de risco';
+    if (/^(na|n\/a)$/.test(t)) return '';
+    return limpa(raw).replace(',', '.');
+  }
+  function normEmUso(raw) { const t = norm(raw); if (/^s/.test(t) && !/^sem/.test(t)) return true; if (/^n/.test(t)) return false; return null; }
+
+  // prioridade para levantar a FDS e homologar primeiro: aponta onde um gatilho de CMR ou PFC é mais provável
+  const ALTA = [[/(?<!etil)benzeno/, 'benzeno'], [/tolueno/, 'tolueno'], [/n-?hexano|\bhexano/, 'hexano'], [/tricloro|percloro|diclorometano|cloreto de metileno|tetracloreto/, 'solvente clorado'], [/formol|formaldeido/, 'formaldeído'], [/metanol|alcool metilico/, 'metanol'], [/\bfluor(?!escen)|pfas|ptfe|perfluor|polifluor/, 'flúor ou PFAS'], [/cromo|chumbo|cadmio|amianto|asbesto|hidrazina/, 'metal ou agente de atenção']];
+  const MEDIA = [[/xileno|xilol/, 'xileno'], [/etilbenzeno/, 'etilbenzeno'], [/estireno/, 'estireno']];
+  function prioridade(it) {
+    const t = norm(it.composicao + ' ' + it.nome); const alta = [], media = [];
+    ALTA.forEach(([re, n]) => { if (re.test(t)) alta.push(n); });
+    MEDIA.forEach(([re, n]) => { if (re.test(t)) media.push(n); });
+    const c = norm(it.classe);
+    if (alta.length) return { nivel: 'alta', motivos: alta.map((x) => 'cita ' + x + ' (possível gatilho CMR ou PFC)') };
+    if (media.length) return { nivel: 'media', motivos: media.map((x) => 'cita ' + x + ' (solvente aromático: confirmar na FDS)') };
+    if (c === '3') return { nivel: 'media', motivos: ['classe 3 (líquido inflamável)'] };
+    if (c === '6' || c === '8a' || c === '8b' || c === '4.1') return { nivel: 'media', motivos: ['classe de risco ' + it.classe] };
+    return { nivel: 'normal', motivos: [] };
+  }
+
+  function montar(folhas, nomeArquivo) {
+    const cab = achaCabecalho(folhas);
+    if (!cab) throw new Error('Não encontrei a coluna "Descrição do Produto" na planilha. Confira se é a lista de produtos químicos.');
+    const { folha, linha, mapa } = cab; const g = (r, k) => (mapa[k] === undefined ? '' : limpa(r[mapa[k]]));
+    const itens = []; const vistos = {}; const agora = new Date().toISOString();
+    for (let i = linha + 1; i < folha.linhas.length; i++) {
+      const r = folha.linhas[i]; if (!r) continue;
+      const nome = g(r, 'nome'); if (!nome) continue;
+      const it = { id: O.Store.uid('fila'), nome, fabricante: g(r, 'fabricante'), classe: normClasse(g(r, 'classe')), composicao: g(r, 'composicao'), emUso: normEmUso(g(r, 'emUso')), area: g(r, 'area'), localOriginal: g(r, 'localArm'), local: normLocal(g(r, 'localArm')), localUso: g(r, 'localUso'), quantidade: g(r, 'qtd'), carimboLista: /^s/.test(norm(g(r, 'fds'))) ? 'sim' : g(r, 'fds') ? 'nao' : '', origem: nomeArquivo || '', importadoEm: agora, estado: '', produtoId: '', obs: '' };
+      it.chave = norm(it.nome) + '|' + norm(it.fabricante);
+      it.duplicado = !!vistos[it.chave]; vistos[it.chave] = 1;
+      it.prioridade = prioridade(it);
+      if (it.emUso === false) { it.estado = 'descartado'; it.obs = 'Marcado como fora de uso na lista importada.'; }
+      itens.push(it);
+    }
+    return itens;
+  }
+  async function lerArquivo(file) {
+    const n = file.name.toLowerCase();
+    const folhas = n.endsWith('.xlsx') ? await lerXlsx(file) : lerCsv(await file.text());
+    return montar(folhas, file.name);
+  }
+
+  // situação mostrada: segue o produto, quando a homologação já foi iniciada
+  const ROTULOS = { homologado: 'Homologado', condicionado: 'Homologado com condicionantes', reprovado: 'Reprovado', pendente: 'Pendente', em_analise: 'Em homologação', na_lista: 'Já homologado' };
+  function situacao(it) {
+    const p = it.produtoId ? O.Store.produto(it.produtoId) : null;
+    if (p) return { chave: p.status || 'em_analise', rotulo: ROTULOS[p.status] || 'Em homologação', produto: p };
+    if (it.estado === 'descartado') return { chave: 'descartado', rotulo: 'Descartado' };
+    if (it.estado === 'fds_recebida') return { chave: 'fds_recebida', rotulo: 'FDS recebida' };
+    return { chave: 'fds_levantar', rotulo: 'FDS a levantar' };
+  }
+  // inicia a homologação já com os dados da lista (a FDS lida substitui o que for conflitante)
+  function iniciar(it) {
+    const E = O.Engine, S = O.Store;
+    const p = E.novoProduto();
+    p.nome = it.nome; p.fornecedor = it.fabricante;
+    p.comp.limite = it.quantidade || '';
+    const norml = (s) => norm(s);
+    const loc = it.local ? S.locais().find((l) => norml(l.nome).includes(norml(it.local)) || norml(it.local).includes(norml(l.nome))) : null;
+    if (loc) p.ctx.localId = loc.id;
+    p.comp.observacoes = 'Origem: lista importada' + (it.localOriginal ? '. Local informado: ' + it.localOriginal : '') + (it.localUso ? '. Local de utilização: ' + it.localUso : '') + '.';
+    p.filaRef = { id: it.id, composicao: it.composicao, classe: it.classe, quantidade: it.quantidade, area: it.area, carimboLista: it.carimboLista };
+    S.salvarProduto(p);
+    it.produtoId = p.id; S.salvarFila(it);
+    return p;
+  }
+
+  O.Fila = { lerArquivo, montar, situacao, iniciar, prioridade, normLocal, ROTULOS };
+})(window.O360 = window.O360 || {});
+</script>
 <script>/* Pictogramas GHS, rótulos de risco de transporte (NBR 7500 / IMDG), painel de segurança, QR Code e logo.
    Pictogramas são representações vetoriais simplificadas: use a arte oficial do GHS na impressão final de rótulos. */
 (function (O) {
@@ -25492,6 +25647,33 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return B;
   }
 
+  // ---------------------------------------------------------------- Fila de homologação (lista importada, sem FDS)
+  function filaDoc(itens, op) {
+    op = op || {}; const F = O.Fila; const sg = signer(null);
+    const sit = (it) => F.situacao(it);
+    const PRI = { alta: 0, media: 1, normal: 2 }; const PRI_TXT = { alta: 'Alta', media: 'Média', normal: 'Normal' };
+    const ord = itens.slice().sort((a, b) => PRI[a.prioridade.nivel] - PRI[b.prioridade.nivel] || a.local.localeCompare(b.local) || a.nome.localeCompare(b.nome));
+    const conta = (f) => itens.filter(f).length;
+    const pseudo = { nome: 'Fila de homologação', dec: { numero: '' }, rotulo: 'Documento', pseudo: true };
+    const B = [capa('Fila de homologação', 'QUIM 360 | Produtos a homologar | ' + fmtData(new Date().toISOString()), pseudo, [['Produtos na fila', String(itens.length)], ['Origem', 'Lista importada, sem FDS: dados de partida, a confirmar na FDS atual']])];
+    B.push({ t: 'callout', tone: 'warn', title: 'A lista não traz FDS', text: 'Nome, fabricante, classe de transporte, composição e local vêm de um levantamento antigo. Para cada produto, levante a FDS atual: a homologação usa os dados da FDS, não os desta lista.' });
+    B.push({ t: 'h1', text: '1 Resumo' });
+    B.push({ t: 'table', head: ['Situação', 'Produtos'], widths: [70, 30], rows: [['FDS a levantar', conta((i) => sit(i).chave === 'fds_levantar')], ['FDS recebida', conta((i) => sit(i).chave === 'fds_recebida')], ['Em homologação ou pendentes', conta((i) => ['em_analise', 'pendente'].includes(sit(i).chave))], ['Homologados (inclui condicionantes)', conta((i) => ['homologado', 'condicionado', 'na_lista'].includes(sit(i).chave))], ['Reprovados', conta((i) => sit(i).chave === 'reprovado')], ['Descartados', conta((i) => sit(i).chave === 'descartado')]].map((r) => [r[0], String(r[1])]) });
+    B.push({ t: 'table', head: ['Prioridade para levantar a FDS', 'Produtos'], widths: [70, 30], rows: [['Alta: composição cita agente de atenção', String(conta((i) => i.prioridade.nivel === 'alta'))], ['Média: solvente aromático ou classe de risco 3, 4.1, 6 ou 8', String(conta((i) => i.prioridade.nivel === 'media'))], ['Normal', String(conta((i) => i.prioridade.nivel === 'normal'))]] });
+    B.push({ t: 'h1', text: '2 Prioridade alta' });
+    B.push({ t: 'p', small: true, text: 'Produtos cuja composição, como descrita na lista, cita substâncias que costumam acionar o gatilho de CMR ou PFC. É indício de partida: a FDS atual confirma ou não.' });
+    const alta = ord.filter((i) => i.prioridade.nivel === 'alta');
+    B.push({ t: 'table', head: ['Produto', 'Fabricante', 'Local', 'Motivo', 'Situação'], widths: [24, 18, 16, 28, 14], rows: alta.length ? alta.map((i) => [i.nome, nz(i.fabricante), nz(i.local), i.prioridade.motivos.join('; '), sit(i).rotulo]) : [['Nenhum', '', '', '', '']] });
+    B.push({ t: 'h1', text: '3 Qualidade da lista' });
+    const q = [['Possíveis duplicados (mesmo nome e fabricante)', conta((i) => i.duplicado)], ['Sem fabricante', conta((i) => !i.fabricante)], ['Sem composição', conta((i) => !i.composicao)], ['Sem local de armazenamento definido', conta((i) => !i.local)], ['Sem quantidade informada', conta((i) => !i.quantidade)], ['Sem classe de risco informada ou "sem classe de risco" (classe de armazenamento não deduzível)', conta((i) => !i.classe || /^sem classe/i.test(i.classe))], ['Marcados como fora de uso', conta((i) => i.emUso === false)]];
+    B.push({ t: 'table', head: ['Ponto de atenção', 'Produtos'], widths: [80, 20], rows: q.map((r) => [r[0], String(r[1])]) });
+    B.push({ t: 'h1', text: '4 Lista completa, por prioridade e local' });
+    B.push({ t: 'table', head: ['Produto', 'Fabricante', 'Classe (lista)', 'Local', 'Prioridade', 'Situação'], widths: [26, 18, 11, 16, 10, 19], rows: ord.map((i) => [i.nome + (i.duplicado ? ' (possível duplicado)' : ''), nz(i.fabricante), nz(i.classe), nz(i.local), PRI_TXT[i.prioridade.nivel], sit(i).rotulo]) });
+    B.push({ t: 'p', small: true, text: 'Prioridade é apoio para organizar o trabalho e não classifica o perigo do produto. A classificação vem da FDS.' });
+    B.push({ t: 'sign', rows: [[sg.nome, sg.funcao]] });
+    return B;
+  }
+
   // ---------------------------------------------------------------- Cenários de risco (treinamento, brigada, reuniões)
   const TOM_RISCO = { 'Crítico': 'crit', 'Alto': 'warn', 'Médio': 'info', 'Baixo': 'ok' };
   // local: cenários do local (ativos e adicionados); sem local: catálogo geral (padrão e biblioteca da organização)
@@ -25750,7 +25932,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});
 </script>
 <script>/* Renderizadores de blocos: HTML (pré-visualização e PDF por impressão) e Word (.docx). */
@@ -26379,6 +26561,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     fds0: {
       render(p, api) {
         const w = h('div');
+        if (p.filaRef) w.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Dados da lista de origem (apenas referência)'), h('p', { class: 'small' }, 'A lista é de um levantamento antigo e não traz FDS: anexe a FDS atual abaixo. A análise usa a FDS; os dados da lista ficam só como apoio.'),
+          h('table', { class: 't' }, h('tbody', {}, [['Composição na lista', p.filaRef.composicao], ['Classe de risco na lista', p.filaRef.classe], ['Quantidade na lista', p.filaRef.quantidade], ['Área usuária', p.filaRef.area]].filter((x) => x[1]).map((x) => h('tr', {}, h('th', { style: 'width:34%' }, x[0]), h('td', {}, x[1])))))));
         w.appendChild(U.q('', 'Envie a FDS. O app lê o documento e preenche tudo que consta nela.'));
         w.appendChild(fdsPanel(p, api.rerender));
         if (p.fds.analisada) {
@@ -27224,6 +27408,83 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     draw();
   };
 
+  // ------------------------------------------------------------ fila de homologação (lista importada, sem FDS)
+  V.fila = (root) => {
+    const F = O.Fila;
+    root.appendChild(head('Fila de homologação', 'Produtos de uma lista a homologar: levante a FDS atual de cada um e inicie a análise'));
+    const impBox = h('div');
+    const arq = h('input', { type: 'file', accept: '.xlsx,.csv,.txt', style: 'display:none' });
+    let pendente = null;
+    const mostraPrevia = (itens, nome) => {
+      pendente = itens; impBox.innerHTML = '';
+      const c = (f) => itens.filter(f).length;
+      const jaTem = new Set(S.fila().map((x) => x.chave));
+      const novos = itens.filter((i) => !jaTem.has(i.chave)).length;
+      let modo = 'adicionar';
+      const rad = (v, rot) => { const inp = h('input', { type: 'radio', name: 'modo-fila', value: v, ...(v === modo ? { checked: true } : {}) }); inp.addEventListener('change', () => { modo = v; }); return h('label', { class: 'row small', style: 'gap:6px' }, inp, rot); };
+      impBox.appendChild(h('div', { class: 'alert' }, h('b', {}, nome + ': ' + itens.length + ' produtos lidos'), h('div', { class: 'small' }, 'Prioridade alta: ' + c((i) => i.prioridade.nivel === 'alta') + ' | média: ' + c((i) => i.prioridade.nivel === 'media') + ' | normal: ' + c((i) => i.prioridade.nivel === 'normal') + '. Possíveis duplicados: ' + c((i) => i.duplicado) + '. Marcados fora de uso: ' + c((i) => i.emUso === false) + '. Sem composição: ' + c((i) => !i.composicao) + '. Novos em relação à fila atual: ' + novos + '.')));
+      impBox.appendChild(h('div', { class: 'row' }, rad('adicionar', 'Adicionar só os novos (ignora o que já está na fila)'), rad('substituir', 'Substituir a fila (mantém os que já iniciaram homologação)')));
+      impBox.appendChild(h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'btn', onclick: () => {
+        if (modo === 'substituir') { const mant = S.fila().filter((x) => x.produtoId); const chaves = new Set(mant.map((x) => x.chave)); S.substituirFila(mant.concat(pendente.filter((i) => !chaves.has(i.chave)))); }
+        else S.adicionarFila(pendente.filter((i) => !jaTem.has(i.chave)));
+        U.toast('Fila atualizada.'); O.route(); } }, 'Importar para a fila'), h('button', { class: 'btn ghost', onclick: () => { pendente = null; impBox.innerHTML = ''; } }, 'Cancelar')));
+    };
+    arq.addEventListener('change', async () => { if (!arq.files[0]) return; try { const itens = await F.lerArquivo(arq.files[0]); if (!itens.length) { U.toast('Nenhum produto encontrado na planilha.'); return; } mostraPrevia(itens, arq.files[0].name); } catch (e) { U.toast(e.message); } arq.value = ''; });
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Importar lista de produtos'),
+      h('p', { class: 'small' }, 'Aceita planilha .xlsx ou .csv com as colunas Descrição do Produto, Fabricante, Classe de risco, Composição química, Em uso, Área usuária, Local de Armazenamento, Local de utilização e Quantidade. A lista não traz FDS: serve para organizar o trabalho. Nenhum dado vira produto homologado, e a coluna Empresa não é importada.'),
+      h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => arq.click() }, 'Escolher planilha'), arq), impBox));
+
+    const lista = S.fila();
+    if (!lista.length) { root.appendChild(h('div', { class: 'empty' }, 'A fila está vazia. Importe uma lista para começar.')); return; }
+    const st = { q: '', sit: '', pri: '', loc: '' };
+    const kpi = h('div', { class: 'grid g4', style: 'margin-bottom:12px' });
+    const tabArea = h('div');
+    const locais = [...new Set(lista.map((i) => i.local || 'Sem local'))].sort();
+    const mk = (opts, k) => { const s = h('select', { style: 'max-width:250px' }, opts.map((o) => h('option', { value: o[0] }, o[1]))); s.addEventListener('change', () => { st[k] = s.value; draw(); }); return s; };
+    const busca = h('input', { type: 'text', placeholder: 'Buscar por produto, fabricante ou composição', style: 'max-width:340px' }); busca.addEventListener('input', () => { st.q = busca.value; draw(); });
+    root.appendChild(kpi);
+    root.appendChild(h('div', { class: 'row', style: 'margin-bottom:10px' }, busca,
+      mk([['', 'Todas as situações'], ['fds_levantar', 'FDS a levantar'], ['fds_recebida', 'FDS recebida'], ['em_analise', 'Em homologação'], ['pendente', 'Pendente'], ['homologado', 'Homologado'], ['condicionado', 'Homologado com condicionantes'], ['reprovado', 'Reprovado'], ['descartado', 'Descartado']], 'sit'),
+      mk([['', 'Toda prioridade'], ['alta', 'Prioridade alta'], ['media', 'Prioridade média'], ['normal', 'Prioridade normal']], 'pri'),
+      mk([['', 'Todos os locais']].concat(locais.map((l) => [l, l])), 'loc')));
+    const acoes = h('div', { class: 'row', style: 'margin-bottom:10px' }); root.appendChild(acoes);
+    root.appendChild(tabArea);
+    const PRI_TOM = { alta: 'crit', media: 'warn', normal: 'info' }, PRI_TXT = { alta: 'Alta', media: 'Média', normal: 'Normal' };
+    const SIT_TOM = { fds_levantar: 'warn', fds_recebida: 'info', em_analise: 'info', pendente: 'warn', homologado: 'ok', condicionado: 'warn', reprovado: 'crit', descartado: 'info', na_lista: 'ok' };
+    const filtrados = () => S.fila().filter((i) => { const s = F.situacao(i); const t = (i.nome + ' ' + i.fabricante + ' ' + i.composicao).toLowerCase();
+      return (!st.q || t.includes(st.q.toLowerCase())) && (!st.sit || s.chave === st.sit) && (!st.pri || i.prioridade.nivel === st.pri) && (!st.loc || (i.local || 'Sem local') === st.loc); });
+    const draw = () => {
+      const todos = S.fila(); const cs = (k) => todos.filter((i) => F.situacao(i).chave === k).length;
+      kpi.innerHTML = ''; [['Produtos na fila', todos.length, ''], ['FDS a levantar', cs('fds_levantar'), 'warn'], ['Em homologação', cs('em_analise') + cs('pendente') + cs('fds_recebida'), ''], ['Homologados', cs('homologado') + cs('condicionado') + cs('na_lista'), 'ok']].forEach((k) => kpi.appendChild(h('div', { class: 'kpi ' + k[2] }, h('b', {}, k[1]), h('span', {}, k[0]))));
+      const f = filtrados();
+      acoes.innerHTML = ''; acoes.appendChild(V.docBotoes({ nome: 'fila-de-homologacao', id: 'fila' }, { id: 'fila', nome: 'Fila de homologação', fn: () => D.filaDoc(filtrados()) }, true));
+      acoes.appendChild(h('button', { class: 'btn sm ghost', onclick: () => { const cab = ['Produto', 'Fabricante', 'Classe (lista)', 'Local', 'Prioridade', 'Situação', 'Motivo da prioridade']; const esc = (x) => '"' + String(x == null ? '' : x).replace(/"/g, '""') + '"'; const linhas = [cab.map(esc).join(';')].concat(f.map((i) => [i.nome, i.fabricante, i.classe, i.local, PRI_TXT[i.prioridade.nivel], F.situacao(i).rotulo, i.prioridade.motivos.join('; ')].map(esc).join(';'))); R.baixar(new Blob(['﻿' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' }), 'fila-de-homologacao.csv'); } }, 'Baixar CSV'));
+      tabArea.innerHTML = '';
+      if (!f.length) { tabArea.appendChild(h('div', { class: 'empty' }, 'Nenhum produto com esses filtros.')); return; }
+      const ordem = { alta: 0, media: 1, normal: 2 };
+      const linhas = f.slice().sort((a, b) => ordem[a.prioridade.nivel] - ordem[b.prioridade.nivel] || a.nome.localeCompare(b.nome)).slice(0, 250).map((i) => {
+        const s = F.situacao(i);
+        const det = h('details', {}, h('summary', { class: 'small' }, 'Detalhes'),
+          h('p', { class: 'small', style: 'margin:4px 0' }, 'Composição na lista: ' + (i.composicao || '—')), h('p', { class: 'small', style: 'margin:4px 0' }, 'Local informado: ' + (i.localOriginal || '—') + (i.localUso ? ' | uso: ' + i.localUso : '') + (i.quantidade ? ' | quantidade: ' + i.quantidade : '')),
+          i.prioridade.motivos.length ? h('p', { class: 'small', style: 'margin:4px 0' }, 'Prioridade: ' + i.prioridade.motivos.join('; ')) : null,
+          i.carimboLista === 'sim' ? h('p', { class: 'small', style: 'margin:4px 0' }, 'A lista marca "FDS com carimbo de SSMA", mas refere-se à versão antiga: levante a FDS atual.') : null,
+          U.input(i, 'obs', { rows: 2, label: 'Observações', onInput: () => S.salvarFila(i) }));
+        const bt = h('div', { class: 'row' });
+        if (s.produto) bt.appendChild(h('a', { class: 'btn sm', href: (['em_analise', 'pendente'].includes(s.chave) ? '#/homologar/' : '#/produto/') + s.produto.id }, ['em_analise', 'pendente'].includes(s.chave) ? 'Continuar' : 'Abrir'));
+        else if (s.chave === 'descartado') bt.appendChild(h('button', { class: 'btn sm ghost', onclick: () => { i.estado = ''; S.salvarFila(i); draw(); } }, 'Reativar'));
+        else {
+          bt.appendChild(h('button', { class: 'btn sm', onclick: () => { const p = F.iniciar(i); location.hash = '#/homologar/' + p.id; } }, 'Iniciar homologação'));
+          bt.appendChild(h('button', { class: 'btn sm ghost', onclick: () => { i.estado = s.chave === 'fds_recebida' ? '' : 'fds_recebida'; S.salvarFila(i); draw(); } }, s.chave === 'fds_recebida' ? 'FDS ainda não' : 'FDS recebida'));
+          bt.appendChild(h('button', { class: 'btn sm ghost', onclick: () => { i.estado = 'descartado'; S.salvarFila(i); draw(); } }, 'Descartar'));
+        }
+        return h('tr', {}, h('td', {}, h('b', {}, i.nome), i.duplicado ? U.badge('warn', 'possível duplicado') : null, h('div', { class: 'small' }, i.fabricante || '—'), det), h('td', {}, i.local || '—'), h('td', {}, i.classe || '—'), h('td', {}, U.badge(PRI_TOM[i.prioridade.nivel], PRI_TXT[i.prioridade.nivel])), h('td', {}, U.badge(SIT_TOM[s.chave] || 'info', s.rotulo)), h('td', {}, bt));
+      });
+      tabArea.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Produto', 'Local', 'Classe (lista)', 'Prioridade', 'Situação', ''].map((x) => h('th', {}, x)))), h('tbody', {}, linhas))));
+      if (f.length > 250) tabArea.appendChild(h('p', { class: 'small' }, 'Mostrando 250 de ' + f.length + ' produtos: use os filtros. O documento e o CSV trazem todos os produtos filtrados.'));
+    };
+    draw();
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -27837,7 +28098,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 (function (O) {
   const U = O.UI, h = U.h;
   const NAV = [
-    ['#/', 'Início', 'home'], ['#/painel', 'Painel', 'grid'], ['#/produtos', 'Produtos', 'flask'], ['#/nova', 'Nova homologação', 'plus'], ['#/fds', 'Analisador de FDS', 'file'], '-',
+    ['#/', 'Início', 'home'], ['#/painel', 'Painel', 'grid'], ['#/produtos', 'Produtos', 'flask'], ['#/fila', 'Fila de homologação', 'file'], ['#/nova', 'Nova homologação', 'plus'], ['#/fds', 'Analisador de FDS', 'file'], '-',
     ['#/locais', 'Locais de armazenamento', 'pin'], ['#/compat', 'Quadro de compatibilidade', 'grid'], ['#/cenarios', 'Cenários de risco', 'scale'], ['#/matriz', 'Matriz de segregação', 'grid'], ['#/legal', 'Base técnico-legal', 'scale'], ['#/config', 'Configurações', 'gear'],
   ];
   const root = document.getElementById('app');
@@ -27868,6 +28129,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         case '': V.capa(main); break;
         case 'painel': V.painel(main); break;
         case 'produtos': V.produtos(main); break;
+        case 'fila': V.fila(main); break;
         case 'produto': V.produto(main, parts[1], parts[2]); break;
         case 'doc': V.doc(main, parts[1], parts[2]); break;
         case 'nova': { const p = O.Engine.novoProduto(); O.Store.salvarProduto(p); location.replace('#/homologar/' + p.id); return; }

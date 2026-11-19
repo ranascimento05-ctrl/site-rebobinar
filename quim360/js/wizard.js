@@ -137,6 +137,8 @@
     fds0: {
       render(p, api) {
         const w = h('div');
+        if (p.filaRef) w.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Dados da lista de origem (apenas referência)'), h('p', { class: 'small' }, 'A lista é de um levantamento antigo e não traz FDS: anexe a FDS atual abaixo. A análise usa a FDS; os dados da lista ficam só como apoio.'),
+          h('table', { class: 't' }, h('tbody', {}, [['Composição na lista', p.filaRef.composicao], ['Classe de risco na lista', p.filaRef.classe], ['Quantidade na lista', p.filaRef.quantidade], ['Área usuária', p.filaRef.area]].filter((x) => x[1]).map((x) => h('tr', {}, h('th', { style: 'width:34%' }, x[0]), h('td', {}, x[1])))))));
         w.appendChild(U.q('', 'Envie a FDS. O app lê o documento e preenche tudo que consta nela.'));
         w.appendChild(fdsPanel(p, api.rerender));
         if (p.fds.analisada) {
