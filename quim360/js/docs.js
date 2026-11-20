@@ -361,7 +361,9 @@
   }
 
   // ---------------------------------------------------------------- Plano de ação
-  function planoAcao(p, produtos) {
+  // ações do plano (geradas pelas regras do app) com os dados de responsável, prazo e situação registrados em p.acoesPlano
+  const SIT_ACAO = { fazer: 'A fazer', enviada: 'Enviada', andamento: 'Em andamento', concluida: 'Concluída' };
+  function listaAcoes(p, produtos) {
     const av = E.avaliar(p, produtos);
     const ok = ['homologado', 'condicionado'].includes(p.status);
     const loc = localDe(p);
@@ -429,6 +431,12 @@
       if (p.fds.dataRevisao) { const d = new Date(p.fds.dataRevisao); d.setFullYear(d.getFullYear() + lim); add('Solicitar nova versão da FDS ao fornecedor', 'ABNT NBR 14725', 'Compras / SST', fmtData(d.toISOString())); }
     }
     if (p.status === 'pendente' || (!A.length && p.status === 'em_analise')) add('Registrar o retorno do fornecedor ou do parecer e retomar a análise na etapa pendente', 'Pendência da análise', 'Responsável técnico', '', 'Pendente');
+    const reg = p.acoesPlano || {};
+    const acoes = A.map((r) => { const o = reg[r[1]] || {}; const papel = r[3]; const resp = o.resp ? o.resp + (papel ? ' (' + papel + ')' : '') : papel; const prazo = o.prazo ? fmtData(o.prazo) : r[4]; const sit = o.sit ? SIT_ACAO[o.sit] || r[5] : r[5]; return { n: r[0], acao: r[1], origem: r[2], papel, prazoTexto: r[4], sitTexto: r[5], reg: o, linha: [r[0], r[1], r[2], resp, prazo, sit] }; });
+    return { A: acoes.map((x) => x.linha), st, acoes };
+  }
+  function planoAcao(p, produtos) {
+    const { A, st } = listaAcoes(p, produtos);
     const B = [];
     B.push(capa('Plano de ação', 'QUIM 360 | Plano de Ação | ' + nz(p.nome), p, [['Situação do produto', st[0]]]));
     B.push({ t: 'callout', tone: st[1], title: 'Situação: ' + st[0], text: p.status === 'condicionado' ? 'Uso liberado somente após as ações marcadas como pendentes.' : p.status === 'homologado' ? 'Ações para colocar o produto em uso com os controles definidos na análise.' : p.status === 'reprovado' ? 'Produto reprovado: ações de encerramento e substituição.' : 'Análise sem decisão: ações para destravar a homologação.' });
@@ -439,6 +447,36 @@
     return B;
   }
   function D_STATUS(p) { return STATUS[p.status] || STATUS.em_analise; }
+
+  // e-mail de solicitação de ação ao responsável: descrição do produto, local de armazenamento e ações pedidas
+  function emailAcoes(p, produtos, acoes, destino) {
+    const G = O.GHS; const loc = localDe(p); const sg = signer(p); const c = cfg();
+    const h = (p.ghs.h || []).slice(0, 6).map((x) => x + ' ' + (G.hText(x) || '')).join('; ');
+    const L = [];
+    L.push('Olá' + (destino && destino.nome ? ', ' + destino.nome : '') + ',');
+    L.push('');
+    L.push('Solicito a sua ação referente ao produto químico abaixo.');
+    L.push('');
+    L.push('PRODUTO');
+    L.push('Nome: ' + nz(p.nome) + (p.fornecedor ? ' | Fornecedor: ' + p.fornecedor : ''));
+    L.push('Transporte: ' + [p.imdg.onu ? 'ONU ' + p.imdg.onu : '', p.imdg.classe ? 'classe ' + p.imdg.classe : '', p.imdg.pg ? 'grupo de embalagem ' + p.imdg.pg : '', p.imdg.numeroRisco ? 'número de risco ' + p.imdg.numeroRisco : ''].filter(Boolean).join(', ') || 'não informado');
+    L.push('Perigos (FDS): ' + (p.ghs.palavra ? p.ghs.palavra + '. ' : '') + (h || 'não informados'));
+    L.push('Uso previsto: ' + nz([p.finalidade, p.ctx.atividade].filter(Boolean).join(' | '), 'não informado'));
+    L.push('Situação: ' + (STATUS[p.status] || STATUS.em_analise)[0] + (p.dec.numero ? ' (' + p.dec.numero + ')' : ''));
+    L.push('');
+    L.push('LOCAL DE ARMAZENAMENTO');
+    L.push(loc ? loc.nome + ' (' + loc.tipo + ')' + (loc.areaM2 ? ', ' + loc.areaM2 + ' m²' : '') + (loc.aoArLivre ? ', ao ar livre' : '') + (p.comp.qtdKg !== '' && p.comp.qtdKg != null ? '. Quantidade prevista: ' + String(p.comp.qtdKg).replace('.', ',') + ' kg' : '') : 'Local não definido');
+    L.push('');
+    L.push('AÇÃO SOLICITADA');
+    acoes.forEach((a, i) => { L.push((i + 1) + '. ' + a.acao); L.push('   Origem: ' + a.origem + (a.linha[4] ? ' | Prazo: ' + a.linha[4] : '')); if (a.reg && a.reg.obs) L.push('   Observação: ' + a.reg.obs); });
+    L.push('');
+    L.push('Ao concluir, responda este e-mail informando a conclusão e anexe a evidência, se houver (foto, registro ou documento).');
+    L.push('');
+    L.push('Atenciosamente,');
+    L.push(sg.nome || '[nome]'); L.push(sg.funcao + (sg.registro ? ' | ' + sg.registro : '')); if (c.organizacao) L.push(c.organizacao);
+    return { para: (destino && destino.email) || '', assunto: '[QUIM 360] Ação solicitada | ' + nz(p.nome) + (loc ? ' | ' + loc.nome : ''), corpo: L.join('\n') };
+  }
+
 
 
 
@@ -749,5 +787,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});
