@@ -23808,13 +23808,20 @@ var vfs = {
 /* Persistência local (localStorage) com fallback em memória e exportação/importação JSON. */
 (function (O) {
   const KEY = 'quim360.v1';
-  let mem = null;
+  const KEY_BK = 'quim360.backup.';
+  // Versão do esquema dos dados: sobe a cada mudança que exija ajuste dos registros guardados.
+  // MIGRACOES[n] leva os dados da versão n para a n+1. Antes de migrar, uma cópia automática fica guardada (slot "migracao").
+  const SCHEMA_VERSION = 2;
+  const MIGRACOES = {
+    1: (d) => { d.bacias = d.bacias || []; d.consultas = d.consultas || {}; if (d.config) { if (d.config.email === 'ranascimento05@gmail.com') delete d.config.email; if (d.config.alertaDiasBacia == null) d.config.alertaDiasBacia = 30; } return d; },
+  };
+  function migrar(d) { let v = d.v || 1; while (v < SCHEMA_VERSION) { if (MIGRACOES[v]) d = MIGRACOES[v](d); v += 1; d.v = v; } return d; }
+  let mem = null; let somenteLeitura = false;
 
   const DEFAULT_CFG = {
     organizacao: '',
     responsavel: '',
     registro: '',
-    email: 'ranascimento05@gmail.com',
     telEmergencia: '',
     anosValidadeFDS: 5,
     cat2Reprova: true,
@@ -23822,17 +23829,18 @@ var vfs = {
     logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false,
     bibliotecaCenarios: [],
     contatos: [],
-    alertaDias: 30, alertaDiasFds: 90, alertaDiasBacia: 30,
+    alertaDias: 30, alertaDiasFds: 90, alertaDiasBacia: 30, lembreteBackupDias: 30, ultimoBackup: '',
   };
 
-  function blank() { return { v: 1, seq: 0, produtos: [], locais: [], fila: [], bacias: [], consultas: {}, config: { ...DEFAULT_CFG } }; }
+  function blank() { return { v: SCHEMA_VERSION, seq: 0, produtos: [], locais: [], fila: [], bacias: [], consultas: {}, config: { ...DEFAULT_CFG } }; }
 
   function load() {
     if (mem) return mem;
-    try {
-      const raw = localStorage.getItem(KEY);
-      mem = raw ? JSON.parse(raw) : blank();
-    } catch (e) { mem = blank(); }
+    let raw = null; let migrou = false;
+    try { raw = localStorage.getItem(KEY); mem = raw ? JSON.parse(raw) : blank(); } catch (e) { mem = blank(); }
+    const vArq = mem.v || 1;
+    if (vArq > SCHEMA_VERSION) somenteLeitura = true; // dados criados por versão mais nova do app: não gravar por cima
+    else if (vArq < SCHEMA_VERSION) { if (raw) guardaBackup('migracao', 'Antes de migrar os dados da versão ' + vArq + ' para a ' + SCHEMA_VERSION, raw); mem = migrar(mem); migrou = true; }
     mem.config = { ...DEFAULT_CFG, ...(mem.config || {}) };
     if (/CREA-PE\s*1816474835/.test(mem.config.registro || '')) mem.config.registro = '';
     mem.produtos = (mem.produtos || []).filter((x) => x && x.id && x.ghs); // remove registros fantasmas criados por campos de formulário que não são produtos
@@ -23840,12 +23848,16 @@ var vfs = {
     mem.fila = mem.fila || [];
     mem.bacias = mem.bacias || [];
     mem.consultas = mem.consultas || {};
+    if (migrou) save();
     return mem;
   }
   function save() {
+    if (somenteLeitura) return;
     try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch (e) { /* armazenamento indisponível: segue em memória */ }
     O.emit && O.emit('store');
   }
+  // cópias automáticas (3 espaços): antes de migrar, antes de importar e antes de apagar tudo
+  function guardaBackup(slot, motivo, dados) { try { localStorage.setItem(KEY_BK + slot, JSON.stringify({ quando: new Date().toISOString(), motivo, dados })); } catch (e) { /* sem espaço: segue sem a cópia */ } }
   function uid(p) { return p + '-' + Math.random().toString(36).slice(2, 8); }
 
   const Store = {
@@ -23892,14 +23904,32 @@ var vfs = {
     salvarConsulta(a, b, c) { load().consultas[[a, b].sort().join('|')] = c; save(); },
     removerConsulta(a, b) { delete load().consultas[[a, b].sort().join('|')]; save(); },
     uid,
-    exportar() { return JSON.stringify(load(), null, 2); },
+    versao() { return load().v || 1; },
+    versaoApp() { return SCHEMA_VERSION; },
+    somenteLeitura() { load(); return somenteLeitura; },
+    exportar() {
+      const d = load(); d.config.ultimoBackup = new Date().toISOString(); save();
+      return JSON.stringify({ ...d, app: 'QUIM 360', exportadoEm: d.config.ultimoBackup }, null, 2);
+    },
+    // dias desde o último backup exportado (null se nunca)
+    diasSemBackup() { const u = load().config.ultimoBackup; return u ? Math.floor((Date.now() - new Date(u).getTime()) / 86400000) : null; },
     importar(txt) {
       const o = JSON.parse(txt);
       if (!o || !Array.isArray(o.produtos) || !Array.isArray(o.locais)) throw new Error('Arquivo inválido: faltam produtos ou locais.');
-      mem = { ...blank(), ...o, config: { ...DEFAULT_CFG, ...(o.config || {}) } };
-      save();
+      if ((o.v || 1) > SCHEMA_VERSION) throw new Error('O arquivo é de uma versão mais nova do app (dados v' + o.v + '; este app lê até a v' + SCHEMA_VERSION + '). Atualize o app antes de importar.');
+      if (somenteLeitura) throw new Error('Os dados deste navegador são de uma versão mais nova do app: atualize o app antes de importar.');
+      guardaBackup('importacao', 'Antes de importar um arquivo', JSON.stringify(load()));
+      delete o.app; delete o.exportadoEm;
+      const novo = migrar({ ...blank(), ...o, config: { ...DEFAULT_CFG, ...(o.config || {}) } }); novo.v = SCHEMA_VERSION;
+      mem = novo; save(); mem = null; load();
     },
-    limpar() { mem = blank(); save(); },
+    limpar() { guardaBackup('apagar', 'Antes de apagar tudo', JSON.stringify(load())); mem = blank(); save(); },
+    // cópias automáticas guardadas neste navegador
+    backups() {
+      return ['migracao', 'importacao', 'apagar'].map((slot) => { try { const x = JSON.parse(localStorage.getItem(KEY_BK + slot)); return x ? { slot, quando: x.quando, motivo: x.motivo, tamanho: (x.dados || '').length } : null; } catch (e) { return null; } }).filter(Boolean);
+    },
+    backupTexto(slot) { try { return JSON.parse(localStorage.getItem(KEY_BK + slot)).dados; } catch (e) { return ''; } },
+    restaurarBackup(slot) { const t = this.backupTexto(slot); if (!t) throw new Error('Cópia não encontrada.'); this.importar(t); },
   };
 
   // eventos simples
@@ -25424,6 +25454,7 @@ var vfs = {
   const Logo = {
     atual() {
       const c = S.config();
+      if (c.semLogo) return { src: '', w: 0, h: 0, tipo: 'png', custom: true, sem: true, claro: true };
       if (c.logoDoc) return { src: c.logoDoc, w: c.logoDocW || 300, h: c.logoDocH || 100, tipo: 'png', custom: true, claro: !!c.capaClara };
       const L = O.LOGO.lockup;
       return { src: L.src, w: L.w, h: L.h, tipo: 'jpg', custom: false, claro: false };
@@ -25437,7 +25468,7 @@ var vfs = {
       return { w: Math.round(w), h: Math.round(h) };
     },
     img(maxH, maxW) {
-      const l = this.atual(); const t = this.tam(maxH, maxW || 260);
+      const l = this.atual(); if (l.sem) return ''; const t = this.tam(maxH, maxW || 260);
       return `<img src="${l.src}" width="${t.w}" height="${t.h}" alt="${l.custom ? 'Logo da organização' : 'Orbit 360 | Consultoria em SSMA'}" style="display:block;object-fit:contain">`;
     },
     bytes() {
@@ -26518,7 +26549,7 @@ var vfs = {
       switch (b.t) {
         case 'cover': {
           const tm = O.Logo.tema();
-          return `<header class="d-cover${O.Logo.atual().claro ? ' claro' : ''}"><div class="d-cover-logo">${O.Logo.img(112, 240)}</div><div class="d-cover-txt"><div class="d-cover-org">${b.org ? esc(b.org) : 'QUIM 360'}</div><h1>${esc(b.titulo)}</h1><p class="d-cover-sub">${esc(b.sub)}</p></div></header><table class="d-kv d-meta">${b.meta.map((m) => `<tr><th>${esc(m[0])}</th><td>${esc(m[1])}</td></tr>`).join('')}</table>`;
+          return `<header class="d-cover${O.Logo.atual().claro ? ' claro' : ''}">${O.Logo.atual().sem ? '' : `<div class="d-cover-logo">${O.Logo.img(112, 240)}</div>`}<div class="d-cover-txt"><div class="d-cover-org">${b.org ? esc(b.org) : 'QUIM 360'}</div><h1>${esc(b.titulo)}</h1><p class="d-cover-sub">${esc(b.sub)}</p></div></header><table class="d-kv d-meta">${b.meta.map((m) => `<tr><th>${esc(m[0])}</th><td>${esc(m[1])}</td></tr>`).join('')}</table>`;
         }
         case 'h1': return `<h2 class="d-h1">${esc(b.text)}</h2>`;
         case 'h2': return `<h3 class="d-h2">${esc(b.text)}</h3>`;
@@ -26638,7 +26669,7 @@ var vfs = {
           const t = new D.Table({ width: { size: W, type: D.WidthType.DXA }, borders: noBorders, rows: [new D.TableRow({ children: [new D.TableCell({
             shading: { type: D.ShadingType.CLEAR, fill: tm.fill, color: 'auto' }, margins: { top: 160, bottom: 160, left: 200, right: 200 }, borders: lg.claro ? { top: line('CBD5E1', 4), left: line('CBD5E1', 4), right: line('CBD5E1', 4), bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } } : { ...noBorders, bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } },
             children: [
-              new D.Paragraph({ children: [new D.ImageRun({ type: lg.tipo, data: O.Logo.bytes(), transformation: { width: dim.w, height: dim.h } })] }),
+              ...(lg.sem ? [] : [new D.Paragraph({ children: [new D.ImageRun({ type: lg.tipo, data: O.Logo.bytes(), transformation: { width: dim.w, height: dim.h } })] })]),
               new D.Paragraph({ spacing: { before: 100, after: 60 }, children: [run(b.titulo, { bold: true, color: tm.tituloHex, size: 48 })] }),
               new D.Paragraph({ children: [run(b.sub, { color: tm.subHex, size: 20 })] }),
             ] })] })] });
@@ -26772,7 +26803,7 @@ var vfs = {
         const meta = await conv({ t: 'kv', rows: b.meta });
         return [
           { table: { widths: ['*'], body: [[{ fillColor: tm.bg, margin: [10, 10, 10, 10], columns: [
-            { image: lg.src, width: Math.round(dim.w * 0.75 * 1.2), height: Math.round(dim.h * 0.75 * 1.2) },
+            ...(lg.sem ? [] : [{ image: lg.src, width: Math.round(dim.w * 0.75 * 1.2), height: Math.round(dim.h * 0.75 * 1.2) }]),
             { width: '*', margin: [14, 6, 0, 0], stack: [{ text: b.org || 'QUIM 360', color: tm.org, bold: true, fontSize: 10 }, { text: b.titulo, color: tm.titulo, bold: true, fontSize: 21, margin: [0, 3, 0, 4] }, { text: b.sub, color: tm.sub, fontSize: 9 }] },
           ] }]] }, layout: { hLineWidth: (i, n) => (i === n.table.body.length ? 3 : (lg.claro ? 0.5 : 0)), hLineColor: (i, n) => (i === n.table.body.length ? '#60a5fa' : '#cbd5e1'), vLineWidth: () => (lg.claro ? 0.5 : 0), vLineColor: () => '#cbd5e1' }, margin: [0, 0, 0, 8] },
           ...meta,
@@ -28354,7 +28385,15 @@ var vfs = {
   };
 
   // ------------------------------------------------------------ painel
+  // aviso de backup e de versão dos dados (Painel e Configurações)
+  V.avisosDados = (root) => {
+    if (S.somenteLeitura()) root.appendChild(U.alert('crit', 'Dados de versão mais nova', 'Os dados deste navegador foram criados por uma versão mais nova do app. Para não perder nada, o app não grava alterações. Abra a versão mais nova do app.'));
+    const d = S.diasSemBackup(); const lim = Number(S.config().lembreteBackupDias) || 30;
+    if (S.produtos().length + S.locais().length > 0 && (d == null || d > lim)) root.appendChild(h('div', {}, U.alert('warn', 'Faça um backup dos dados', d == null ? 'Nenhum backup exportado ainda. Os dados ficam só neste navegador.' : 'O último backup foi há ' + d + ' dias (lembrete a cada ' + lim + ').'), h('a', { class: 'btn sm', href: '#/config' }, 'Ir para Configurações')));
+  };
+
   V.painel = (root) => {
+    V.avisosDados(root);
     const ps = S.produtos();
     const cnt = (st) => ps.filter((p) => p.status === st).length;
     root.appendChild(head('Painel', 'Homologação, uso, armazenamento e compatibilidade de produtos químicos', h('a', { class: 'btn', href: '#/nova' }, 'Nova homologação'), h('a', { class: 'btn ghost', href: '#/fds' }, 'Analisar FDS')));
@@ -28577,6 +28616,8 @@ var vfs = {
     const d = p && V.catalogo(p).find((x) => x.id === tipo);
     if (!p || !d) { root.appendChild(h('div', { class: 'empty' }, 'Documento não encontrado.')); return; }
     root.appendChild(head(d.nome, p.nome, h('a', { class: 'btn ghost', href: '#/produto/' + p.id + '/docs' }, 'Voltar'), h('button', { class: 'btn', onclick: () => baixarDocx(p, d) }, 'Word (.docx)'), h('button', { class: 'btn', onclick: () => baixarPdf(p, d) }, 'PDF'), h('button', { class: 'btn ghost', onclick: () => pdf(p, d) }, 'Imprimir')));
+    const lgx = O.Logo.atual();
+    root.appendChild(h('div', { class: 'card' }, h('div', { class: 'row' }, h('b', {}, 'Logotipo deste e dos demais documentos: ' + (lgx.sem ? 'nenhum' : lgx.custom ? 'logo própria' : 'Orbit 360')), h('span', { class: 'spacer' }), V.logoBotoes())));
     root.appendChild(h('div', { class: 'paper', html: R.html(d.fn()) }));
   };
 
@@ -28786,19 +28827,29 @@ var vfs = {
 
 
   // logo e identidade dos documentos (usada em Configurações, na aba Documentos e na saída)
-  V.logoCard = () => {
-    const lg = O.Logo.atual();
+  // botões de logotipo: inserir, trocar, tirar (sem logotipo) ou voltar à logo padrão; valem para todos os documentos
+  V.logoBotoes = () => {
+    const c = S.config(); const lg = O.Logo.atual();
     const arq = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/svg+xml,image/webp', style: 'display:none' });
     arq.addEventListener('change', async () => {
       if (!arq.files[0]) return;
-      try { const r = await O.Logo.processar(arq.files[0]); const claro = lg.custom ? !!S.config().capaClara : true; S.setConfig({ logoDoc: r.src, logoDocW: r.w, logoDocH: r.h, capaClara: claro }); U.toast('Logo atualizada nos documentos.'); O.route(); }
+      try { const r = await O.Logo.processar(arq.files[0]); const claro = c.logoDoc && !c.semLogo ? !!c.capaClara : true; S.setConfig({ logoDoc: r.src, logoDocW: r.w, logoDocH: r.h, capaClara: claro, semLogo: false }); U.toast('Logotipo atualizado nos documentos.'); O.route(); }
       catch (e) { U.toast(e.message); }
     });
+    const bt = (rot, fn, ghost) => h('button', { class: 'btn' + (ghost ? ' ghost' : '') + ' sm', onclick: fn }, rot);
+    return h('div', { class: 'row' }, arq,
+      bt(lg.custom && !lg.sem ? 'Trocar logotipo' : 'Inserir logotipo', () => arq.click()),
+      !lg.sem ? bt('Tirar logotipo', () => { S.setConfig({ semLogo: true }); U.toast('Documentos sem logotipo.'); O.route(); }, true) : null,
+      lg.sem && c.logoDoc ? bt('Usar o último logotipo enviado', () => { S.setConfig({ semLogo: false }); O.route(); }, true) : null,
+      lg.custom ? bt('Usar a logo Orbit 360', () => { S.setConfig({ semLogo: false, logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false }); U.toast('Voltou para a logo Orbit 360.'); O.route(); }, true) : null);
+  };
+
+  V.logoCard = () => {
+    const lg = O.Logo.atual();
     return (h('div', { class: 'card' }, h('h3', {}, 'Logo dos documentos'),
-      h('p', { class: 'small' }, 'A logo aparece na capa do relatório, do plano de ação, da ficha de emergência, da rotulagem, do envelope e do checklist, em Word, PDF e na pré-visualização. Use PNG com fundo transparente, JPG ou SVG. A imagem é reduzida e guardada neste navegador.'),
-      h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => arq.click() }, lg.custom ? 'Trocar logo' : 'Enviar minha logo'), arq,
-        lg.custom ? h('button', { class: 'btn ghost', onclick: () => { S.setConfig({ logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false }); U.toast('Voltou para a logo Orbit 360.'); O.route(); } }, 'Voltar para a logo Orbit 360') : null),
-      lg.custom ? h('div', { class: 'opts', style: 'margin-top:12px' },
+      h('p', { class: 'small' }, 'A logo aparece na capa do relatório, do plano de ação, da ficha de emergência, da rotulagem, do envelope e do checklist, em Word, PDF e na pré-visualização. Você pode inserir, trocar ou tirar a logo quando quiser. Use PNG com fundo transparente, JPG ou SVG. A imagem é reduzida e guardada neste navegador.'),
+      V.logoBotoes(),
+      lg.custom && !lg.sem ? h('div', { class: 'opts', style: 'margin-top:12px' },
         [[false, 'Faixa escura', 'Para logos claras ou brancas'], [true, 'Faixa clara', 'Para logos escuras ou coloridas']].map((o) => { const inp = h('input', { type: 'radio', name: 'tema', ...(!!S.config().capaClara === o[0] ? { checked: true } : {}) }); const lab = h('label', { class: 'opt' + (!!S.config().capaClara === o[0] ? ' sel' : '') }, inp, h('span', {}, h('b', {}, o[1]), h('small', {}, o[2]))); inp.addEventListener('change', () => { S.setConfig({ capaClara: o[0] }); O.route(); }); return lab; })) : h('p', { class: 'small', style: 'margin-top:8px' }, 'Logo em uso: Orbit 360.'),
       h('div', { class: 'paper', style: 'margin-top:12px;max-width:640px', html: R.html([{ t: 'cover', titulo: 'Exemplo de documento', sub: 'Pré-visualização da capa', org: S.config().organizacao, meta: [['Produto', 'Produto de exemplo']] }]) })));
   };
@@ -28807,6 +28858,7 @@ var vfs = {
   V.config = (root) => {
     const c = S.config();
     root.appendChild(head('Configurações', 'Responsável técnico, critérios e dados'));
+    V.avisosDados(root);
     const holder = { c };
     const save = () => S.setConfig(holder.c);
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Padrão da equipe: responsável técnico e organização'), h('p', { class: 'small' }, 'Usado quando a análise não define outro assinante. Cada análise pode ser assinada por outra pessoa na aba Documentos ou na etapa de saída.'), h('div', { class: 'grid g2' }, U.input(holder, 'c.responsavel', { label: 'Responsável técnico', onInput: save }), U.input(holder, 'c.registro', { label: 'Registro profissional', onInput: save }), U.input(holder, 'c.organizacao', { label: 'Organização (aparece na capa dos documentos)', onInput: save }), U.input(holder, 'c.email', { label: 'E-mail', onInput: save }), U.input(holder, 'c.telEmergencia', { label: 'Telefone de emergência da organização', onInput: save }), U.input(holder, 'c.sharepointBase', { label: 'Endereço base do SharePoint (opcional)', onInput: save }))));
@@ -28823,7 +28875,22 @@ var vfs = {
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Dados'), h('p', { class: 'small' }, 'Os dados ficam neste navegador. Exporte para backup ou para levar a outro computador.'), h('div', { class: 'row' },
       h('button', { class: 'btn', onclick: () => R.baixar(new Blob([S.exportar()], { type: 'application/json' }), 'quim360-dados-' + new Date().toISOString().slice(0, 10) + '.json') }, 'Exportar JSON'), h('button', { class: 'btn ghost', onclick: () => file.click() }, 'Importar JSON'), file,
       h('button', { class: 'btn ghost', onclick: async () => { if (await U.confirm('Carregar demonstração', 'Serão adicionados 2 locais e 2 produtos fictícios.', 'Carregar')) { O.Demo.criar(); O.route(); } } }, 'Carregar demonstração'),
-      h('button', { class: 'btn danger', onclick: async () => { if (await U.confirm('Apagar tudo', 'Todos os produtos, locais e configurações deste navegador serão apagados.', 'Apagar')) { S.limpar(); O.route(); } } }, 'Apagar tudo'))));
+      h('button', { class: 'btn danger', onclick: async () => { if (await U.confirm('Apagar tudo', 'Todos os produtos, locais e configurações deste navegador serão apagados. Uma cópia automática fica guardada para restaurar.', 'Apagar')) { S.limpar(); O.route(); } } }, 'Apagar tudo'))));
+
+    // versão dos dados, backup e cópias automáticas
+    {
+      const d = S.diasSemBackup(); const bks = S.backups();
+      const fmt = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—');
+      root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Backup e versão dos dados'),
+        h('p', { class: 'small' }, 'Os dados ficam só neste navegador: exporte um backup com frequência. Versão dos dados: ' + S.versao() + ' (este app lê até a ' + S.versaoApp() + '). Quando uma atualização do app mudar o formato, os dados são migrados sozinhos e uma cópia automática é guardada antes.'),
+        h('p', { class: 'small' }, 'Último backup exportado: ' + (d == null ? 'nunca' : 'há ' + d + ' dia(s)') + '.'),
+        h('div', { class: 'grid g3' }, U.input(holder, 'c.lembreteBackupDias', { type: 'number', label: 'Lembrar do backup a cada (dias)', onInput: () => { holder.c.lembreteBackupDias = Number(holder.c.lembreteBackupDias) || 30; save(); } })),
+        h('h4', { style: 'margin-top:10px' }, 'Cópias automáticas neste navegador'),
+        bks.length ? h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Quando', 'Motivo', ''].map((x) => h('th', {}, x)))), h('tbody', {}, bks.map((b) => h('tr', {}, h('td', {}, fmt(b.quando)), h('td', {}, b.motivo),
+          h('td', {}, h('div', { class: 'row' }, h('button', { class: 'btn sm ghost', onclick: () => R.baixar(new Blob([S.backupTexto(b.slot)], { type: 'application/json' }), 'quim360-copia-' + b.slot + '.json') }, 'Baixar'),
+            h('button', { class: 'btn sm', onclick: async () => { if (await U.confirm('Restaurar cópia', 'Os dados atuais serão substituídos pela cópia de ' + fmt(b.quando) + '. Os dados atuais ficam guardados na cópia "antes de importar".', 'Restaurar')) { try { S.restaurarBackup(b.slot); U.toast('Cópia restaurada.'); O.route(); } catch (e) { U.toast(e.message); } } } }, 'Restaurar'))))))))
+          : h('p', { class: 'muted' }, 'Nenhuma cópia automática ainda. Elas são criadas antes de migrar, de importar e de apagar tudo.')));
+    }
   };
   V.aplicarWatch = () => {
     const txt = S.config().watchExtra || '';

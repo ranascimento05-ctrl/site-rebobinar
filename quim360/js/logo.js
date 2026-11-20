@@ -7,6 +7,7 @@
   const Logo = {
     atual() {
       const c = S.config();
+      if (c.semLogo) return { src: '', w: 0, h: 0, tipo: 'png', custom: true, sem: true, claro: true };
       if (c.logoDoc) return { src: c.logoDoc, w: c.logoDocW || 300, h: c.logoDocH || 100, tipo: 'png', custom: true, claro: !!c.capaClara };
       const L = O.LOGO.lockup;
       return { src: L.src, w: L.w, h: L.h, tipo: 'jpg', custom: false, claro: false };
@@ -20,7 +21,7 @@
       return { w: Math.round(w), h: Math.round(h) };
     },
     img(maxH, maxW) {
-      const l = this.atual(); const t = this.tam(maxH, maxW || 260);
+      const l = this.atual(); if (l.sem) return ''; const t = this.tam(maxH, maxW || 260);
       return `<img src="${l.src}" width="${t.w}" height="${t.h}" alt="${l.custom ? 'Logo da organização' : 'Orbit 360 | Consultoria em SSMA'}" style="display:block;object-fit:contain">`;
     },
     bytes() {

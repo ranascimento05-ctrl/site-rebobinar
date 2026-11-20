@@ -19,7 +19,7 @@
         const meta = await conv({ t: 'kv', rows: b.meta });
         return [
           { table: { widths: ['*'], body: [[{ fillColor: tm.bg, margin: [10, 10, 10, 10], columns: [
-            { image: lg.src, width: Math.round(dim.w * 0.75 * 1.2), height: Math.round(dim.h * 0.75 * 1.2) },
+            ...(lg.sem ? [] : [{ image: lg.src, width: Math.round(dim.w * 0.75 * 1.2), height: Math.round(dim.h * 0.75 * 1.2) }]),
             { width: '*', margin: [14, 6, 0, 0], stack: [{ text: b.org || 'QUIM 360', color: tm.org, bold: true, fontSize: 10 }, { text: b.titulo, color: tm.titulo, bold: true, fontSize: 21, margin: [0, 3, 0, 4] }, { text: b.sub, color: tm.sub, fontSize: 9 }] },
           ] }]] }, layout: { hLineWidth: (i, n) => (i === n.table.body.length ? 3 : (lg.claro ? 0.5 : 0)), hLineColor: (i, n) => (i === n.table.body.length ? '#60a5fa' : '#cbd5e1'), vLineWidth: () => (lg.claro ? 0.5 : 0), vLineColor: () => '#cbd5e1' }, margin: [0, 0, 0, 8] },
           ...meta,

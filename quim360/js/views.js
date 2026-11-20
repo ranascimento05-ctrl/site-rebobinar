@@ -551,7 +551,15 @@
   };
 
   // ------------------------------------------------------------ painel
+  // aviso de backup e de versão dos dados (Painel e Configurações)
+  V.avisosDados = (root) => {
+    if (S.somenteLeitura()) root.appendChild(U.alert('crit', 'Dados de versão mais nova', 'Os dados deste navegador foram criados por uma versão mais nova do app. Para não perder nada, o app não grava alterações. Abra a versão mais nova do app.'));
+    const d = S.diasSemBackup(); const lim = Number(S.config().lembreteBackupDias) || 30;
+    if (S.produtos().length + S.locais().length > 0 && (d == null || d > lim)) root.appendChild(h('div', {}, U.alert('warn', 'Faça um backup dos dados', d == null ? 'Nenhum backup exportado ainda. Os dados ficam só neste navegador.' : 'O último backup foi há ' + d + ' dias (lembrete a cada ' + lim + ').'), h('a', { class: 'btn sm', href: '#/config' }, 'Ir para Configurações')));
+  };
+
   V.painel = (root) => {
+    V.avisosDados(root);
     const ps = S.produtos();
     const cnt = (st) => ps.filter((p) => p.status === st).length;
     root.appendChild(head('Painel', 'Homologação, uso, armazenamento e compatibilidade de produtos químicos', h('a', { class: 'btn', href: '#/nova' }, 'Nova homologação'), h('a', { class: 'btn ghost', href: '#/fds' }, 'Analisar FDS')));
@@ -774,6 +782,8 @@
     const d = p && V.catalogo(p).find((x) => x.id === tipo);
     if (!p || !d) { root.appendChild(h('div', { class: 'empty' }, 'Documento não encontrado.')); return; }
     root.appendChild(head(d.nome, p.nome, h('a', { class: 'btn ghost', href: '#/produto/' + p.id + '/docs' }, 'Voltar'), h('button', { class: 'btn', onclick: () => baixarDocx(p, d) }, 'Word (.docx)'), h('button', { class: 'btn', onclick: () => baixarPdf(p, d) }, 'PDF'), h('button', { class: 'btn ghost', onclick: () => pdf(p, d) }, 'Imprimir')));
+    const lgx = O.Logo.atual();
+    root.appendChild(h('div', { class: 'card' }, h('div', { class: 'row' }, h('b', {}, 'Logotipo deste e dos demais documentos: ' + (lgx.sem ? 'nenhum' : lgx.custom ? 'logo própria' : 'Orbit 360')), h('span', { class: 'spacer' }), V.logoBotoes())));
     root.appendChild(h('div', { class: 'paper', html: R.html(d.fn()) }));
   };
 
@@ -983,19 +993,29 @@
 
 
   // logo e identidade dos documentos (usada em Configurações, na aba Documentos e na saída)
-  V.logoCard = () => {
-    const lg = O.Logo.atual();
+  // botões de logotipo: inserir, trocar, tirar (sem logotipo) ou voltar à logo padrão; valem para todos os documentos
+  V.logoBotoes = () => {
+    const c = S.config(); const lg = O.Logo.atual();
     const arq = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/svg+xml,image/webp', style: 'display:none' });
     arq.addEventListener('change', async () => {
       if (!arq.files[0]) return;
-      try { const r = await O.Logo.processar(arq.files[0]); const claro = lg.custom ? !!S.config().capaClara : true; S.setConfig({ logoDoc: r.src, logoDocW: r.w, logoDocH: r.h, capaClara: claro }); U.toast('Logo atualizada nos documentos.'); O.route(); }
+      try { const r = await O.Logo.processar(arq.files[0]); const claro = c.logoDoc && !c.semLogo ? !!c.capaClara : true; S.setConfig({ logoDoc: r.src, logoDocW: r.w, logoDocH: r.h, capaClara: claro, semLogo: false }); U.toast('Logotipo atualizado nos documentos.'); O.route(); }
       catch (e) { U.toast(e.message); }
     });
+    const bt = (rot, fn, ghost) => h('button', { class: 'btn' + (ghost ? ' ghost' : '') + ' sm', onclick: fn }, rot);
+    return h('div', { class: 'row' }, arq,
+      bt(lg.custom && !lg.sem ? 'Trocar logotipo' : 'Inserir logotipo', () => arq.click()),
+      !lg.sem ? bt('Tirar logotipo', () => { S.setConfig({ semLogo: true }); U.toast('Documentos sem logotipo.'); O.route(); }, true) : null,
+      lg.sem && c.logoDoc ? bt('Usar o último logotipo enviado', () => { S.setConfig({ semLogo: false }); O.route(); }, true) : null,
+      lg.custom ? bt('Usar a logo Orbit 360', () => { S.setConfig({ semLogo: false, logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false }); U.toast('Voltou para a logo Orbit 360.'); O.route(); }, true) : null);
+  };
+
+  V.logoCard = () => {
+    const lg = O.Logo.atual();
     return (h('div', { class: 'card' }, h('h3', {}, 'Logo dos documentos'),
-      h('p', { class: 'small' }, 'A logo aparece na capa do relatório, do plano de ação, da ficha de emergência, da rotulagem, do envelope e do checklist, em Word, PDF e na pré-visualização. Use PNG com fundo transparente, JPG ou SVG. A imagem é reduzida e guardada neste navegador.'),
-      h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => arq.click() }, lg.custom ? 'Trocar logo' : 'Enviar minha logo'), arq,
-        lg.custom ? h('button', { class: 'btn ghost', onclick: () => { S.setConfig({ logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false }); U.toast('Voltou para a logo Orbit 360.'); O.route(); } }, 'Voltar para a logo Orbit 360') : null),
-      lg.custom ? h('div', { class: 'opts', style: 'margin-top:12px' },
+      h('p', { class: 'small' }, 'A logo aparece na capa do relatório, do plano de ação, da ficha de emergência, da rotulagem, do envelope e do checklist, em Word, PDF e na pré-visualização. Você pode inserir, trocar ou tirar a logo quando quiser. Use PNG com fundo transparente, JPG ou SVG. A imagem é reduzida e guardada neste navegador.'),
+      V.logoBotoes(),
+      lg.custom && !lg.sem ? h('div', { class: 'opts', style: 'margin-top:12px' },
         [[false, 'Faixa escura', 'Para logos claras ou brancas'], [true, 'Faixa clara', 'Para logos escuras ou coloridas']].map((o) => { const inp = h('input', { type: 'radio', name: 'tema', ...(!!S.config().capaClara === o[0] ? { checked: true } : {}) }); const lab = h('label', { class: 'opt' + (!!S.config().capaClara === o[0] ? ' sel' : '') }, inp, h('span', {}, h('b', {}, o[1]), h('small', {}, o[2]))); inp.addEventListener('change', () => { S.setConfig({ capaClara: o[0] }); O.route(); }); return lab; })) : h('p', { class: 'small', style: 'margin-top:8px' }, 'Logo em uso: Orbit 360.'),
       h('div', { class: 'paper', style: 'margin-top:12px;max-width:640px', html: R.html([{ t: 'cover', titulo: 'Exemplo de documento', sub: 'Pré-visualização da capa', org: S.config().organizacao, meta: [['Produto', 'Produto de exemplo']] }]) })));
   };
@@ -1004,6 +1024,7 @@
   V.config = (root) => {
     const c = S.config();
     root.appendChild(head('Configurações', 'Responsável técnico, critérios e dados'));
+    V.avisosDados(root);
     const holder = { c };
     const save = () => S.setConfig(holder.c);
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Padrão da equipe: responsável técnico e organização'), h('p', { class: 'small' }, 'Usado quando a análise não define outro assinante. Cada análise pode ser assinada por outra pessoa na aba Documentos ou na etapa de saída.'), h('div', { class: 'grid g2' }, U.input(holder, 'c.responsavel', { label: 'Responsável técnico', onInput: save }), U.input(holder, 'c.registro', { label: 'Registro profissional', onInput: save }), U.input(holder, 'c.organizacao', { label: 'Organização (aparece na capa dos documentos)', onInput: save }), U.input(holder, 'c.email', { label: 'E-mail', onInput: save }), U.input(holder, 'c.telEmergencia', { label: 'Telefone de emergência da organização', onInput: save }), U.input(holder, 'c.sharepointBase', { label: 'Endereço base do SharePoint (opcional)', onInput: save }))));
@@ -1020,7 +1041,22 @@
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Dados'), h('p', { class: 'small' }, 'Os dados ficam neste navegador. Exporte para backup ou para levar a outro computador.'), h('div', { class: 'row' },
       h('button', { class: 'btn', onclick: () => R.baixar(new Blob([S.exportar()], { type: 'application/json' }), 'quim360-dados-' + new Date().toISOString().slice(0, 10) + '.json') }, 'Exportar JSON'), h('button', { class: 'btn ghost', onclick: () => file.click() }, 'Importar JSON'), file,
       h('button', { class: 'btn ghost', onclick: async () => { if (await U.confirm('Carregar demonstração', 'Serão adicionados 2 locais e 2 produtos fictícios.', 'Carregar')) { O.Demo.criar(); O.route(); } } }, 'Carregar demonstração'),
-      h('button', { class: 'btn danger', onclick: async () => { if (await U.confirm('Apagar tudo', 'Todos os produtos, locais e configurações deste navegador serão apagados.', 'Apagar')) { S.limpar(); O.route(); } } }, 'Apagar tudo'))));
+      h('button', { class: 'btn danger', onclick: async () => { if (await U.confirm('Apagar tudo', 'Todos os produtos, locais e configurações deste navegador serão apagados. Uma cópia automática fica guardada para restaurar.', 'Apagar')) { S.limpar(); O.route(); } } }, 'Apagar tudo'))));
+
+    // versão dos dados, backup e cópias automáticas
+    {
+      const d = S.diasSemBackup(); const bks = S.backups();
+      const fmt = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—');
+      root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Backup e versão dos dados'),
+        h('p', { class: 'small' }, 'Os dados ficam só neste navegador: exporte um backup com frequência. Versão dos dados: ' + S.versao() + ' (este app lê até a ' + S.versaoApp() + '). Quando uma atualização do app mudar o formato, os dados são migrados sozinhos e uma cópia automática é guardada antes.'),
+        h('p', { class: 'small' }, 'Último backup exportado: ' + (d == null ? 'nunca' : 'há ' + d + ' dia(s)') + '.'),
+        h('div', { class: 'grid g3' }, U.input(holder, 'c.lembreteBackupDias', { type: 'number', label: 'Lembrar do backup a cada (dias)', onInput: () => { holder.c.lembreteBackupDias = Number(holder.c.lembreteBackupDias) || 30; save(); } })),
+        h('h4', { style: 'margin-top:10px' }, 'Cópias automáticas neste navegador'),
+        bks.length ? h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Quando', 'Motivo', ''].map((x) => h('th', {}, x)))), h('tbody', {}, bks.map((b) => h('tr', {}, h('td', {}, fmt(b.quando)), h('td', {}, b.motivo),
+          h('td', {}, h('div', { class: 'row' }, h('button', { class: 'btn sm ghost', onclick: () => R.baixar(new Blob([S.backupTexto(b.slot)], { type: 'application/json' }), 'quim360-copia-' + b.slot + '.json') }, 'Baixar'),
+            h('button', { class: 'btn sm', onclick: async () => { if (await U.confirm('Restaurar cópia', 'Os dados atuais serão substituídos pela cópia de ' + fmt(b.quando) + '. Os dados atuais ficam guardados na cópia "antes de importar".', 'Restaurar')) { try { S.restaurarBackup(b.slot); U.toast('Cópia restaurada.'); O.route(); } catch (e) { U.toast(e.message); } } } }, 'Restaurar'))))))))
+          : h('p', { class: 'muted' }, 'Nenhuma cópia automática ainda. Elas são criadas antes de migrar, de importar e de apagar tudo.')));
+    }
   };
   V.aplicarWatch = () => {
     const txt = S.config().watchExtra || '';

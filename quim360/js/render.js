@@ -15,7 +15,7 @@
       switch (b.t) {
         case 'cover': {
           const tm = O.Logo.tema();
-          return `<header class="d-cover${O.Logo.atual().claro ? ' claro' : ''}"><div class="d-cover-logo">${O.Logo.img(112, 240)}</div><div class="d-cover-txt"><div class="d-cover-org">${b.org ? esc(b.org) : 'QUIM 360'}</div><h1>${esc(b.titulo)}</h1><p class="d-cover-sub">${esc(b.sub)}</p></div></header><table class="d-kv d-meta">${b.meta.map((m) => `<tr><th>${esc(m[0])}</th><td>${esc(m[1])}</td></tr>`).join('')}</table>`;
+          return `<header class="d-cover${O.Logo.atual().claro ? ' claro' : ''}">${O.Logo.atual().sem ? '' : `<div class="d-cover-logo">${O.Logo.img(112, 240)}</div>`}<div class="d-cover-txt"><div class="d-cover-org">${b.org ? esc(b.org) : 'QUIM 360'}</div><h1>${esc(b.titulo)}</h1><p class="d-cover-sub">${esc(b.sub)}</p></div></header><table class="d-kv d-meta">${b.meta.map((m) => `<tr><th>${esc(m[0])}</th><td>${esc(m[1])}</td></tr>`).join('')}</table>`;
         }
         case 'h1': return `<h2 class="d-h1">${esc(b.text)}</h2>`;
         case 'h2': return `<h3 class="d-h2">${esc(b.text)}</h3>`;
@@ -135,7 +135,7 @@
           const t = new D.Table({ width: { size: W, type: D.WidthType.DXA }, borders: noBorders, rows: [new D.TableRow({ children: [new D.TableCell({
             shading: { type: D.ShadingType.CLEAR, fill: tm.fill, color: 'auto' }, margins: { top: 160, bottom: 160, left: 200, right: 200 }, borders: lg.claro ? { top: line('CBD5E1', 4), left: line('CBD5E1', 4), right: line('CBD5E1', 4), bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } } : { ...noBorders, bottom: { style: D.BorderStyle.SINGLE, size: 24, color: '60A5FA' } },
             children: [
-              new D.Paragraph({ children: [new D.ImageRun({ type: lg.tipo, data: O.Logo.bytes(), transformation: { width: dim.w, height: dim.h } })] }),
+              ...(lg.sem ? [] : [new D.Paragraph({ children: [new D.ImageRun({ type: lg.tipo, data: O.Logo.bytes(), transformation: { width: dim.w, height: dim.h } })] })]),
               new D.Paragraph({ spacing: { before: 100, after: 60 }, children: [run(b.titulo, { bold: true, color: tm.tituloHex, size: 48 })] }),
               new D.Paragraph({ children: [run(b.sub, { color: tm.subHex, size: 20 })] }),
             ] })] })] });
