@@ -1023,5 +1023,31 @@
     return B;
   }
 
-  O.Docs = { planoImplantacao, prontidaoGranel, compatTanque, vencimentos, vencimentosDoc, listaAcoesLocal, emailAcoesLocal, listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  // ---------------------------------------------------------------- Lista de inspeção em campo (para imprimir e preencher à mão)
+  function listaInspecao(local, produtos) {
+    const RQ = O.NBR17160REQ; const r = E.requisitosLocal(local, produtos);
+    const pseudo = { nome: local.nome, dec: { numero: '' }, rotulo: 'Armazém', pseudo: true };
+    const ULT = { c: 'Conforme', nc: 'NÃO CONF.', na: 'N/A', '': '—' };
+    const B = [capa('Lista de inspeção em campo', 'QUIM 360 | Para imprimir e levar à área | ' + local.nome, pseudo, [['Local', local.nome + ' (' + local.tipo + ')' + (local.aoArLivre ? ', ao ar livre' : '') + (local.armarioSeg ? ', armário de segurança' : '')], ['Itens a verificar', String(r.itens.length)]])];
+    B.push({ t: 'p', text: 'Leve esta lista à área, marque cada item (C = conforme, NC = não conforme, NA = não se aplica) e anote a evidência. Na volta, registre as respostas no app, no checklist do local. A coluna "Último registro" mostra o que estava no app antes desta inspeção.' });
+    B.push({ t: 'kv', rows: [['Data da inspeção', ''], ['Inspetor(es)', ''], ['Hora de início e término', ''], ['Condições (turno, clima, observações gerais)', '']] });
+    let n = 0;
+    Object.keys(RQ.GRUPOS).forEach((gk) => {
+      const it = r.itens.filter((i) => i.grupo === gk); if (!it.length) return;
+      B.push({ t: 'h1', text: (++n) + ' ' + RQ.GRUPOS[gk] });
+      B.push({ t: 'table', head: ['Item', 'Requisito', 'Último registro', 'Marcar', 'Observação ou evidência'], widths: [8, 38, 12, 14, 28], rows: it.map((i) => [i.id, i.texto + (i.semTexto ? ' [texto não transcrito: ver a norma]' : ''), ULT[i.resp] + (i.resp === 'nc' && i.obs ? ': ' + i.obs : ''), '☐ C   ☐ NC   ☐ NA', ' ']), tall: true });
+    });
+    const emEst = E.estoqueAtivo(produtos).filter((p) => p.ctx && p.ctx.localId === local.id && p.armazenamento !== 'granel');
+    B.push({ t: 'h1', text: (++n) + ' Conferência dos produtos em estoque' });
+    B.push(emEst.length ? { t: 'table', head: ['Produto', 'Quantidade registrada', 'Contada em campo', 'Observação'], widths: [38, 20, 20, 22], rows: emEst.map((p) => [p.nome, p.comp.qtdKg === '' || p.comp.qtdKg == null ? '—' : p.comp.qtdKg + ' kg', ' ', ' ']), tall: true } : { t: 'p', text: 'Nenhum produto em estoque registrado neste local.' });
+    B.push({ t: 'p', small: true, text: 'Produto em campo que não consta na lista acima: anote nome, quantidade e embalagem para cadastrar no app.' });
+    B.push({ t: 'table', head: ['Produto encontrado fora da lista', 'Quantidade', 'Embalagem', 'Observação'], widths: [38, 18, 20, 24], rows: [[' ', ' ', ' ', ' '], [' ', ' ', ' ', ' '], [' ', ' ', ' ', ' ']], tall: true });
+    B.push({ t: 'h1', text: (++n) + ' Resultado da inspeção (6.3.9)' });
+    B.push({ t: 'p', small: true, text: 'Intervalo definido pelo empregador: ' + (r.periodo ? r.periodo + ' dias' : 'não informado') + (r.proxima ? '. Próxima inspeção até ' + fmtData(r.proxima) + (r.vencida ? ' (vencida)' : '') : '') + '.' });
+    B.push({ t: 'kv', rows: [['Resultado', '☐ Conforme     ☐ Com não conformidades'], ['Não conformidades a tratar', ''], ['Próxima inspeção em', '']] });
+    B.push({ t: 'sign', rows: [['Inspetor', ''], ['Gestor do local', '']] });
+    return B;
+  }
+
+  O.Docs = { listaInspecao, planoImplantacao, prontidaoGranel, compatTanque, vencimentos, vencimentosDoc, listaAcoesLocal, emailAcoesLocal, listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

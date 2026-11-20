@@ -36,6 +36,7 @@
     return folhas;
   }
   function lerCsv(texto) {
+    texto = String(texto).replace(/^\uFEFF/, '');
     const sep = (texto.match(/;/g) || []).length >= (texto.match(/,/g) || []).length ? ';' : ',';
     const linhas = []; let r = [], c = '', q = false;
     for (let i = 0; i < texto.length; i++) {

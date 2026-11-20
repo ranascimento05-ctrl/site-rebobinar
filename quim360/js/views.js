@@ -82,6 +82,8 @@
       card.appendChild(det);
     });
     card.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, V.docBotoes({ nome: l.nome, id: 'chk' }, { id: 'checklist', nome: 'Checklist NBR 17160', fn: () => D.checklistLocal(l, S.produtos()) }, true)));
+    card.appendChild(h('div', { style: 'margin-top:10px' }, h('b', {}, 'Lista de inspeção em campo'), h('p', { class: 'small', style: 'margin:2px 0 6px' }, 'Para imprimir e levar à área: itens com caixas de marcar (C, NC, NA), espaço para evidência, conferência de estoque e resultado. Na volta, registre as respostas acima.'),
+      V.docBotoes({ nome: l.nome, id: 'insp' }, { id: 'inspecao', nome: 'Lista de inspeção em campo', fn: () => D.listaInspecao(l, S.produtos()) }, true)));
     return card;
   };
 
@@ -287,8 +289,9 @@
     };
     arq.addEventListener('change', async () => { if (!arq.files[0]) return; try { const itens = await F.lerArquivo(arq.files[0]); if (!itens.length) { U.toast('Nenhum produto encontrado na planilha.'); return; } mostraPrevia(itens, arq.files[0].name); } catch (e) { U.toast(e.message); } arq.value = ''; });
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Importar lista de produtos'),
-      h('p', { class: 'small' }, 'Aceita planilha .xlsx ou .csv com as colunas Descrição do Produto, Fabricante, Classe de risco, Composição química, Em uso, Área usuária, Local de Armazenamento, Local de utilização e Quantidade. A lista não traz FDS: serve para organizar o trabalho. Nenhum dado vira produto homologado, e a coluna Empresa não é importada.'),
-      h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => arq.click() }, 'Escolher planilha'), arq), impBox));
+      h('p', { class: 'small' }, 'Aceita planilha .xlsx ou .csv (separador ; ou vírgula), com a linha de títulos em qualquer posição. Só a coluna Descrição do Produto é obrigatória (aceita também Nome do Produto ou Produto). As demais são opcionais: Fabricante (ou Fornecedor), Classe de risco, Composição química, Em uso (sim ou não), Área usuária, Local de Armazenamento, Local de utilização e Quantidade. Baixe o modelo para ver o formato. A lista não traz FDS: serve para organizar o trabalho. Nenhum dado vira produto homologado, e a coluna Empresa não é importada.'),
+      h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => arq.click() }, 'Escolher planilha'), arq,
+        h('button', { class: 'btn ghost', onclick: () => { const cab = ['Descrição do Produto', 'Fabricante', 'Classe de risco', 'Composição química', 'Em uso', 'Área usuária', 'Local de Armazenamento', 'Local de utilização', 'Quantidade']; const ex = ['Exemplo: Thinner para limpeza', 'Fornecedor X', '3', 'Tolueno, acetato de etila', 'Sim', 'Oficina', 'Contêiner de PQ', 'Oficina', '20 L']; R.baixar(new Blob(['\uFEFF' + [cab, ex].map((l) => l.join(';')).join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }), 'modelo-lista-de-produtos.csv'); } }, 'Baixar modelo da planilha (.csv)')), impBox));
 
     const lista = S.fila();
     if (!lista.length) { root.appendChild(h('div', { class: 'empty' }, 'A fila está vazia. Importe uma lista para começar.')); return; }
