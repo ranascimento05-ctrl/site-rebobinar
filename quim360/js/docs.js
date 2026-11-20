@@ -419,6 +419,12 @@
       const nvc = O.RISCO.nivelCenario(E.tanqueDe(p).cenario);
       if (nvc.grave) add('Reduzir o risco do cenário de vazamento simultâneo de mais de um tanque (' + nvc.nome.toLowerCase() + ', score ' + nvc.v + ', lente ' + nvc.det + ')', 'Etapa 11.2 | Cenário de tanques', 'Segurança de processo', 'Antes de receber o produto', 'Pendente');
     }
+    if (ok && p.armazenamento === 'granel') {
+      const im = p.impl || {};
+      if (!im.treinoData) add('Treinar operadores, brigada, motoristas e manutenção para o produto (plano de implantação) e registrar a data', 'Implantação | Plano de treinamento', 'SST / Gestor da operação', 'Antes de receber o produto', 'Pendente');
+      if (!im.simuladoData) add('Realizar simulado de emergência com o produto, incluindo vazamento de mais de um tanque, e registrar a data', 'Implantação | Cenários da brigada', 'Brigada / Segurança de processo', 'Antes de receber o produto', 'Pendente');
+      if (!im.comunicadoData) add('Comunicar as áreas envolvidas (operação, manutenção, laboratório, portaria) sobre o produto novo e registrar a data', 'Implantação | Comunicação', 'Gestor da operação', 'Antes de receber o produto', 'Pendente');
+    }
     if (p.armazenamento === 'granel') E.exigenciasTanque(p).filter((x) => ['nao', 'depende'].includes(x.atende)).forEach((x) => add('Tanque: ' + x.rot + ' (' + (x.atende === 'nao' ? 'a frota não atende' : 'depende do tanque') + '). Verificar com a engenharia e, se houver adaptação, abrir MOC', 'Etapa 11.2 | Exigências do tanque', 'Engenharia / Segurança de processo', 'Antes de receber o produto', 'Pendente'));
     if (p.hig.dosimetria === true) add('Realizar a avaliação quantitativa (dosimetria ou varredura) antes da liberação de uso', 'NR-15 | Etapa 9.3', 'Higiene Ocupacional', '', 'Pendente');
     if (ok) {
@@ -958,5 +964,64 @@
     return B;
   }
 
-  O.Docs = { compatTanque, vencimentos, vencimentosDoc, listaAcoesLocal, emailAcoesLocal, listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  // ---------------------------------------------------------------- Plano de implantação do produto a granel
+  function prontidaoGranel(p, produtos) {
+    const av = E.avaliar(p, produtos); const at = E.analiseTanque(p, O.Store.bacias(), produtos); const mu = E.mudancaDe(p); const sg = E.mudancaSugestao(p, produtos);
+    const ex = E.exigenciasTanque(p); const im = p.impl || {}; const ok = ['homologado', 'condicionado'].includes(p.status);
+    const nvc = O.RISCO.nivelCenario(E.tanqueDe(p).cenario);
+    const I = [];
+    const add = (item, sit, onde, nota) => I.push({ item, sit, onde, nota: nota || '' });
+    add('FDS analisada e dentro da NBR 14725', p.fds.analisada && p.fds.completa !== false && p.fds.atualizada !== false ? 'Pronto' : 'Pendente', 'Etapas 3 a 5');
+    add('Triagem CMR e PFC tratada', !E.cmrCarga(p) ? 'Pronto' : (String((p.cmr || {}).justificativa || '').trim() && p.hig.parecerExigidoOk ? 'Pronto' : 'Pendente'), 'Etapa 7', E.cmrCarga(p) ? 'Gatilho acionado: justificativa, controles e parecer de higiene ocupacional' : '');
+    add('Exigências do produto para o tanque respondidas', ex.some((x) => !x.atende) ? 'Pendente' : ex.some((x) => ['nao', 'depende'].includes(x.atende)) ? 'Atenção' : 'Pronto', 'Etapa 11.2', ex.some((x) => ['nao', 'depende'].includes(x.atende)) ? 'A frota pode não atender: ver MOC' : '');
+    add('Gestão de mudança (MOC) resolvida', mu.exige === true ? (mu.situacao === 'concluido' || (mu.situacao === 'dispensado' && String(mu.just).trim()) ? 'Pronto' : 'Pendente') : mu.exige === false ? (String(mu.just).trim() ? 'Pronto' : 'Pendente') : (sg.sugere ? 'Pendente' : 'Pronto'), 'Etapa 12.3', mu.ref ? 'Ref. ' + mu.ref : '');
+    add('Compatibilidade com bacias e produtos do terminal', at.semBacias ? 'Pendente' : at.resumo.sem_dados ? 'Pendente' : at.resumo.incompativel ? 'Atenção' : 'Pronto', 'Etapa 11.2 e menu Bacias', at.resumo.incompativel ? 'Incompatibilidade a decidir pelo responsável técnico' : at.resumo.sem_dados ? at.resumo.sem_dados + ' par(es) sem dados' : '');
+    add('Cenário de vazamento simultâneo avaliado', nvc.v ? 'Pronto' : 'Pendente', 'Etapa 11.2', nvc.v ? nvc.nome + ' (lente ' + nvc.det + ')' : '');
+    add('Atualização do PGR', p.par.pgrIndicador === 'requer' ? 'Pendente' : 'Pronto', 'Etapa 12.2');
+    add('Decisão de homologação registrada', ok ? 'Pronto' : 'Pendente', 'Etapa 13');
+    add('Ficha de emergência, rotulagem e envelope emitidos', ok ? 'Pronto' : 'Pendente', 'Documentos do produto', 'Disponíveis após a decisão');
+    add('Treinamento realizado', im.treinoData ? 'Pronto' : 'Pendente', 'Registro de implantação', im.treinoData ? fmtData(im.treinoData) : '');
+    add('Simulado de emergência com o produto', im.simuladoData ? 'Pronto' : 'Pendente', 'Registro de implantação', im.simuladoData ? fmtData(im.simuladoData) : '');
+    add('Comunicação às áreas envolvidas', im.comunicadoData ? 'Pronto' : 'Pendente', 'Registro de implantação', im.comunicadoData ? fmtData(im.comunicadoData) : '');
+    return { itens: I, av, at };
+  }
+  function planoImplantacao(p, produtos) {
+    const R = O.RISCO; const ce = R.CENARIO_TANQUE; const sg = signer(p); const ctx = prontidaoGranel(p, produtos); const at = ctx.at;
+    const split = (t) => (t || '').split(/\n|\.\s+(?=[A-ZÁÉÍÓÚÂÊÔÃÕ])/).map((x) => x.trim()).filter(Boolean);
+    const sec = p.fds.secoes || {}; const inc = at.terminal.filter((v) => v.res.nivel === 'incompativel');
+    const pend = ctx.itens.filter((x) => x.sit !== 'Pronto').length;
+    const B = [capa('Plano de implantação do produto a granel', 'QUIM 360 | Prontidão, treinamento e emergência | ' + nz(p.nome), p, [['Classe do líquido (NBR 17505-1)', E.classe17505(p).id || 'não definida'], ['Itens pendentes', String(pend)]])];
+    B.push({ t: 'callout', tone: pend ? 'warn' : 'ok', title: 'Prontidão para receber o produto', text: pend ? pend + ' de ' + ctx.itens.length + ' itens ainda pendentes ou com atenção. O plano só sinaliza: a decisão de receber o produto é do responsável técnico.' : 'Todos os itens estão prontos.' });
+    B.push({ t: 'h1', text: '1 Prontidão' });
+    B.push({ t: 'table', head: ['Item', 'Situação', 'Onde tratar', 'Observação'], widths: [40, 12, 22, 26], rows: ctx.itens.map((x) => [x.item, x.sit, x.onde, x.nota || '—']) });
+    B.push({ t: 'h1', text: '2 Plano de treinamento por público' });
+    B.push({ t: 'p', small: true, text: 'Conteúdo mínimo sugerido a partir dos dados da análise do produto. O responsável técnico ajusta o conteúdo, a carga horária e os grupos conforme o procedimento da organização.' });
+    const epi = split(p.ocup.epi).slice(0, 4).join('; ') || 'conforme a Seção 8 da FDS';
+    const pares = inc.length ? 'Produtos incompatíveis no terminal: ' + inc.map((v) => v.outro.nome + ' (bacia ' + v.bacias.join(', ') + ')').join('; ') : '';
+    const linhas = [
+      ['Operadores de tanque, píer e plataforma', ['Perigos do produto, rótulo e FDS: ' + ((p.ghs.h || []).slice(0, 6).join(', ') || 'conforme FDS') + '.', 'EPI: ' + epi + '.', 'Procedimento de recebimento e expedição, controle de nível e prevenção de transbordo.', E.nr20(p).aplica ? 'Aterramento, ignição e áreas classificadas (NR-20).' : 'Controles de armazenamento conforme a análise.', 'Dreno da bacia fechado e produtos presentes em cada bacia.', pares, 'Derramamento: ' + (corta(p.amb.derramamento || sec[6], 220) || 'conforme Seção 6 da FDS') + '.'].filter(Boolean)],
+      ['Brigada e equipe de emergência', ['Ficha de emergência do produto e EPI de emergência.', 'Incêndio: ' + (corta(sec[5], 220) || 'conforme Seção 5 da FDS') + '.', 'Cenário de vazamento simultâneo de mais de um tanque e reações entre produtos.', pares, 'Retenção da água de extinção e contenção do líquido misturado.', 'Primeiros socorros: ' + (corta(sec[4], 200) || 'conforme Seção 4 da FDS') + '.'].filter(Boolean)],
+      ['Motoristas e equipe de recebimento rodoviário', ['Envelope de transporte, painel de segurança, rótulos de risco, número ONU ' + nz(p.imdg.onu, 'conforme FDS') + '.', 'Conduta em emergência no recebimento e no carregamento.', 'Pontos de aterramento e conexão, sentido de evacuação.']],
+      ['Manutenção, inspeção e terceiros', ['Materiais compatíveis com o produto (tanque, juntas, vedações, mangotes, bombas).', 'Liberação de equipamento e limpeza ou descontaminação do tanque anterior (contaminação cruzada).', 'Permissão de trabalho e riscos específicos do produto.']],
+      ['Laboratório e amostragem', ['EPI e controle de vapores na coleta de amostras.', 'Descarte de amostras e resíduos: ' + (corta(sec[13], 160) || 'conforme Seção 13 da FDS') + '.']],
+    ];
+    B.push({ t: 'table', head: ['Público', 'Conteúdo mínimo', 'Data e instrutor'], widths: [22, 58, 20], rows: linhas.map((l) => [l[0], l[1].join('\n'), ' ']), tall: true });
+    B.push({ t: 'h1', text: '3 Cenários para treinamento da brigada' });
+    B.push({ t: 'p', bold: true, text: ce.titulo });
+    B.push({ t: 'kv', rows: [['Como pode acontecer', ce.causas], ['O que pode acontecer', ce.consequencias]] });
+    if (inc.length) B.push({ t: 'callout', tone: 'crit', title: 'Pares incompatíveis a trabalhar no treinamento', text: inc.map((v) => p.nome + ' e ' + v.outro.nome + ' (bacia ' + v.bacias.join(', ') + ')').join('; ') + '.' });
+    B.push({ t: 'p', bold: true, text: 'Como prevenir' }); B.push({ t: 'list', items: ce.medidas });
+    B.push({ t: 'p', bold: true, text: 'Para discutir' }); B.push({ t: 'list', ordered: true, items: ce.discussao });
+    B.push({ t: 'table', head: ['Anotações e decisões do treinamento ou do simulado'], rows: [[' '], [' '], [' ']], tall: true });
+    B.push({ t: 'h1', text: '4 Verificação de aprendizado' });
+    B.push({ t: 'check', items: ['O participante identifica o perigo principal do produto no rótulo e na ficha de emergência.', 'O participante cita quais produtos não podem se encontrar na bacia e na drenagem.', 'O participante demonstra o uso correto do EPI.', 'O participante sabe como agir e quem acionar em derramamento e em vazamento de mais de um tanque.'] });
+    B.push({ t: 'h1', text: '5 Registro de presença' });
+    B.push({ t: 'kv', rows: [['Atividade', ''], ['Data', ''], ['Instrutor ou facilitador', '']] });
+    B.push({ t: 'table', head: ['Nome', 'Função', 'Assinatura'], widths: [38, 28, 34], rows: Array.from({ length: 12 }, () => [' ', ' ', ' ']), tall: true });
+    B.push({ t: 'p', small: true, text: 'Conteúdos e cenários são pontos de partida a revisar. Apoio à decisão: a responsabilidade técnica é do profissional que assina.' });
+    B.push({ t: 'sign', rows: [[sg.nome, sg.funcao], ['Gestor da operação', '']] });
+    return B;
+  }
+
+  O.Docs = { planoImplantacao, prontidaoGranel, compatTanque, vencimentos, vencimentosDoc, listaAcoesLocal, emailAcoesLocal, listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

@@ -482,6 +482,7 @@
     const c = [{ id: 'relatorio', nome: 'Relatório de homologação', desc: 'Decisão, FDS, triagem GHS, impactos, PGR, IMDG, segregação e rastreabilidade.', fn: () => D.relatorio(p, prods), on: true }];
     c.splice(1, 0, { id: 'analise', nome: 'Relatório da análise da FDS', desc: 'Leitura da FDS: validade, GHS, composição, triagem CMR e PFC, transporte, classe de armazenamento e controles sugeridos. Disponível a qualquer momento.', fn: () => D.analiseFds(p, prods), on: !!(p.fds.analisada || p.nome) });
     c.push({ id: 'quadro', nome: 'Quadro de compatibilidade', desc: 'Este produto e os homologados comparados dois a dois, com grupos que podem dividir o setor de armazém.', fn: () => D.quadroCompat(p, prods), on: E.estoqueAtivo(prods).filter((x) => x.id !== p.id && x.armazenamento !== 'granel').length >= 1 && p.armazenamento !== 'granel' });
+    c.push({ id: 'implantacao', nome: 'Plano de implantação do produto a granel', desc: 'Prontidão para receber o produto, plano de treinamento por público, cenários da brigada, verificação de aprendizado e lista de presença.', fn: () => D.planoImplantacao(p, prods), on: p.armazenamento === 'granel' && !!(p.fds.analisada || p.nome) });
     c.push({ id: 'compatTanque', nome: 'Análise de compatibilidade do produto a granel', desc: 'Produto contra cada bacia e contra os produtos do terminal, consultas externas registradas e cenário de vazamento simultâneo de tanques.', fn: () => D.compatTanque(p, prods), on: p.armazenamento === 'granel' && !!(p.fds.analisada || p.nome) });
     c.push({ id: 'plano', nome: 'Plano de ação', desc: 'Ações, origem, responsável e prazo para colocar o produto em uso (ou encerrar, se reprovado).', fn: () => D.planoAcao(p, prods), on: decidido });
     c.push({ id: 'ficha', nome: 'Ficha de emergência', desc: 'Estrutura NBR 7503 e Manual ABIQUIM: riscos, isolamento, fogo, derramamento, primeiros socorros.', fn: () => D.fichaEmergencia(p), on: ok || lida });
@@ -627,6 +628,13 @@
         const mu = E.mudancaDe(p); const trocado = mu.substituiId ? S.produto(mu.substituiId) : null; const nov = E.substituidoPor(p, S.produtos());
         if (trocado) root.appendChild(U.alert('info', 'Troca de produto', 'Substitui "' + trocado.nome + '"' + (mu.motivo ? '. Motivo: ' + mu.motivo : '') + '. Gestão de mudança: ' + (mu.exige === true ? 'necessária' + (mu.situacao ? ' (' + (E.MOC_SIT.find((x) => x[0] === mu.situacao) || [0, mu.situacao])[1].toLowerCase() + ')' : '') + (mu.ref ? ', ref. ' + mu.ref : '') : mu.exige === false ? 'não exigida' : 'ainda não avaliada') + '.'));
         nov.forEach((n) => root.appendChild(U.alert('warn', 'Produto substituído', 'Substituído por "' + n.nome + '"' + (E.emEstoque(p) ? '. Ainda consta em estoque: registre a saída quando for retirado.' : '.'))));
+      }
+      if (p.armazenamento === 'granel') {
+        p.impl = p.impl || {};
+        root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Implantação do produto a granel ', U.disc('PSM')),
+          h('p', { class: 'small' }, 'Registre as datas de realização. O plano de implantação mostra o que está pronto e o que falta, com o plano de treinamento por público e os cenários da brigada.'),
+          h('div', { class: 'grid g3' }, U.input(p, 'impl.treinoData', { type: 'date', label: 'Treinamento realizado em' }), U.input(p, 'impl.simuladoData', { type: 'date', label: 'Simulado de emergência em' }), U.input(p, 'impl.comunicadoData', { type: 'date', label: 'Comunicação às áreas em' })),
+          h('div', { class: 'row' }, h('a', { class: 'btn sm', href: '#/doc/' + p.id + '/implantacao' }, 'Abrir o plano de implantação'))));
       }
       const loc = S.local(p.ctx.localId);
       const n20 = E.nr20(p);
