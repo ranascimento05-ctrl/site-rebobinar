@@ -174,5 +174,13 @@
     return { n: 2, txt: 'todos os itens relacionados estão conformes no checklist' };
   }
 
-  O.RISCO = { SEV_DESC, PROB_DESC, EXEMPLOS, ORIGENS, sugestaoProb, ASPECTOS, CONSIDERACOES, ANEXO_A, CENARIOS, SEV, PROB, nivel, nivelCenario, sevNome, DIMS };
+  // cenário de produtos a granel: vazamento de mais de um tanque com produtos diferentes (mistura na bacia, na canaleta ou na drenagem comum)
+  const CENARIO_TANQUE = {
+    titulo: 'Vazamento simultâneo de mais de um tanque com produtos diferentes',
+    causas: 'Ruptura, transbordo ou falha de mangote ou de válvula em mais de um tanque (incêndio, explosão, falha estrutural ou evento externo), com os produtos se encontrando na mesma bacia, na canaleta ou na caixa separadora.',
+    consequencias: 'Reação entre produtos incompatíveis (calor, gás tóxico ou inflamável, pressurização), incêndio de inflamável na presença de oxidante, contaminação do ambiente, água de extinção misturada e dificuldade de resposta da brigada.',
+    medidas: ['Conhecer, para cada bacia, os produtos presentes e os pares incompatíveis, com a consulta de compatibilidade registrada.', 'Evitar produtos com incompatibilidade declarada ou consultada na mesma bacia; se for inevitável, decidir com o responsável técnico e registrar a justificativa.', 'Verificar a separação das drenagens e canaletas entre bacias com produtos incompatíveis.', 'Plano de emergência e treinamento da brigada para vazamento de mais de um produto, com a ficha de emergência de cada um à mão.', 'Manter a lista de produtos de cada bacia atualizada.'],
+    discussao: ['Quais pares de produtos do terminal reagem entre si?', 'Se dois tanques da mesma bacia vazarem juntos, o que acontece e como a brigada responde?', 'Para onde vai o líquido misturado e a água de extinção?'],
+  };
+  O.RISCO = { CENARIO_TANQUE, SEV_DESC, PROB_DESC, EXEMPLOS, ORIGENS, sugestaoProb, ASPECTOS, CONSIDERACOES, ANEXO_A, CENARIOS, SEV, PROB, nivel, nivelCenario, sevNome, DIMS };
 })(window.O360 = window.O360 || {});

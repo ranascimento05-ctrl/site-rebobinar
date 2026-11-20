@@ -482,6 +482,7 @@
     const c = [{ id: 'relatorio', nome: 'Relatório de homologação', desc: 'Decisão, FDS, triagem GHS, impactos, PGR, IMDG, segregação e rastreabilidade.', fn: () => D.relatorio(p, prods), on: true }];
     c.splice(1, 0, { id: 'analise', nome: 'Relatório da análise da FDS', desc: 'Leitura da FDS: validade, GHS, composição, triagem CMR e PFC, transporte, classe de armazenamento e controles sugeridos. Disponível a qualquer momento.', fn: () => D.analiseFds(p, prods), on: !!(p.fds.analisada || p.nome) });
     c.push({ id: 'quadro', nome: 'Quadro de compatibilidade', desc: 'Este produto e os homologados comparados dois a dois, com grupos que podem dividir o setor de armazém.', fn: () => D.quadroCompat(p, prods), on: E.estoqueAtivo(prods).filter((x) => x.id !== p.id && x.armazenamento !== 'granel').length >= 1 && p.armazenamento !== 'granel' });
+    c.push({ id: 'compatTanque', nome: 'Análise de compatibilidade do produto a granel', desc: 'Produto contra cada bacia e contra os produtos do terminal, consultas externas registradas e cenário de vazamento simultâneo de tanques.', fn: () => D.compatTanque(p, prods), on: p.armazenamento === 'granel' && !!(p.fds.analisada || p.nome) });
     c.push({ id: 'plano', nome: 'Plano de ação', desc: 'Ações, origem, responsável e prazo para colocar o produto em uso (ou encerrar, se reprovado).', fn: () => D.planoAcao(p, prods), on: decidido });
     c.push({ id: 'ficha', nome: 'Ficha de emergência', desc: 'Estrutura NBR 7503 e Manual ABIQUIM: riscos, isolamento, fogo, derramamento, primeiros socorros.', fn: () => D.fichaEmergencia(p), on: ok || lida });
     c.push({ id: 'rotulo', nome: 'Rotulagem', desc: 'Rótulo GHS (NBR 14725), etiqueta de uso (NR-26) e rótulos de risco (NBR 7500).', fn: () => D.rotulagem(p), on: ok || lida });
@@ -791,6 +792,29 @@
   };
 
   // ------------------------------------------------------------ locais
+  // bacias de contenção: só guardam os produtos a granel de cada bacia (os tanques são multiuso)
+  V.bacias = (root) => {
+    const dias = S.config().alertaDiasBacia || 30;
+    root.appendChild(head('Bacias de contenção', 'Quais produtos a granel estão em cada bacia, para analisar a compatibilidade em caso de vazamento'));
+    root.appendChild(U.alert('info', 'Os tanques são multiuso', 'O app não vincula produto a tanque: só guarda quais produtos estão em cada bacia. Mantenha a lista atualizada: a análise de compatibilidade perde valor se ela envelhecer (aviso após ' + dias + ' dias sem confirmação).'));
+    const nome = h('input', { type: 'text', placeholder: 'Nome ou código da bacia (ex.: Bacia 03)' });
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Nova bacia'), h('div', { class: 'row' }, h('div', { style: 'flex:1;min-width:220px' }, nome), h('button', { class: 'btn', onclick: () => { if (!nome.value.trim()) return; S.novaBacia(nome.value.trim()); O.route(); } }, 'Adicionar'))));
+    const granel = S.produtos().filter((x) => x.armazenamento === 'granel' && x.status !== 'reprovado' && x.nome);
+    if (!granel.length) root.appendChild(U.alert('warn', 'Sem produtos a granel', 'Cadastre e analise os produtos a granel do terminal (Nova homologação, armazenamento a granel, em tanque) para listá-los nas bacias.'));
+    if (!S.bacias().length) root.appendChild(h('div', { class: 'empty' }, 'Nenhuma bacia cadastrada.'));
+    S.bacias().forEach((b) => {
+      const idade = b.atualizadoEm ? Math.floor((Date.now() - new Date(b.atualizadoEm).getTime()) / 86400000) : null;
+      const velha = idade == null || idade > dias;
+      root.appendChild(h('div', { class: 'card' }, h('div', { class: 'row' }, h('h3', { style: 'margin:0' }, b.nome), h('span', { class: 'spacer' }), U.badge(velha ? 'warn' : 'ok', idade == null ? 'Lista nunca confirmada' : 'Lista confirmada há ' + idade + ' dia(s)')),
+        U.input(b, 'nome', { label: 'Nome ou código', onInput: () => S.salvarBacia(b) }),
+        U.input(b, 'obs', { rows: 2, label: 'Observações (tanques que a bacia atende, drenagem comum com outras bacias)', onInput: () => S.salvarBacia(b) }),
+        h('p', { class: 'q' }, 'Produtos a granel nesta bacia agora:'),
+        U.checks(b, 'produtos', granel.map((x) => ({ v: x.id, label: x.nome, hint: (D.STATUS[x.status] || D.STATUS.em_analise)[0] })), { onChange: () => { b.atualizadoEm = new Date().toISOString(); S.salvarBacia(b); O.route(); } }),
+        h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'btn sm', onclick: () => { b.atualizadoEm = new Date().toISOString(); S.salvarBacia(b); O.route(); } }, 'Confirmar que a lista está atual hoje'),
+          h('button', { class: 'btn sm danger', onclick: async () => { if (await U.confirm('Remover bacia', 'A bacia "' + b.nome + '" será removida. As consultas de compatibilidade registradas são mantidas.', 'Remover')) { S.removerBacia(b.id); O.route(); } } }, 'Remover'))));
+    });
+  };
+
   V.locais = (root) => {
     root.appendChild(head('Locais de armazenamento', 'Contêiner de PQ, oficina, almoxarifado e demais áreas, com o que já está armazenado'));
     const nome = h('input', { type: 'text', placeholder: 'Nome (ex.: Contêiner de PQ 01)' });

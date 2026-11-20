@@ -121,6 +121,7 @@
     return c;
   }
   const N = () => O.NBR17160;
+  const RK = () => O.RISCO;
 
   // "combustível" no sentido da NBR 17160 (9.1.1.3 h): tem ponto de fulgor ou comprovadamente queima
   function combustivel(p) {
@@ -594,7 +595,7 @@
   // ---------- Exigências do produto a granel para os tanques ----------
   // Os tanques são multiuso: o app não vincula produto a tanque. Cada item é uma pergunta à engenharia e à operação; o app não calcula projeto.
   const ATENDE = [['sim', 'Sim, a frota atende sem modificação'], ['nao', 'Não atende: exige adaptação'], ['depende', 'Depende do tanque'], ['na', 'Não se aplica']];
-  function tanqueDe(p) { const t = p.tanque || {}; return { pontoEbulicao: t.pontoEbulicao || '', obs: t.obs || '', itens: t.itens || {} }; }
+  function tanqueDe(p) { const t = p.tanque || {}; return { pontoEbulicao: t.pontoEbulicao || '', obs: t.obs || '', itens: t.itens || {}, cenario: Object.assign({ sev: '', sevAmb: '', sevPsm: '', prob: '', obs: '' }, t.cenario || {}) }; }
   // classe do líquido pela NBR 17505-1:2013, Tabela 1 (página 19 da norma)
   function classe17505(p) {
     const pf = p.imdg.pontoFulgor === '' || p.imdg.pontoFulgor == null ? NaN : parseFloat(String(p.imdg.pontoFulgor).replace(',', '.'));
@@ -627,6 +628,45 @@
       mk('aterramento', 'Aterramento e controle de fontes de ignição', inf ? 'Inflamável: aterramento, equivalência de potencial e áreas classificadas.' : 'Conferir se há exigência de aterramento ou de área classificada.'),
       mk('saude', 'Vapores tóxicos, EPI e drenagem', tox ? 'Há perigo de toxicidade: conferir controle de emissões, EPI e drenagem.' : 'Conferir controle de emissões, EPI e drenagem (Seção 8 da FDS).'),
     ];
+  }
+
+  // ---------- Compatibilidade de produtos a granel (tanques e bacias) ----------
+  // Base: incompatibilidades declaradas na Seção 10 das FDS e consulta externa registrada pelo analista (por exemplo, NOAA CAMEO).
+  // Não usa a matriz da NBR 17160, que é de armazenamento embalado.
+  const RES_CONSULTA = [['incompativel', 'Incompatível (reação perigosa)'], ['restricao', 'Compatível com restrição'], ['sem_incompat', 'Nenhuma incompatibilidade encontrada'], ['sem_dados', 'Consultei e não há dados']];
+  const NIVEL_GRANEL = { incompativel: 'Incompatível', restricao: 'Com restrição', sem_dados: 'Sem dados: confirmar', nada: 'Nenhuma incompatibilidade declarada' };
+  const ORD_GRANEL = { incompativel: 3, restricao: 2, sem_dados: 1, nada: 0 };
+  function compatGranel(a, b) {
+    const rot = (g) => (T.RG.find((r) => r[0] === g) || [g, g])[1];
+    const gA = a.comp.grupos || [], gB = b.comp.grupos || [], iA = a.comp.incompativeis || [], iB = b.comp.incompativeis || [];
+    const decl = [];
+    iA.filter((g) => gB.includes(g)).forEach((g) => decl.push('A FDS de "' + a.nome + '" declara incompatibilidade com ' + rot(g).toLowerCase() + ' (grupo de "' + b.nome + '").'));
+    iB.filter((g) => gA.includes(g)).forEach((g) => decl.push('A FDS de "' + b.nome + '" declara incompatibilidade com ' + rot(g).toLowerCase() + ' (grupo de "' + a.nome + '").'));
+    const semDados = a.comp.incompDeclaradas == null || b.comp.incompDeclaradas == null || (!gA.length && !gB.length);
+    const fds = decl.length ? 'incompativel' : semDados ? 'sem_dados' : 'nada';
+    const c = O.Store.consulta(a.id, b.id); let nivel = fds; let diverge = false;
+    if (c) {
+      if (c.resultado === 'incompativel') nivel = 'incompativel';
+      else if (c.resultado === 'restricao') nivel = fds === 'incompativel' ? 'incompativel' : 'restricao';
+      else if (c.resultado === 'sem_incompat') { nivel = fds === 'incompativel' ? 'incompativel' : 'nada'; diverge = fds === 'incompativel'; }
+    }
+    return { nivel, fds, decl, consulta: c, diverge };
+  }
+  function analiseTanque(p, bacias, produtos) {
+    const dias = O.Store.config().alertaDiasBacia || 30;
+    const out = { bacias: [], terminal: [], resumo: { incompativel: 0, restricao: 0, sem_dados: 0, nada: 0 }, semBacias: !(bacias || []).length, desatualizadas: [] };
+    const vistos = {};
+    (bacias || []).forEach((b) => {
+      const lista = (b.produtos || []).map((id) => (produtos || []).find((x) => x.id === id)).filter((x) => x && x.id !== p.id);
+      const pares = lista.map((o) => ({ outro: o, res: compatGranel(p, o) }));
+      const pior = pares.reduce((m, x) => (ORD_GRANEL[x.res.nivel] > ORD_GRANEL[m] ? x.res.nivel : m), 'nada');
+      out.bacias.push({ bacia: b, pares, pior });
+      const idade = b.atualizadoEm ? (Date.now() - new Date(b.atualizadoEm).getTime()) / 86400000 : Infinity;
+      if (idade > dias) out.desatualizadas.push({ bacia: b, dias: isFinite(idade) ? Math.floor(idade) : null });
+      lista.forEach((o) => { (vistos[o.id] = vistos[o.id] || { outro: o, bacias: [] }).bacias.push(b.nome); });
+    });
+    Object.values(vistos).forEach((v) => { const res = compatGranel(p, v.outro); out.terminal.push(Object.assign({}, v, { res })); out.resumo[res.nivel]++; });
+    return out;
   }
 
   // ---------- Gestão de mudança (MOC) ----------
@@ -702,6 +742,17 @@
       else r.pendencias.push('Conflito de segregação sem solução definida (etapa 11.2).');
     }
     if (p.par.pgrIndicador === '' && p.confirmadas['12']) r.pendencias.push('Indicador de PGR não registrado (etapa 12.2).');
+    if (p.armazenamento === 'granel') {
+      const at = analiseTanque(p, O.Store.bacias(), produtos);
+      if (at.semBacias) r.alertas.push('Nenhuma bacia de contenção cadastrada: a compatibilidade com os produtos do terminal não foi analisada (menu Bacias de contenção).');
+      else {
+        const inc = at.terminal.filter((x) => x.res.nivel === 'incompativel');
+        if (inc.length) r.alertas.push('Incompatibilidade com produto(s) do terminal: ' + inc.map((x) => x.outro.nome + ' (bacia ' + x.bacias.join(', ') + ')').join('; ') + '. A decisão é do responsável técnico, com justificativa.');
+        if (at.resumo.sem_dados) r.pendencias.push('Compatibilidade sem dados com ' + at.resumo.sem_dados + ' produto(s) do terminal: consultar a fonte externa e registrar o resultado (etapa 11.2).');
+        at.desatualizadas.forEach((d) => r.alertas.push('Lista de produtos da bacia "' + d.bacia.nome + '" desatualizada' + (d.dias != null ? ' (há ' + d.dias + ' dias)' : '') + ': confirme antes de confiar na análise.'));
+      }
+      if (!RK().nivelCenario(tanqueDe(p).cenario).v) r.pendencias.push('Avaliar o cenário de vazamento simultâneo de mais de um tanque (etapa 11.2).');
+    }
     {
       const m = mudancaDe(p); const sg = mudancaSugestao(p, produtos);
       if (m.exige === true) {
@@ -726,5 +777,5 @@
     return r;
   }
 
-  O.Engine = { emEstoque, estoqueAtivo, registrarEntrada, registrarAjuste, registrarSaida, historicoLocal, analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal, MOC_SIT, ATENDE, tanqueDe, classe17505, exigenciasTanque, mudancaDe, mudancaSugestao, substituidoPor };
+  O.Engine = { emEstoque, estoqueAtivo, registrarEntrada, registrarAjuste, registrarSaida, historicoLocal, analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal, RES_CONSULTA, NIVEL_GRANEL, compatGranel, analiseTanque, MOC_SIT, ATENDE, tanqueDe, classe17505, exigenciasTanque, mudancaDe, mudancaSugestao, substituidoPor };
 })(window.O360 = window.O360 || {});

@@ -15,10 +15,10 @@
     logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false,
     bibliotecaCenarios: [],
     contatos: [],
-    alertaDias: 30, alertaDiasFds: 90,
+    alertaDias: 30, alertaDiasFds: 90, alertaDiasBacia: 30,
   };
 
-  function blank() { return { v: 1, seq: 0, produtos: [], locais: [], fila: [], config: { ...DEFAULT_CFG } }; }
+  function blank() { return { v: 1, seq: 0, produtos: [], locais: [], fila: [], bacias: [], consultas: {}, config: { ...DEFAULT_CFG } }; }
 
   function load() {
     if (mem) return mem;
@@ -31,6 +31,8 @@
     mem.produtos = (mem.produtos || []).filter((x) => x && x.id && x.ghs); // remove registros fantasmas criados por campos de formulário que não são produtos
     mem.locais = mem.locais || [];
     mem.fila = mem.fila || [];
+    mem.bacias = mem.bacias || [];
+    mem.consultas = mem.consultas || {};
     return mem;
   }
   function save() {
@@ -71,6 +73,17 @@
     substituirFila(lista) { load().fila = lista; save(); },
     removerFila(id) { const d = load(); d.fila = d.fila.filter((x) => x.id !== id); save(); },
     removerLocal(id) { const d = load(); d.locais = d.locais.filter((l) => l.id !== id); save(); },
+    // bacias de contenção: só guardam quais produtos a granel estão nelas (os tanques são multiuso e não são cadastrados)
+    bacias() { return load().bacias; },
+    bacia(id) { return load().bacias.find((b) => b.id === id); },
+    novaBacia(nome) { const b = { id: uid('bac'), nome, obs: '', produtos: [], atualizadoEm: new Date().toISOString() }; load().bacias.push(b); save(); return b; },
+    salvarBacia(b) { const d = load(); const i = d.bacias.findIndex((x) => x.id === b.id); if (i >= 0) d.bacias[i] = b; else d.bacias.push(b); save(); },
+    removerBacia(id) { const d = load(); d.bacias = d.bacias.filter((b) => b.id !== id); save(); },
+    // consultas de compatibilidade entre dois produtos (fonte externa, transcrita pelo analista)
+    chavePar(a, b) { return [a, b].sort().join('|'); },
+    consulta(a, b) { return load().consultas[[a, b].sort().join('|')] || null; },
+    salvarConsulta(a, b, c) { load().consultas[[a, b].sort().join('|')] = c; save(); },
+    removerConsulta(a, b) { delete load().consultas[[a, b].sort().join('|')]; save(); },
     uid,
     exportar() { return JSON.stringify(load(), null, 2); },
     importar(txt) {

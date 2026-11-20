@@ -412,6 +412,13 @@
       add('Obter e arquivar o parecer de Higiene Ocupacional para o agente CMR ou PFC', 'NR-01 | NR-15', 'Higiene Ocupacional', 'Antes da liberação', p.hig.parecerExigidoOk ? 'Concluído' : 'Pendente');
     }
     if (ok && p.armazenamento === 'granel') ['dique', 'nr20', 'aterramento', 'incendio', 'vapores', 'drenagem'].filter((k) => !(p.comp.granel || []).includes(k)).forEach((k) => add('Tanque: ' + ({ dique: 'confirmar bacia ou dique de contenção (NBR 17505)', nr20: 'confirmar classificação da instalação e prontuário (NR-20)', aterramento: 'confirmar aterramento e proteção contra descargas', incendio: 'confirmar proteção e combate a incêndio', vapores: 'confirmar controle de emissões e vapores', drenagem: 'confirmar drenagem e contenção de águas de combate' }[k]), 'NBR 17505 | NR-20', 'Segurança de processo', 'Antes da liberação', 'Pendente'));
+    if (p.armazenamento === 'granel') {
+      const at = E.analiseTanque(p, O.Store.bacias(), produtos);
+      at.terminal.filter((v) => v.res.nivel === 'incompativel').forEach((v) => add('Definir com o responsável técnico se "' + p.nome + '" e "' + v.outro.nome + '" podem ficar na mesma bacia ou na drenagem comum (incompatibilidade). Bacia(s): ' + v.bacias.join(', '), 'Etapa 11.2 | Compatibilidade no terminal', 'Responsável técnico / Segurança de processo', 'Antes de receber o produto', 'Pendente'));
+      at.terminal.filter((v) => v.res.nivel === 'sem_dados').forEach((v) => add('Consultar a compatibilidade com "' + v.outro.nome + '" na fonte externa e registrar o resultado', 'Etapa 11.2 | Compatibilidade no terminal', 'Segurança de processo', 'Antes de receber o produto', 'Pendente'));
+      const nvc = O.RISCO.nivelCenario(E.tanqueDe(p).cenario);
+      if (nvc.grave) add('Reduzir o risco do cenário de vazamento simultâneo de mais de um tanque (' + nvc.nome.toLowerCase() + ', score ' + nvc.v + ', lente ' + nvc.det + ')', 'Etapa 11.2 | Cenário de tanques', 'Segurança de processo', 'Antes de receber o produto', 'Pendente');
+    }
     if (p.armazenamento === 'granel') E.exigenciasTanque(p).filter((x) => ['nao', 'depende'].includes(x.atende)).forEach((x) => add('Tanque: ' + x.rot + ' (' + (x.atende === 'nao' ? 'a frota não atende' : 'depende do tanque') + '). Verificar com a engenharia e, se houver adaptação, abrir MOC', 'Etapa 11.2 | Exigências do tanque', 'Engenharia / Segurança de processo', 'Antes de receber o produto', 'Pendente'));
     if (p.hig.dosimetria === true) add('Realizar a avaliação quantitativa (dosimetria ou varredura) antes da liberação de uso', 'NR-15 | Etapa 9.3', 'Higiene Ocupacional', '', 'Pendente');
     if (ok) {
@@ -918,5 +925,38 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { vencimentos, vencimentosDoc, listaAcoesLocal, emailAcoesLocal, listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  // ---------------------------------------------------------------- Análise de compatibilidade do produto a granel
+  function compatTanque(p, produtos) {
+    const R = O.RISCO; const at = E.analiseTanque(p, O.Store.bacias(), produtos); const ce = R.CENARIO_TANQUE; const cn = E.tanqueDe(p).cenario; const nv = R.nivelCenario(cn); const sg = signer(p);
+    const N = E.NIVEL_GRANEL;
+    const base = (res) => (res.consulta ? 'Consulta: ' + nz(res.consulta.fonte) + ' em ' + fmtData(res.consulta.data) + (res.diverge ? ' | a FDS declara incompatibilidade (mantido o resultado mais conservador)' : '') : res.decl.length ? res.decl.join(' ') : res.fds === 'sem_dados' ? 'FDS sem dados suficientes' : 'FDS sem incompatibilidade declarada');
+    const B = [capa('Análise de compatibilidade do produto a granel', 'QUIM 360 | Vazamento simultâneo de tanques | ' + nz(p.nome), p, [['Bacias analisadas', String(at.bacias.length)], ['Produtos do terminal considerados', String(at.terminal.length)]])];
+    B.push({ t: 'callout', tone: at.resumo.incompativel ? 'crit' : (at.resumo.sem_dados || at.semBacias || at.resumo.restricao) ? 'warn' : 'ok', title: 'Resumo', text: at.semBacias ? 'Nenhuma bacia cadastrada: a compatibilidade com os produtos do terminal não foi analisada.' : at.terminal.length + ' produto(s) do terminal: ' + at.resumo.incompativel + ' incompatível(is), ' + at.resumo.restricao + ' com restrição, ' + at.resumo.sem_dados + ' sem dados, ' + at.resumo.nada + ' sem incompatibilidade declarada.' });
+    B.push({ t: 'h1', text: '1 Método e limites' });
+    B.push({ t: 'p', text: 'Em caso de emergência, mais de um tanque pode vazar e produtos diferentes se encontram na mesma bacia, na canaleta ou na drenagem comum. Esta análise compara o produto com cada bacia e com os produtos do terminal.' });
+    B.push({ t: 'list', items: ['Base: incompatibilidades declaradas na Seção 10 das FDS e consulta externa registrada pelo analista (por exemplo, NOAA CAMEO Chemicals).', 'Não usa a matriz da ABNT NBR 17160, que trata de armazenamento embalado.', '"Sem incompatibilidade declarada" não prova compatibilidade: só indica que as FDS não declaram. Pares sem dados exigem consulta e registro.', 'Em caso de divergência entre FDS e consulta, prevalece o resultado mais conservador.', 'O resultado só sinaliza: a decisão de alocar o produto, as medidas e a justificativa são do responsável técnico.'] });
+    B.push({ t: 'h1', text: '2 Produto contra cada bacia' });
+    if (!at.bacias.length) B.push({ t: 'p', text: 'Nenhuma bacia cadastrada.' });
+    at.bacias.forEach((x) => {
+      B.push({ t: 'h2', text: 'Bacia ' + x.bacia.nome + ' | lista atualizada em ' + (x.bacia.atualizadoEm ? fmtData(x.bacia.atualizadoEm) : 'data não registrada') });
+      B.push(x.pares.length ? { t: 'table', head: ['Produto na bacia', 'Resultado', 'Base'], widths: [30, 22, 48], rows: x.pares.map((q) => [q.outro.nome, N[q.res.nivel], base(q.res)]) } : { t: 'p', small: true, text: 'Sem outros produtos cadastrados nesta bacia.' });
+    });
+    if (at.desatualizadas.length) B.push({ t: 'callout', tone: 'warn', title: 'Listas desatualizadas', text: at.desatualizadas.map((d) => d.bacia.nome + (d.dias != null ? ' (' + d.dias + ' dias)' : '')).join('; ') + '. Confirme antes de confiar na análise.' });
+    B.push({ t: 'h1', text: '3 Produto contra os produtos do terminal' });
+    B.push(at.terminal.length ? { t: 'table', head: ['Produto', 'Bacia(s)', 'Resultado', 'Base'], widths: [24, 16, 20, 40], rows: at.terminal.map((v) => [v.outro.nome, v.bacias.join(', '), N[v.res.nivel], base(v.res)]) } : { t: 'p', text: 'Sem produtos cadastrados nas bacias.' });
+    const cons = at.terminal.filter((v) => v.res.consulta);
+    B.push({ t: 'h1', text: '4 Consultas externas registradas' });
+    B.push(cons.length ? { t: 'table', head: ['Produto', 'Resultado', 'Fonte', 'Data', 'Transcrição'], widths: [20, 22, 16, 12, 30], rows: cons.map((v) => [v.outro.nome, (E.RES_CONSULTA.find((r) => r[0] === v.res.consulta.resultado) || [0, v.res.consulta.resultado])[1], nz(v.res.consulta.fonte), fmtData(v.res.consulta.data), nz(v.res.consulta.obs)]) } : { t: 'p', text: 'Nenhuma consulta externa registrada.' });
+    B.push({ t: 'h1', text: '5 Cenário: ' + ce.titulo });
+    B.push({ t: 'kv', rows: [['Causas', ce.causas], ['Consequências', ce.consequencias], ['Medidas de controle', ce.medidas.join('\n')], ['Severidade por lente', nv.dims.length ? nv.dims.map((x) => x.curto + ': ' + x.sev + ' ' + R.sevNome(x.sev, x.dim)).join('\n') : 'não avaliada'], ['Probabilidade', cn.prob ? cn.prob + ' ' + R.PROB[cn.prob - 1][1] : 'não avaliada'], ['Nível de risco', nv.v ? nv.nome + ' (' + nv.v + ', lente ' + nv.det + ')' + (nv.psif ? ' | PSIF (lente de pessoas)' : '') : 'não avaliado'], ['Observações', nz(cn.obs)]] });
+    B.push({ t: 'p', bold: true, text: 'Para discutir com a brigada e a operação' });
+    B.push({ t: 'list', ordered: true, items: ce.discussao });
+    B.push({ t: 'h1', text: '6 Conclusão do responsável técnico' });
+    B.push({ t: 'table', head: ['Conclusão, decisão de alocação e justificativa'], rows: [[' '], [' '], [' ']], tall: true });
+    B.push({ t: 'p', small: true, text: 'Cenários e medidas são pontos de partida a revisar. Apoio à decisão: a responsabilidade técnica é do profissional que assina.' });
+    B.push({ t: 'sign', rows: [[sg.nome, sg.funcao]] });
+    return B;
+  }
+
+  O.Docs = { compatTanque, vencimentos, vencimentosDoc, listaAcoesLocal, emailAcoesLocal, listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

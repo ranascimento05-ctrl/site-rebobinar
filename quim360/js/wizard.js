@@ -476,6 +476,43 @@
             E.exigenciasTanque(p).map((it) => h('div', { style: 'padding:8px 0;border-top:1px solid #26324d' }, h('b', {}, it.rot), h('p', { class: 'small', style: 'margin:2px 0' }, it.dica),
               U.select(p, 'tanque.itens.' + it.k + '.atende', E.ATENDE, { label: 'A frota atual atende?', empty: 'Selecione', onChange: api.rerender }))),
             U.input(p, 'tanque.obs', { rows: 2, label: 'Observações (quem foi consultado, tanques de referência, condições)' })));
+          // compatibilidade com os produtos do terminal e das bacias (vazamento simultâneo)
+          {
+            const at = E.analiseTanque(p, S.bacias(), S.produtos()); const RKx = O.RISCO; const cam = T.FONTES_CONSULTA[0]; const hoje = new Date().toISOString().slice(0, 10);
+            const tomN = { incompativel: 'crit', restricao: 'warn', sem_dados: 'warn', nada: 'ok' };
+            const cc = h('div', { class: 'card' }, h('h4', {}, 'Compatibilidade com os produtos do terminal e das bacias ', U.disc('PSM')),
+              h('p', { class: 'small' }, 'Se mais de um tanque vazar, produtos diferentes se encontram na bacia e na drenagem. A análise usa as incompatibilidades declaradas nas FDS e a consulta externa que você registrar, nunca a matriz da NBR 17160 (armazenamento embalado). "Nenhuma incompatibilidade declarada" não prova compatibilidade.'),
+              h('p', { class: 'small' }, 'Consulta externa: ', h('a', { href: cam.url, target: '_blank', rel: 'noopener noreferrer' }, cam.titulo), '. Consulte cada par, transcreva o resultado abaixo e registre a data.'));
+            if (at.semBacias) cc.appendChild(h('div', {}, U.alert('warn', 'Nenhuma bacia cadastrada', 'Cadastre as bacias e os produtos que estão em cada uma para analisar a compatibilidade.'), h('a', { class: 'btn sm', href: '#/bacias' }, 'Cadastrar bacias de contenção')));
+            at.desatualizadas.forEach((d) => cc.appendChild(U.alert('warn', 'Lista desatualizada', 'A lista de produtos da bacia "' + d.bacia.nome + '" não é atualizada' + (d.dias != null ? ' há ' + d.dias + ' dias' : '') + '. Confirme em Bacias de contenção.')));
+            at.bacias.forEach((x) => cc.appendChild(h('div', { style: 'padding:8px 0;border-top:1px solid #26324d' }, h('div', { class: 'row' }, h('b', {}, 'Bacia ' + x.bacia.nome), U.badge(x.pares.length ? tomN[x.pior] : 'info', x.pares.length ? E.NIVEL_GRANEL[x.pior] : 'Sem outros produtos')),
+              x.pares.length ? h('ul', { style: 'margin:4px 0 0 18px' }, x.pares.map((q) => h('li', { class: 'small' }, q.outro.nome + ': ' + E.NIVEL_GRANEL[q.res.nivel]))) : null)));
+            if (at.terminal.length) {
+              cc.appendChild(h('h4', { style: 'margin-top:10px' }, 'Consulta por produto do terminal'));
+              at.terminal.forEach((v) => {
+                const f = Object.assign({ resultado: '', fonte: cam.sigla, data: hoje, obs: '' }, v.res.consulta || {});
+                cc.appendChild(h('details', {}, h('summary', { style: 'cursor:pointer;padding:6px 0' }, h('b', {}, v.outro.nome), ' (bacia ' + v.bacias.join(', ') + ') ', U.badge(tomN[v.res.nivel], E.NIVEL_GRANEL[v.res.nivel])),
+                  v.res.decl.length ? h('ul', { style: 'margin:0 0 6px 18px' }, v.res.decl.map((x) => h('li', { class: 'small' }, x))) : h('p', { class: 'small' }, v.res.fds === 'sem_dados' ? 'As FDS não trazem dados suficientes para concluir.' : 'As FDS não declaram incompatibilidade entre os dois.'),
+                  v.res.diverge ? U.alert('warn', 'Divergência', 'A consulta registrada não encontrou incompatibilidade, mas a FDS declara. O app mantém o resultado mais conservador.') : null,
+                  h('div', { class: 'grid g2' }, U.select({ f }, 'f.resultado', E.RES_CONSULTA, { label: 'Resultado da consulta', empty: 'Selecione' }), U.input({ f }, 'f.fonte', { label: 'Fonte consultada' })),
+                  h('div', { class: 'grid g2' }, U.input({ f }, 'f.data', { type: 'date', label: 'Data da consulta' }), U.input({ f }, 'f.obs', { rows: 2, label: 'Transcrição do resultado (reação esperada, restrições)' })),
+                  h('div', { class: 'row' }, h('button', { class: 'btn sm', onclick: () => { if (!f.resultado) { U.toast('Selecione o resultado da consulta.'); return; } S.salvarConsulta(p.id, v.outro.id, { resultado: f.resultado, fonte: f.fonte, data: f.data, obs: f.obs }); api.rerender(); } }, 'Registrar consulta'),
+                    v.res.consulta ? h('button', { class: 'btn sm ghost', onclick: () => { S.removerConsulta(p.id, v.outro.id); api.rerender(); } }, 'Remover consulta') : null)));
+              });
+            }
+            w.appendChild(cc);
+            const ce = RKx.CENARIO_TANQUE; const cenP = p.tanque.cenario;
+            const badge = h('span'); const mostra = () => { const n = RKx.nivelCenario(cenP); badge.replaceChildren(n.v ? U.badge(n.tom || 'info', n.nome + ' (' + n.v + ', ' + n.det + ')') : U.badge('info', 'Não avaliado')); };
+            const optS = (dim) => RKx.SEV.map((x) => [x[0], x[0] + ' ' + RKx.sevNome(x[0], dim)]);
+            const sel = (campo, dim, rot) => U.select(p, 'tanque.cenario.' + campo, optS(dim), { label: rot, empty: 'Não se aplica', onChange: () => { cenP[campo] = Number(cenP[campo]) || ''; U.salvar(p); mostra(); } });
+            w.appendChild(h('div', { class: 'card' }, h('div', { class: 'row' }, h('h4', {}, 'Cenário: ' + ce.titulo + ' '), U.disc('PSM'), h('span', { class: 'spacer' }), badge),
+              h('p', { class: 'small', style: 'margin:4px 0' }, 'Causas: ' + ce.causas), h('p', { class: 'small', style: 'margin:4px 0' }, 'Consequências: ' + ce.consequencias),
+              h('ul', { style: 'margin:4px 0 4px 18px' }, ce.medidas.map((m) => h('li', { class: 'small' }, m))),
+              h('div', { class: 'grid g2' }, sel('sev', 'pessoas', 'Severidade: pessoas (com PSIF)'), sel('sevAmb', 'amb', 'Severidade: meio ambiente')),
+              h('div', { class: 'grid g2' }, sel('sevPsm', 'psm', 'Severidade: processo e patrimônio (PSM)'), U.select(p, 'tanque.cenario.prob', RKx.PROB.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Probabilidade', empty: 'Selecione', onChange: () => { cenP.prob = Number(cenP.prob) || ''; U.salvar(p); mostra(); } })),
+              U.input(p, 'tanque.cenario.obs', { rows: 2, label: 'Observações e medidas adicionais' })));
+            mostra();
+          }
         } else {
         const ca = E.classeArm(p), cmb = E.combustivel(p);
         w.appendChild(h('div', { class: 'card' }, h('h4', {}, 'Classe de armazenamento (NBR 17160, Anexo D) ', U.disc('PSM')),
