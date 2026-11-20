@@ -172,6 +172,13 @@
       ['Controles adicionais', (p.comp.controles || []).length ? p.comp.controles.map(ctrlNome).join('; ') : '—'],
       ['Estoque máximo', nz(p.comp.limite)], ['Temperatura máxima', nz(p.comp.tempMax)],
     ] });
+    if (p.armazenamento === 'granel') {
+      const c17 = E.classe17505(p); const ex = E.exigenciasTanque(p);
+      B.push({ t: 'h2', text: 'Exigências do produto para o tanque que o receber' });
+      B.push({ t: 'p', small: true, text: 'Os tanques do terminal são multiuso: não há vínculo do produto com um tanque específico. Classe do líquido pela NBR 17505-1: ' + (c17.id || 'não definida') + '. ' + c17.texto + ' As respostas abaixo são da engenharia e da operação; o aplicativo não faz cálculo de projeto.' });
+      B.push({ t: 'table', head: ['Exigência', 'A frota atual atende?'], widths: [60, 40], rows: ex.map((x) => [x.rot, (E.ATENDE.find((a) => a[0] === x.atende) || [0, 'Não respondido'])[1]]) });
+      if (E.tanqueDe(p).obs) B.push({ t: 'kv', rows: [['Observações', E.tanqueDe(p).obs]] });
+    }
     if (loc) {
       const cp = E.compatibilidade(p, loc, produtos);
       if (cp.pares.length || cp.grupos.length) {
@@ -405,6 +412,7 @@
       add('Obter e arquivar o parecer de Higiene Ocupacional para o agente CMR ou PFC', 'NR-01 | NR-15', 'Higiene Ocupacional', 'Antes da liberação', p.hig.parecerExigidoOk ? 'Concluído' : 'Pendente');
     }
     if (ok && p.armazenamento === 'granel') ['dique', 'nr20', 'aterramento', 'incendio', 'vapores', 'drenagem'].filter((k) => !(p.comp.granel || []).includes(k)).forEach((k) => add('Tanque: ' + ({ dique: 'confirmar bacia ou dique de contenção (NBR 17505)', nr20: 'confirmar classificação da instalação e prontuário (NR-20)', aterramento: 'confirmar aterramento e proteção contra descargas', incendio: 'confirmar proteção e combate a incêndio', vapores: 'confirmar controle de emissões e vapores', drenagem: 'confirmar drenagem e contenção de águas de combate' }[k]), 'NBR 17505 | NR-20', 'Segurança de processo', 'Antes da liberação', 'Pendente'));
+    if (p.armazenamento === 'granel') E.exigenciasTanque(p).filter((x) => ['nao', 'depende'].includes(x.atende)).forEach((x) => add('Tanque: ' + x.rot + ' (' + (x.atende === 'nao' ? 'a frota não atende' : 'depende do tanque') + '). Verificar com a engenharia e, se houver adaptação, abrir MOC', 'Etapa 11.2 | Exigências do tanque', 'Engenharia / Segurança de processo', 'Antes de receber o produto', 'Pendente'));
     if (p.hig.dosimetria === true) add('Realizar a avaliação quantitativa (dosimetria ou varredura) antes da liberação de uso', 'NR-15 | Etapa 9.3', 'Higiene Ocupacional', '', 'Pendente');
     if (ok) {
       linhas(p.ocup.subst).forEach((x) => add('Substituição: ' + x, 'Etapa 8a | SST', 'Solicitante / SST', 'Antes da liberação'));

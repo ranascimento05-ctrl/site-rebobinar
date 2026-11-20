@@ -591,6 +591,44 @@
     return (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
   }
 
+  // ---------- Exigências do produto a granel para os tanques ----------
+  // Os tanques são multiuso: o app não vincula produto a tanque. Cada item é uma pergunta à engenharia e à operação; o app não calcula projeto.
+  const ATENDE = [['sim', 'Sim, a frota atende sem modificação'], ['nao', 'Não atende: exige adaptação'], ['depende', 'Depende do tanque'], ['na', 'Não se aplica']];
+  function tanqueDe(p) { const t = p.tanque || {}; return { pontoEbulicao: t.pontoEbulicao || '', obs: t.obs || '', itens: t.itens || {} }; }
+  // classe do líquido pela NBR 17505-1:2013, Tabela 1 (página 19 da norma)
+  function classe17505(p) {
+    const pf = p.imdg.pontoFulgor === '' || p.imdg.pontoFulgor == null ? NaN : parseFloat(String(p.imdg.pontoFulgor).replace(',', '.'));
+    if (isNaN(pf)) return { id: '', texto: 'Informe o ponto de fulgor (etapa 10) para classificar o líquido pela NBR 17505-1.' };
+    if (pf < 22.8) {
+      const pe = parseFloat(String(tanqueDe(p).pontoEbulicao).replace(',', '.'));
+      if (isNaN(pe)) return { id: 'I', texto: 'Classe I (IA ou IB): ponto de fulgor abaixo de 22,8 °C. Informe o ponto de ebulição para separar IA (abaixo de 37,8 °C) de IB.' };
+      return pe < 37.8 ? { id: 'IA', texto: 'Classe IA: ponto de fulgor abaixo de 22,8 °C e ponto de ebulição abaixo de 37,8 °C.' } : { id: 'IB', texto: 'Classe IB: ponto de fulgor abaixo de 22,8 °C e ponto de ebulição de 37,8 °C ou mais.' };
+    }
+    if (pf < 37.8) return { id: 'IC', texto: 'Classe IC: ponto de fulgor de 22,8 °C até menos de 37,8 °C.' };
+    if (pf < 60) return { id: 'II', texto: 'Classe II: ponto de fulgor de 37,8 °C até menos de 60 °C.' };
+    if (pf < 93) return { id: 'IIIA', texto: 'Classe IIIA: ponto de fulgor de 60 °C até menos de 93 °C.' };
+    return { id: 'IIIB', texto: 'Classe IIIB: ponto de fulgor de 93 °C ou mais.' };
+  }
+  function exigenciasTanque(p) {
+    const h = p.ghs.h || []; const inf = h.some((c) => /^H22[0-6]$/.test(c)) || ['IA', 'IB', 'IC', 'II', 'I'].includes(classe17505(p).id);
+    const corr = h.some((c) => /^H(290|314)$/.test(c)) || classesDoProduto(p).includes('8');
+    const amb = h.some((c) => /^H4[01]\d$/.test(c)) || p.imdg.poluente;
+    const tox = h.some((c) => /^H3(0|3)\d$/.test(c));
+    const T = tanqueDe(p).itens;
+    const mk = (k, rot, dica) => ({ k, rot, dica, atende: (T[k] || {}).atende || '' });
+    return [
+      mk('teto', 'Tipo de teto e selagem do tanque', inf ? 'Líquido inflamável: o tipo de teto e a selagem devem servir ao produto e à sua pressão de vapor.' : 'Confirme se o tipo de teto atual serve ao produto (Seção 7 da FDS).'),
+      mk('respiro', 'Respiro, válvulas de alívio e inertização', inf ? 'Vapores inflamáveis: conferir respiro, corta-chamas e necessidade de inertização.' : 'Conferir se o produto pede respiro especial ou atmosfera inerte (Seções 7 e 10 da FDS).'),
+      mk('material', 'Material do tanque, juntas, vedações, mangotes e bombas', corr ? 'Produto corrosivo: conferir a compatibilidade de cada material em contato.' : 'Confirme os materiais compatíveis e incompatíveis (Seções 7 e 10 da FDS).'),
+      mk('aquecimento', 'Aquecimento, serpentina ou controle de temperatura', p.comp.tempMax ? 'A FDS indica temperatura máxima de ' + p.comp.tempMax + '. Conferir também ponto de fusão e viscosidade.' : 'Conferir ponto de fusão, viscosidade e temperatura de armazenamento (Seções 7 e 9 da FDS).'),
+      mk('contaminacao', 'Contaminação cruzada e limpeza do tanque', 'O tanque que receber o produto pode ter armazenado outro: há limite de contaminação ou exigência de limpeza ou descontaminação?'),
+      mk('contencao', 'Bacia de contenção e retenção da água de extinção', amb ? 'Perigoso ao ambiente aquático: avaliar retenção de vazamento e de água de extinção contaminada.' : 'Conferir se a bacia atende ao volume e ao produto.'),
+      mk('combate', 'Sistema de combate a incêndio adequado ao produto', inf ? 'Inflamável: conferir se o sistema (resfriamento, espuma) serve ao produto, inclusive o tipo de espuma.' : 'Conferir se o sistema de combate existente serve ao produto (Seção 5 da FDS).'),
+      mk('aterramento', 'Aterramento e controle de fontes de ignição', inf ? 'Inflamável: aterramento, equivalência de potencial e áreas classificadas.' : 'Conferir se há exigência de aterramento ou de área classificada.'),
+      mk('saude', 'Vapores tóxicos, EPI e drenagem', tox ? 'Há perigo de toxicidade: conferir controle de emissões, EPI e drenagem.' : 'Conferir controle de emissões, EPI e drenagem (Seção 8 da FDS).'),
+    ];
+  }
+
   // ---------- Gestão de mudança (MOC) ----------
   // O app não faz o MOC (feito em outro sistema): levanta se é necessário e registra se foi feito.
   const MOC_SIT = [['nao_aberto', 'Ainda não aberto'], ['andamento', 'Em andamento'], ['concluido', 'Concluído'], ['dispensado', 'Dispensado (com justificativa)']];
@@ -604,7 +642,11 @@
         motivos.push('Troca de produto: substitui "' + ref.nome + '".' + (dv.length ? ' O perfil mudou em relação ao produto substituído (ver diferenças).' : ' Pelos dados do app o perfil não mudou de forma relevante: confirme nas FDS.'));
       }
     }
-    if (p.armazenamento === 'granel') motivos.push('Produto a granel nos tanques do terminal: confirme se a frota recebe o produto sem modificação (teto, material, vedação, aquecimento, contenção, combate). Se exigir obra, é necessário MOC de engenharia.');
+    if (p.armazenamento === 'granel') {
+      const it = exigenciasTanque(p); const nao = it.filter((x) => x.atende === 'nao').map((x) => x.rot); const dep = it.filter((x) => x.atende === 'depende').map((x) => x.rot);
+      if (nao.length || dep.length) motivos.push('A frota pode não atender ao produto sem modificação.' + (nao.length ? ' Não atende: ' + nao.join('; ') + '.' : '') + (dep.length ? ' Depende do tanque: ' + dep.join('; ') + '.' : '') + ' Obra ou adaptação de tanque exige MOC de engenharia.');
+      else motivos.push('Produto a granel nos tanques do terminal: responda às exigências do produto para o tanque (etapa 11.2). Se a frota não atender, é necessário MOC de engenharia.');
+    }
     if (p.comp && p.comp.localOk === 'conflito' && ['alternativo', 'condicionar'].includes(p.comp.solucao)) motivos.push('Segregação física ou local alternativo implica mudança no armazenamento.');
     return { sugere: motivos.length > 0, motivos, divergencias: dv, ref };
   }
@@ -667,6 +709,7 @@
         else if (m.situacao === 'dispensado') { if (!String(m.just).trim()) r.pendencias.push('MOC dispensado sem justificativa (etapa 12.3).'); }
         else r.condicionantes.push('Gestão de mudança (MOC) necessária e ainda não concluída' + (m.ref ? ' (ref. ' + m.ref + ')' : '') + ': ' + ((MOC_SIT.find((x) => x[0] === m.situacao) || [0, 'situação não informada'])[1]).toLowerCase() + '.');
       } else if (m.exige === false) {
+        if (p.armazenamento === 'granel' && exigenciasTanque(p).some((x) => ['nao', 'depende'].includes(x.atende))) r.alertas.push('Há exigências do produto que a frota pode não atender (etapa 11.2), mas o MOC foi marcado como não exigido: confirme.');
         if (sg.sugere && !String(m.just).trim()) r.pendencias.push('Justificativa de que não há MOC não registrada (etapa 12.3).');
       } else if (sg.sugere) r.pendencias.push('Definir se o produto exige gestão de mudança (MOC), etapa 12.3: ' + sg.motivos[0]);
     }
@@ -683,5 +726,5 @@
     return r;
   }
 
-  O.Engine = { emEstoque, estoqueAtivo, registrarEntrada, registrarAjuste, registrarSaida, historicoLocal, analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal, MOC_SIT, mudancaDe, mudancaSugestao, substituidoPor };
+  O.Engine = { emEstoque, estoqueAtivo, registrarEntrada, registrarAjuste, registrarSaida, historicoLocal, analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal, MOC_SIT, ATENDE, tanqueDe, classe17505, exigenciasTanque, mudancaDe, mudancaSugestao, substituidoPor };
 })(window.O360 = window.O360 || {});

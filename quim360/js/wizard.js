@@ -466,6 +466,16 @@
             { v: 'vapores', label: 'Controle de emissões e vapores' },
             { v: 'drenagem', label: 'Drenagem, separação água e óleo e contenção de águas de combate' },
           ]));
+          // exigências do produto para qualquer tanque (os tanques são multiuso: sem vínculo com tanque específico)
+          p.tanque = E.tanqueDe(p);
+          const c17 = E.classe17505(p);
+          w.appendChild(h('div', { class: 'card' }, h('h4', {}, 'Exigências do produto para o tanque que o receber ', U.disc('PSM')),
+            h('p', { class: 'small' }, 'Os tanques do terminal são multiuso e o app não vincula produto a tanque. Cada item abaixo é uma pergunta à engenharia e à operação: a frota atual atende sem modificação? Se não atende ou depende do tanque, é necessário avaliar MOC de engenharia (etapa 12.3).'),
+            U.alert(c17.id ? 'info' : 'warn', 'Classe do líquido pela NBR 17505-1' + (c17.id ? ': ' + c17.id : ''), c17.texto),
+            p.imdg.pontoFulgor !== '' && parseFloat(String(p.imdg.pontoFulgor).replace(',', '.')) < 22.8 ? U.input(p, 'tanque.pontoEbulicao', { label: 'Ponto de ebulição inicial (°C), para separar IA de IB', onInput: api.rerender }) : null,
+            E.exigenciasTanque(p).map((it) => h('div', { style: 'padding:8px 0;border-top:1px solid #26324d' }, h('b', {}, it.rot), h('p', { class: 'small', style: 'margin:2px 0' }, it.dica),
+              U.select(p, 'tanque.itens.' + it.k + '.atende', E.ATENDE, { label: 'A frota atual atende?', empty: 'Selecione', onChange: api.rerender }))),
+            U.input(p, 'tanque.obs', { rows: 2, label: 'Observações (quem foi consultado, tanques de referência, condições)' })));
         } else {
         const ca = E.classeArm(p), cmb = E.combustivel(p);
         w.appendChild(h('div', { class: 'card' }, h('h4', {}, 'Classe de armazenamento (NBR 17160, Anexo D) ', U.disc('PSM')),
@@ -535,6 +545,7 @@
         if (p.comp.incompDeclaradas === null) e.push('Responda 11.1.');
         if (p.comp.incompDeclaradas && !(p.comp.incompativeis || []).length && !p.comp.incompTexto.trim()) e.push('Liste as incompatibilidades declaradas.');
         if (!p.comp.localOk) e.push('Responda 11.2.');
+        if (p.armazenamento === 'granel' && E.exigenciasTanque(p).some((x) => !x.atende)) e.push('Responda todas as exigências do produto para o tanque (11.2).');
         if (p.comp.localOk === 'conflito' && !p.comp.solucao) e.push('Defina a solução para o conflito de segregação.');
         if (p.comp.localOk === 'sim' && p.comp._motor === 'conflito' && !p.comp.observacoes.trim()) e.push('Justifique a divergência em relação ao motor de segregação.');
         if (p.comp.localOk === 'insuficiente') e.push('Informação insuficiente: registre a pendência e solicite complemento ao fornecedor.');
