@@ -659,6 +659,31 @@
     const nome = h('input', { type: 'text', placeholder: 'Nome (ex.: Contêiner de PQ 01)' });
     const tipo = h('select', {}, T.LOCAIS_TIPO.map((t) => h('option', {}, t)));
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Novo local'), h('div', { class: 'row' }, h('div', { style: 'flex:1;min-width:220px' }, nome), tipo, h('button', { class: 'btn', onclick: () => { if (!nome.value.trim()) return; S.novoLocal(nome.value.trim(), tipo.value); O.route(); } }, 'Criar'))));
+    // importar e exportar locais (.json): leva o cadastro de locais para outro navegador ou colega sem mexer nos produtos
+    { const arqL = h('input', { type: 'file', accept: '.json,application/json', style: 'display:none' });
+      arqL.addEventListener('change', async () => {
+        if (!arqL.files[0]) return;
+        try {
+          const o = JSON.parse(await arqL.files[0].text());
+          const lista = Array.isArray(o) ? o : o.locais;
+          if (!Array.isArray(lista) || !lista.length) throw new Error('Arquivo sem locais.');
+          const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+          const CAMPOS = ['tipo', 'descricao', 'espacoM', 'areaM2', 'catK', 'volMaterialM3', 'aoArLivre', 'armarioSeg', 'areaVendas', 'periodoInspecaoDias', 'itens', 'check', 'inspecoes', 'analise'];
+          let novos = 0, atual = 0;
+          lista.forEach((x) => {
+            if (!x || !x.nome) return;
+            let l = S.locais().find((y) => norm(y.nome) === norm(x.nome));
+            if (!l) { l = S.novoLocal(String(x.nome), x.tipo || 'Outro'); novos++; } else atual++;
+            CAMPOS.forEach((k) => { if (x[k] === undefined) return; if (k === 'check') l.check = Object.assign({}, l.check || {}, x.check); else if (k === 'inspecoes') l.inspecoes = (l.inspecoes || []).concat(x.inspecoes); else l[k] = x[k]; });
+            S.salvarLocal(l);
+          });
+          U.toast(novos + ' local(is) novo(s), ' + atual + ' atualizado(s).'); O.route();
+        } catch (e) { U.toast('Não foi possível importar: ' + e.message); }
+        arqL.value = '';
+      });
+      root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Importar e exportar locais'), h('p', { class: 'small' }, 'Leva o cadastro de locais (área, categoria de segurança, respostas do checklist, inspeções) para outro navegador ou colega. Na importação, locais com o mesmo nome são atualizados e os demais são criados; produtos e fila não são alterados.'),
+        h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => arqL.click() }, 'Importar locais (.json)'), arqL,
+          h('button', { class: 'btn ghost', onclick: () => R.baixar(new Blob([JSON.stringify({ tipo: 'quim360-locais', v: 1, locais: S.locais() }, null, 2)], { type: 'application/json' }), 'locais-quim360.json') }, 'Exportar locais (.json)')))); }
     const ps = S.produtos();
     if (!S.locais().length) root.appendChild(h('div', { class: 'empty' }, 'Nenhum local cadastrado.'));
     S.locais().forEach((l) => {
