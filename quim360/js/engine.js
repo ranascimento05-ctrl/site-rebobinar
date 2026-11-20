@@ -430,13 +430,13 @@
       const cont = { total: rel.length, c: 0, nc: 0, aberto: 0 };
       rel.forEach((i) => { if (i.resp === 'c') cont.c++; else if (i.resp === 'nc') cont.nc++; else if (i.resp !== 'na') cont.aberto++; });
       const a = cenAn[c.k] || {};
-      return Object.assign({}, c, { padrao: true, causas: a.causas || c.causas, consequencias: a.consequencias || c.consequencias, medidas: a.medidasTxt ? linhas(a.medidasTxt) : c.medidas, editado: !!(a.causas || a.consequencias || a.medidasTxt), off: !!a.off, offJust: a.offJust || '', sev: a.sev || '', prob: a.prob || '', obs: a.obs || '', checklist: cont, sugProb: R.sugestaoProb(cont), risco: R.nivel(a.sev, a.prob) });
+      return Object.assign({}, c, { padrao: true, causas: a.causas || c.causas, consequencias: a.consequencias || c.consequencias, medidas: a.medidasTxt ? linhas(a.medidasTxt) : c.medidas, editado: !!(a.causas || a.consequencias || a.medidasTxt), off: !!a.off, offJust: a.offJust || '', sev: a.sev || '', sevAmb: a.sevAmb || '', sevPsm: a.sevPsm || '', prob: a.prob || '', obs: a.obs || '', checklist: cont, sugProb: R.sugestaoProb(cont), risco: R.nivelCenario(a) });
     });
-    const proprios = (an.proprios || []).map((x) => Object.assign({}, x, { k: 'p:' + x.id, proprio: true, medidas: linhas(x.medidas), checklist: { total: 0, c: 0, nc: 0, aberto: 0 }, sugProb: null, risco: R.nivel(x.sev, x.prob) }));
+    const proprios = (an.proprios || []).map((x) => Object.assign({}, x, { k: 'p:' + x.id, proprio: true, medidas: linhas(x.medidas), checklist: { total: 0, c: 0, nc: 0, aberto: 0 }, sugProb: null, risco: R.nivelCenario(x) }));
     const desativados = padrao.filter((c) => c.off);
     const cenarios = padrao.filter((c) => !c.off).concat(proprios);
-    const resumo = { crit: 0, alto: 0, medio: 0, baixo: 0, semAvaliar: 0 };
-    cenarios.forEach((c) => { const n = c.risco.nome; if (n === 'Crítico') resumo.crit++; else if (n === 'Alto') resumo.alto++; else if (n === 'Médio') resumo.medio++; else if (n === 'Baixo') resumo.baixo++; else resumo.semAvaliar++; });
+    const resumo = { grave: 0, psif: 0, medio: 0, baixo: 0, desprezivel: 0, semAvaliar: 0 };
+    cenarios.forEach((c) => { const r = c.risco; if (r.grave) resumo.grave++; if (r.psif && r.grave) resumo.psif++; else if (r.nome === 'Médio') resumo.medio++; else if (r.nome === 'Baixo') resumo.baixo++; else if (r.nome === 'Desprezível') resumo.desprezivel++; else if (!r.grave) resumo.semAvaliar++; });
     return { aspectos, consid, anexoA: R.ANEXO_A, cenarios, desativados, resumo, campos, ameacas: campos.ameacas || '', conclusao: an.conclusao || '', data: an.data || '', revisao: an.revisao || '', rq, gatilhos: g };
   }
 

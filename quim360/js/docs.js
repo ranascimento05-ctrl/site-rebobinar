@@ -413,7 +413,7 @@
       }
       if (loc && p.armazenamento !== 'granel') {
         if (!E.emEstoque(p)) add('Registrar a entrada do produto no estoque de ' + loc.nome + ' (data e quantidade) quando ele chegar: só o que está em estoque entra nos cálculos do local', 'Controle de estoque', 'Gestor do local', 'Na chegada do produto');
-        E.analiseRiscoLocal(loc, produtos, p).cenarios.filter((c) => c.risco.v >= 10).sort((x, y) => y.risco.v - x.risco.v).forEach((c) => { const ac = 'Reduzir o risco do cenário "' + c.titulo + '" em ' + loc.nome + ' (risco ' + c.risco.nome.toLowerCase() + ', ' + c.risco.v + ')'; add(ac, 'Análise de risco do armazém | severidade ' + c.sev + ', probabilidade ' + c.prob, 'Gestor do local', 'Antes do primeiro recebimento'); DET[ac] = c.medidas.concat(c.obs ? ['Observação: ' + c.obs] : []); });
+        E.analiseRiscoLocal(loc, produtos, p).cenarios.filter((c) => c.risco.grave).sort(porRisco).forEach((c) => { const ac = 'Reduzir o risco do cenário "' + c.titulo + '" em ' + loc.nome + ' (' + riscoTxt(c).toLowerCase() + ')'; add(ac, 'Análise de risco do armazém | ' + sevTxt(c) + '; probabilidade ' + c.prob, 'Gestor do local', 'Antes do primeiro recebimento'); DET[ac] = c.medidas.concat(c.obs ? ['Observação: ' + c.obs] : []); });
         const rq = E.requisitosLocal(loc, produtos, p);
         rq.itens.filter((i) => i.resp === 'nc').forEach((i) => add('Local ' + loc.nome + ', item ' + i.id + ': ' + i.texto.split(/;|:/)[0] + (i.obs ? ' (' + i.obs + ')' : ''), 'NBR 17160 | ' + i.id, 'Gestor do local / Engenharia', 'Antes do primeiro recebimento'));
         if (rq.cont.aberto) add('Concluir o checklist da NBR 17160 de ' + loc.nome + ': ' + rq.cont.aberto + ' requisito(s) sem resposta', 'NBR 17160 | Checklist do local', 'Responsável técnico', 'Antes do primeiro recebimento');
@@ -510,7 +510,7 @@
   function listaAcoesLocal(local, produtos) {
     const rq = E.requisitosLocal(local, produtos); const A = []; const reg = local.acoesPlano || {};
     const add = (acao, origem, papel, detalhe) => { if (!A.some((x) => x.acao === acao)) { const o = reg[acao] || {}; A.push({ n: String(A.length + 1), acao, origem, papel, prazoTexto: '', reg: o, detalhe: detalhe || [], linha: [String(A.length + 1), acao, origem, o.resp ? o.resp + ' (' + papel + ')' : papel, o.prazo ? fmtData(o.prazo) : '', o.sit ? SIT_ACAO[o.sit] || 'A fazer' : 'A fazer'] }); } };
-    E.analiseRiscoLocal(local, produtos).cenarios.filter((c) => c.risco.v >= 10).sort((x, y) => y.risco.v - x.risco.v).forEach((c) => add('Reduzir o risco do cenário "' + c.titulo + '" (risco ' + c.risco.nome.toLowerCase() + ', ' + c.risco.v + ')', 'Análise de risco do armazém | severidade ' + c.sev + ', probabilidade ' + c.prob, 'Gestor do local', c.medidas.concat(c.obs ? ['Observação: ' + c.obs] : [])));
+    E.analiseRiscoLocal(local, produtos).cenarios.filter((c) => c.risco.grave).sort(porRisco).forEach((c) => add('Reduzir o risco do cenário "' + c.titulo + '" (' + riscoTxt(c).toLowerCase() + ')', 'Análise de risco do armazém | ' + sevTxt(c) + '; probabilidade ' + c.prob, 'Gestor do local', c.medidas.concat(c.obs ? ['Observação: ' + c.obs] : [])));
     rq.itens.filter((i) => i.resp === 'nc').forEach((i) => add('Corrigir o requisito ' + i.id + ' da NBR 17160: ' + i.texto.split(/;|\. /)[0].replace(/\.$/, '') + (i.obs ? ' (' + i.obs + ')' : ''), 'NBR 17160 | ' + i.id + ' | Checklist do local', 'Gestor do local'));
     if (rq.semInspecao) add('Realizar e registrar a inspeção do armazém antes da primeira utilização', 'NBR 17160 | 6.3.9.1', 'Gestor do local');
     else if (rq.vencida) add('Realizar a inspeção do armazém, vencida desde ' + fmtData(rq.proxima), 'NBR 17160 | 6.3.9', 'Gestor do local');
@@ -569,18 +569,35 @@
 
 
 
-  // matriz 5x5, escalas e situações de enquadramento (usadas na análise de risco)
+  // risco por cenário: texto da severidade em cada lente avaliada e do nível final
+  function sevTxt(c) {
+    const R = O.RISCO; const d = (c.risco && c.risco.dims) || [];
+    return d.length ? d.map((x) => 'severidade ' + x.curto.toLowerCase() + ' ' + x.sev + ' (' + R.sevNome(x.sev, x.dim) + ')').join(', ') : 'sem severidade avaliada';
+  }
+  function sevCel(c) { const R = O.RISCO; const d = (c.risco && c.risco.dims) || []; return d.length ? d.map((x) => x.curto + ': ' + x.sev + ' ' + R.sevNome(x.sev, x.dim)).join('\n') : '—'; }
+  function riscoTxt(c) { const r = c.risco; return r.v ? 'risco ' + r.nome + ', score ' + r.v + ', lente ' + r.det : 'não avaliado'; }
+  function riscoCel(c) { const r = c.risco; return r.v ? r.nome + ' (' + r.v + ', ' + r.det + ')' : 'Não avaliado'; }
+  function porRisco(x, y) { return ((y.risco.rank || 0) - (x.risco.rank || 0)) || ((y.risco.v || 0) - (x.risco.v || 0)); }
+  const PROB_NOME = (n) => (O.RISCO.PROB[n - 1] || [0, ''])[1];
+
+  // matrizes, escalas e situações de enquadramento (usadas na análise de risco)
   function criterioRisco() {
     const R = O.RISCO; const B = [];
-    B.push({ t: 'p', small: true, text: 'Risco = severidade x probabilidade. Crítico: 15 a 25 (vermelho). Alto: 10 a 14 (amarelo). Médio: 5 a 9 (cinza). Baixo: 1 a 4 (verde). Linhas: severidade de 1 a 5. Colunas: probabilidade de 1 a 5. O critério pode ser substituído pelo da organização.' });
-    const tom = (v) => (v >= 15 ? 'crit' : v >= 10 ? 'warn' : v >= 5 ? 'info' : 'ok');
-    B.push({ t: 'matrix', labels: ['1', '2', '3', '4', '5'], rows: [1, 2, 3, 4, 5].map((s) => [1, 2, 3, 4, 5].map((p) => ({ txt: String(s * p), tone: tom(s * p) }))) });
-    B.push({ t: 'h2', text: 'Escala de severidade' });
-    B.push({ t: 'table', head: ['Nível', 'Pessoas', 'Meio ambiente', 'Patrimônio e operação'], widths: [14, 34, 30, 22], rows: R.SEV_DESC.map((x) => [x.n + ' ' + x.nome, x.pessoas, x.ambiente, x.patrimonio]) });
+    B.push({ t: 'p', small: true, text: 'O risco é avaliado em três lentes: pessoas (acidente do trabalho), meio ambiente e processo e patrimônio (PSM). A severidade é escolhida em cada lente e a probabilidade é uma só (frequência, barreiras e histórico). Risco = severidade x probabilidade. A severidade é soberana: severidade 4 ou 5, ou score 12 ou mais, é Grave. Médio: score de 6 a 11 com severidade abaixo de 4. Baixo: 3 a 5. Desprezível: 2 ou menos. O nível do cenário é o mais alto entre as lentes avaliadas. PSIF (potencial de causar fatalidade) vale somente para a lente de pessoas; não se aplica a meio ambiente nem a PSM. O critério pode ser substituído pelo da organização.' });
+    const tom = (n) => (n.grave ? 'crit' : n.nome === 'Médio' ? 'warn' : n.nome === 'Baixo' ? 'info' : 'ok');
+    const grade = (dim) => ({ t: 'matrix', labels: ['1', '2', '3', '4', '5'], rows: [1, 2, 3, 4, 5].map((s) => [1, 2, 3, 4, 5].map((p) => { const n = R.nivel(s, p, dim); return { txt: String(s * p) + (n.psif ? ' PSIF' : ''), tone: tom(n) }; })) });
+    B.push({ t: 'h2', text: 'Matriz da lente de pessoas (com PSIF)' });
+    B.push({ t: 'p', small: true, text: 'Linhas: severidade de 1 a 5 (desprezível, baixa, média, grave, fatal). Colunas: probabilidade de 1 a 5 (muito baixa a muito alta).' });
+    B.push(grade('pessoas'));
+    B.push({ t: 'h2', text: 'Matriz das lentes de meio ambiente e PSM (sem PSIF)' });
+    B.push({ t: 'p', small: true, text: 'Linhas: severidade de 1 a 5 (desprezível, baixa, média, grave, catastrófica). Colunas: probabilidade de 1 a 5.' });
+    B.push(grade('amb'));
+    B.push({ t: 'h2', text: 'Escala de severidade por lente' });
+    B.push({ t: 'table', head: ['Nível', 'Pessoas', 'Meio ambiente', 'Processo e patrimônio (PSM)'], widths: [14, 30, 30, 26], rows: R.SEV_DESC.map((x) => [x.n + ' ' + x.nome + (x.nomeAlt !== x.nome ? ' (ambiente e PSM: ' + x.nomeAlt + ')' : ''), x.pessoas, x.ambiente, x.patrimonio]) });
     B.push({ t: 'h2', text: 'Escala de probabilidade' });
     B.push({ t: 'table', head: ['Nível', 'Descrição'], widths: [18, 82], rows: R.PROB_DESC.map((x) => [x.n + ' ' + x.nome, x.desc]) });
     B.push({ t: 'h2', text: 'Situações típicas para enquadramento' });
-    B.push({ t: 'table', head: ['Situação', 'Sugestão'], widths: [75, 25], rows: R.EXEMPLOS.map((x) => [x.situacao, x.sev ? 'Severidade ' + x.sev + ' (' + R.SEV_DESC[x.sev - 1].nome + ')' : 'Probabilidade ' + x.prob + ' (' + R.PROB_DESC[x.prob - 1].nome + ')']) });
+    B.push({ t: 'table', head: ['Situação', 'Sugestão'], widths: [70, 30], rows: R.EXEMPLOS.map((x) => [x.situacao, x.sev ? 'Severidade ' + x.sev + ' (' + R.sevNome(x.sev, x.dim) + '), lente ' + R.DIMS.find((d) => d.id === x.dim).curto : 'Probabilidade ' + x.prob + ' (' + PROB_NOME(x.prob) + ')']) });
     return B;
   }
 
@@ -612,29 +629,29 @@
   }
 
   // ---------------------------------------------------------------- Cenários de risco (treinamento, brigada, reuniões)
-  const TOM_RISCO = { 'Crítico': 'crit', 'Alto': 'warn', 'Médio': 'info', 'Baixo': 'ok' };
+  const TOM_RISCO = { 'Grave / PSIF': 'crit', 'Grave': 'crit', 'Médio': 'warn', 'Baixo': 'info', 'Desprezível': 'ok' };
   // local: cenários do local (ativos e adicionados); sem local: catálogo geral (padrão e biblioteca da organização)
   // op: { soAltos, umaPorPagina (padrão sim), listaPresenca (padrão sim) }
   function cenariosDoc(local, produtos, op) {
     op = op || {}; const R = O.RISCO; const sg = signer(null);
     let lista;
     if (local) {
-      lista = E.analiseRiscoLocal(local, produtos).cenarios.slice().sort((x, y) => (y.risco.v || 0) - (x.risco.v || 0));
-      if (op.soAltos) lista = lista.filter((c) => c.risco.v >= 10);
+      lista = E.analiseRiscoLocal(local, produtos).cenarios.slice().sort(porRisco);
+      if (op.soAltos) lista = lista.filter((c) => c.risco.grave);
     } else {
       const base = R.CENARIOS.map((c) => Object.assign({}, c, { risco: { v: 0, nome: 'Não avaliado' } }));
       const lib = (O.Store.config().bibliotecaCenarios || []).map((m) => ({ titulo: m.titulo, causas: m.causas, consequencias: m.consequencias, medidas: String(m.medidas || '').split('\n').map((x) => x.trim()).filter(Boolean), discussao: [], proprio: true, origem: m.origem, risco: { v: 0, nome: 'Não avaliado' } }));
       lista = base.concat(lib);
     }
     const pseudo = { nome: local ? local.nome : 'Catálogo geral', dec: { numero: '' }, rotulo: local ? 'Armazém' : 'Documento', pseudo: true };
-    const B = [capa('Cenários de risco', 'QUIM 360 | Cenários para treinamento, DDS e reuniões | ' + pseudo.nome, pseudo, [['Local', local ? local.nome + ' (' + local.tipo + ')' : 'Catálogo geral (cenários padrão e biblioteca da organização)'], ['Cenários', String(lista.length) + (op.soAltos ? ' (somente risco alto e crítico)' : '')]])];
+    const B = [capa('Cenários de risco', 'QUIM 360 | Cenários para treinamento, DDS e reuniões | ' + pseudo.nome, pseudo, [['Local', local ? local.nome + ' (' + local.tipo + ')' : 'Catálogo geral (cenários padrão e biblioteca da organização)'], ['Cenários', String(lista.length) + (op.soAltos ? ' (somente risco grave)' : '')]])];
     B.push({ t: 'p', text: 'Este documento reúne os cenários de risco para treinamento da brigada, diálogo de segurança e discussão em reunião. Cada cenário traz como pode acontecer, o que pode acontecer, como prevenir e perguntas para a discussão, com espaço para anotações.' + (local ? '' : ' Sem local definido, os níveis de risco não são mostrados: eles dependem do que está armazenado e das avaliações de cada local.') });
-    if (local && lista.length) B.push({ t: 'table', head: ['Nº', 'Cenário', 'Severidade', 'Probabilidade', 'Risco'], widths: [6, 52, 14, 14, 14], rows: lista.map((c, i) => [String(i + 1), c.titulo, c.sev ? String(c.sev) : '—', c.prob ? String(c.prob) : '—', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado']) });
+    if (local && lista.length) B.push({ t: 'table', head: ['Nº', 'Cenário', 'Severidade por lente', 'Probabilidade', 'Risco'], widths: [6, 40, 20, 12, 22], rows: lista.map((c, i) => [String(i + 1), c.titulo, sevCel(c), c.prob ? c.prob + ' ' + PROB_NOME(c.prob) : '—', riscoCel(c)]) });
     if (!lista.length) B.push({ t: 'callout', tone: 'info', title: 'Sem cenários', text: 'Nenhum cenário atende ao filtro escolhido.' });
     lista.forEach((c, i) => {
       if (op.umaPorPagina !== false) B.push({ t: 'pagebreak' });
       B.push({ t: 'h1', text: (i + 1) + ' ' + c.titulo });
-      if (c.risco.v) B.push({ t: 'callout', tone: TOM_RISCO[c.risco.nome] || 'info', title: 'Risco: ' + c.risco.nome + ' (' + c.risco.v + ')', text: 'Severidade ' + c.sev + ' (' + R.SEV[c.sev - 1][1] + ') e probabilidade ' + c.prob + ' (' + R.PROB[c.prob - 1][1] + ').' });
+      if (c.risco.v) B.push({ t: 'callout', tone: TOM_RISCO[c.risco.nome] || 'info', title: 'Risco: ' + riscoCel(c), text: sevTxt(c).replace(/^./, (m) => m.toUpperCase()) + '; probabilidade ' + c.prob + ' (' + PROB_NOME(c.prob) + ').' + (c.risco.psif ? ' Potencial de causar fatalidade (PSIF, lente de pessoas).' : '') });
       if (c.proprio && (c.origem || c.ref)) B.push({ t: 'p', small: true, text: 'Origem: ' + nz(c.origem) + (c.ref ? ' | ' + c.ref : '') + (c.data ? ' | ' + fmtData(c.data) : '') });
       B.push({ t: 'kv', rows: [['Como pode acontecer', nz(c.causas)], ['O que pode acontecer', nz(c.consequencias)]] });
       B.push({ t: 'p', bold: true, text: 'Como prevenir' });
@@ -660,9 +677,9 @@
     const ar = E.analiseRiscoLocal(lc, produtos, p); const R = O.RISCO;
     const B = [{ t: 'h2', text: 'Cenários de risco do local de armazenamento' }];
     B.push({ t: 'p', small: true, text: 'Cenários da análise de risco de ' + lc.nome + ', considerando este produto. A análise completa está no documento "Análise de risco do armazém" do local; os níveis dependem das avaliações de severidade e probabilidade ali registradas.' });
-    B.push({ t: 'table', head: ['Cenário', 'Severidade', 'Probabilidade', 'Risco'], widths: [56, 14, 15, 15], rows: ar.cenarios.map((c) => [c.titulo + (c.proprio ? ' (adicionado)' : ''), c.sev ? c.sev + ' ' + R.SEV[c.sev - 1][1] : '—', c.prob ? c.prob + ' ' + R.PROB[c.prob - 1][1] : '—', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado']) });
-    const graves = ar.cenarios.filter((c) => c.risco.v >= 10);
-    if (graves.length) { B.push({ t: 'callout', tone: 'crit', title: graves.length + ' cenário(s) de risco alto ou crítico', text: graves.map((c) => c.titulo).join('; ') + '. Confirme as medidas de controle antes do primeiro recebimento.' }); graves.forEach((c) => B.push({ t: 'kv', rows: [[c.titulo, c.medidas.join('\n')]] })); }
+    B.push({ t: 'table', head: ['Cenário', 'Severidade por lente', 'Probabilidade', 'Risco'], widths: [38, 26, 14, 22], rows: ar.cenarios.map((c) => [c.titulo + (c.proprio ? ' (adicionado)' : ''), sevCel(c), c.prob ? c.prob + ' ' + PROB_NOME(c.prob) : '—', riscoCel(c)]) });
+    const graves = ar.cenarios.filter((c) => c.risco.grave);
+    if (graves.length) { B.push({ t: 'callout', tone: 'crit', title: graves.length + ' cenário(s) de risco grave', text: graves.map((c) => c.titulo).join('; ') + '. Confirme as medidas de controle antes do primeiro recebimento.' }); graves.forEach((c) => B.push({ t: 'kv', rows: [[c.titulo, c.medidas.join('\n')]] })); }
     else if (ar.resumo.semAvaliar) B.push({ t: 'p', small: true, text: ar.resumo.semAvaliar + ' cenário(s) ainda sem avaliação de severidade e probabilidade.' });
     return B;
   }
@@ -672,7 +689,7 @@
     const a = E.analiseRiscoLocal(local, produtos); const sg = signer(null);
     const pseudo = { nome: local.nome, dec: { numero: '' }, rotulo: 'Armazém', pseudo: true };
     const B = [capa('Análise de risco do armazém', 'QUIM 360 | Análise de risco | ABNT NBR 17160:2024, Seção 5 | ' + local.nome, pseudo, [['Local', local.nome + ' (' + local.tipo + ')'], ['Data da análise', a.data ? fmtData(a.data) : fmtData(new Date().toISOString())], ['Próxima revisão', a.revisao ? fmtData(a.revisao) : 'não definida']])];
-    B.push({ t: 'callout', tone: a.resumo.crit || a.resumo.alto ? 'crit' : a.resumo.semAvaliar ? 'warn' : 'ok', title: 'Resumo dos cenários', text: a.cenarios.length + ' cenários: ' + a.resumo.crit + ' crítico(s), ' + a.resumo.alto + ' alto(s), ' + a.resumo.medio + ' médio(s), ' + a.resumo.baixo + ' baixo(s), ' + a.resumo.semAvaliar + ' ainda sem avaliação de severidade e probabilidade.' });
+    B.push({ t: 'callout', tone: a.resumo.grave ? 'crit' : a.resumo.semAvaliar ? 'warn' : 'ok', title: 'Resumo dos cenários', text: a.cenarios.length + ' cenários: ' + a.resumo.grave + ' grave(s)' + (a.resumo.psif ? ' (' + a.resumo.psif + ' com PSIF na lente de pessoas)' : '') + ', ' + a.resumo.medio + ' médio(s), ' + a.resumo.baixo + ' baixo(s), ' + a.resumo.desprezivel + ' desprezível(is), ' + a.resumo.semAvaliar + ' ainda sem avaliação de severidade e probabilidade.' });
     B.push({ t: 'h1', text: '1 Identificação do armazém' });
     B.push({ t: 'kv', rows: [['Local', local.nome], ['Tipo', local.tipo], ['Área do setor', local.areaM2 ? local.areaM2 + ' m²' : 'não informada'], ['Ao ar livre', local.aoArLivre ? 'Sim' : 'Não'], ['Armário de segurança', local.armarioSeg ? 'Sim' : 'Não'], ['Área de vendas ou instalação residencial', local.areaVendas ? 'Sim' : 'Não'], ['Descrição e contenção', nz(local.descricao)], ['Massa líquida total', Math.round(a.gatilhos.total).toLocaleString('pt-BR') + ' kg']] });
     B.push({ t: 'h1', text: '2 Aspectos da análise (5.1)' });
@@ -683,17 +700,17 @@
     B.push({ t: 'table', head: ['Item', 'Ponto a considerar'], widths: [8, 92], rows: a.anexoA.map((x) => [x[0], x[1]]) });
     if (a.ameacas) B.push({ t: 'kv', rows: [['Análise de ameaças e vulnerabilidades (A.8)', a.ameacas]] });
     B.push({ t: 'h1', text: '5 Cenários de risco' });
-    B.push({ t: 'p', small: true, text: 'Severidade e probabilidade de 1 a 5; risco = severidade x probabilidade (crítico 15 ou mais, alto 10 a 14, médio 5 a 9, baixo até 4). O critério é da organização e pode ser substituído pelo seu. Cenários e medidas são pontos de partida a revisar pelo responsável técnico.' });
-    B.push({ t: 'table', head: ['Cenário', 'Severidade', 'Probabilidade', 'Risco', 'Checklist'], widths: [44, 12, 14, 14, 16], rows: a.cenarios.map((c) => [c.titulo, c.sev ? c.sev + ' ' + O.RISCO.SEV[c.sev - 1][1] : '—', c.prob ? c.prob + ' ' + O.RISCO.PROB[c.prob - 1][1] : '—', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'Não avaliado', c.checklist.total ? c.checklist.c + ' conf., ' + c.checklist.nc + ' não conf., ' + c.checklist.aberto + ' sem resposta' : 'sem itens']) });
+    B.push({ t: 'p', small: true, text: 'Severidade (em cada lente: pessoas, meio ambiente e processo e patrimônio) e probabilidade de 1 a 5; risco = severidade x probabilidade. Grave: severidade 4 ou 5, ou score 12 ou mais; médio: 6 a 11; baixo: 3 a 5; desprezível: 2 ou menos. O nível do cenário é o da lente mais alta. PSIF só se aplica à lente de pessoas. O critério pode ser substituído pelo da organização. Cenários e medidas são pontos de partida a revisar pelo responsável técnico.' });
+    B.push({ t: 'table', head: ['Cenário', 'Severidade por lente', 'Probabilidade', 'Risco', 'Checklist'], widths: [30, 22, 12, 18, 18], rows: a.cenarios.map((c) => [c.titulo, sevCel(c), c.prob ? c.prob + ' ' + PROB_NOME(c.prob) : '—', riscoCel(c), c.checklist.total ? c.checklist.c + ' conf., ' + c.checklist.nc + ' não conf., ' + c.checklist.aberto + ' sem resposta' : 'sem itens']) });
     a.cenarios.forEach((c, i) => {
       B.push({ t: 'h2', text: '5.' + (i + 1) + ' ' + c.titulo + (c.proprio ? ' (cenário adicionado)' : '') });
-      B.push({ t: 'kv', rows: (c.proprio ? [['Origem', nz(c.origem) + (c.ref ? ' | ' + c.ref : '') + (c.data ? ' | ' + fmtData(c.data) : '')]] : []).concat([['Causas', c.causas], ['Consequências', c.consequencias], ['Medidas de controle', c.medidas.join('\n')], ['Severidade', c.sev ? c.sev + ' ' + O.RISCO.SEV[c.sev - 1][1] : 'não avaliada'], ['Probabilidade', c.prob ? c.prob + ' ' + O.RISCO.PROB[c.prob - 1][1] : 'não avaliada'], ['Nível de risco', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ')' : 'não avaliado'], ['Medidas adicionais e observações', nz(c.obs)]]) });
+      B.push({ t: 'kv', rows: (c.proprio ? [['Origem', nz(c.origem) + (c.ref ? ' | ' + c.ref : '') + (c.data ? ' | ' + fmtData(c.data) : '')]] : []).concat([['Causas', c.causas], ['Consequências', c.consequencias], ['Medidas de controle', c.medidas.join('\n')], ['Severidade por lente', sevCel(c)], ['Probabilidade', c.prob ? c.prob + ' ' + PROB_NOME(c.prob) : 'não avaliada'], ['Nível de risco', c.risco.v ? riscoCel(c) + (c.risco.psif ? ' | PSIF (lente de pessoas)' : '') : 'não avaliado'], ['Medidas adicionais e observações', nz(c.obs)]]) });
     });
     if (a.desativados.length) { B.push({ t: 'h2', text: 'Cenários padrão desativados neste local' }); B.push({ t: 'table', head: ['Cenário', 'Justificativa'], widths: [40, 60], rows: a.desativados.map((c) => [c.titulo, nz(c.offJust)]) }); }
     B.push({ t: 'h1', text: '6 Conclusão' });
     B.push({ t: 'p', text: a.conclusao || 'Conclusão da análise não registrada.' });
     B.push({ t: 'p', small: true, text: 'A análise de risco deve ser revista quando houver mudança de produtos, de quantidades, do layout ou após incidentes. Apoio à decisão: a responsabilidade técnica é do profissional que assina.' });
-    B.push({ t: 'h1', text: '7 Critério de risco: matriz 5x5 e situações de enquadramento' });
+    B.push({ t: 'h1', text: '7 Critério de risco: matrizes por lente e situações de enquadramento' });
     criterioRisco().forEach((b) => B.push(b));
     B.push({ t: 'sign', rows: [[sg.nome, sg.funcao], ['Gestor do local', '']] });
     return B;

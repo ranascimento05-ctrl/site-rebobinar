@@ -96,47 +96,72 @@
       grupos: [], ids: ['6.3.5', '7.4.1', '7.4.5', '6.3.8', '6.3.9.1'] },
   ];
 
-  const SEV = [[1, 'Insignificante'], [2, 'Leve'], [3, 'Moderada'], [4, 'Grave'], [5, 'Catastrófica']];
-  const PROB = [[1, 'Improvável'], [2, 'Remota'], [3, 'Possível'], [4, 'Provável'], [5, 'Frequente']];
-  // critério padrão: matriz 5x5 (severidade x probabilidade); a organização pode adotar outro
-  function nivel(s, p) {
-    const v = (Number(s) || 0) * (Number(p) || 0);
-    if (!v) return { v: 0, nome: 'Não avaliado', tom: '' };
-    if (v >= 15) return { v, nome: 'Crítico', tom: 'crit' };
-    if (v >= 10) return { v, nome: 'Alto', tom: 'crit' };
-    if (v >= 5) return { v, nome: 'Médio', tom: 'warn' };
-    return { v, nome: 'Baixo', tom: 'ok' };
+  // Lentes de avaliação. A severidade é avaliada em cada lente; a probabilidade é única (barreiras, frequência e histórico).
+  // PSIF (potencial de causar fatalidade) só existe na lente de pessoas (acidente do trabalho): não se aplica a ambiente nem a processo e patrimônio.
+  const DIMS = [
+    { id: 'pessoas', rot: 'Pessoas (acidente do trabalho)', curto: 'Pessoas', campo: 'sev', psif: true },
+    { id: 'amb', rot: 'Meio ambiente', curto: 'Ambiente', campo: 'sevAmb', psif: false },
+    { id: 'psm', rot: 'Processo e patrimônio (PSM)', curto: 'PSM', campo: 'sevPsm', psif: false },
+  ];
+  const SEV = [[1, 'Desprezível'], [2, 'Baixa'], [3, 'Média'], [4, 'Grave'], [5, 'Fatal']];
+  const PROB = [[1, 'Muito baixa'], [2, 'Baixa'], [3, 'Média'], [4, 'Alta'], [5, 'Muito alta']];
+  // o nível 5 de ambiente e de processo não é "fatal": chama-se catastrófico
+  function sevNome(n, dim) { const x = SEV[(Number(n) || 0) - 1]; if (!x) return ''; return x[0] === 5 && dim && dim !== 'pessoas' ? 'Catastrófica' : x[1]; }
+  // Gravidade_Classe (guia de classificação): a severidade é soberana.
+  //   Grave (e PSIF, só na lente de pessoas): severidade 4 ou 5, ou score 12 ou mais
+  //   Médio: score 6 a 11 com severidade abaixo de 4; Baixo: 3 a 5; Desprezível: 2 ou menos
+  function nivel(s, p, dim) {
+    dim = dim || 'pessoas'; s = Number(s) || 0; p = Number(p) || 0;
+    const v = s * p; const psifLente = dim === 'pessoas';
+    if (!v) return { v: 0, nome: 'Não avaliado', tom: '', grave: false, psif: false, rank: 0, dim };
+    if (s >= 4 || v >= 12) return { v, nome: psifLente ? 'Grave / PSIF' : 'Grave', tom: 'crit', grave: true, psif: psifLente, rank: 4, dim };
+    if (v >= 6) return { v, nome: 'Médio', tom: 'warn', grave: false, psif: false, rank: 3, dim };
+    if (v >= 3) return { v, nome: 'Baixo', tom: 'info', grave: false, psif: false, rank: 2, dim };
+    return { v, nome: 'Desprezível', tom: 'ok', grave: false, psif: false, rank: 1, dim };
+  }
+  // risco do cenário: avalia cada lente informada e fica com a mais alta (dimensão determinante)
+  function nivelCenario(o) {
+    o = o || {}; const dims = [];
+    DIMS.forEach((d) => { if (Number(o[d.campo]) && Number(o.prob)) dims.push(Object.assign(nivel(o[d.campo], o.prob, d.id), { sev: Number(o[d.campo]), rot: d.rot, curto: d.curto })); });
+    if (!dims.length) return { v: 0, nome: 'Não avaliado', tom: '', grave: false, psif: false, rank: 0, dim: '', det: '', dims: [] };
+    const best = dims.reduce((a, b) => (b.rank > a.rank || (b.rank === a.rank && b.v > a.v) ? b : a));
+    return Object.assign({}, best, { det: best.curto, dims, psif: dims.some((x) => x.psif) });
   }
 
-
-  // Escalas descritivas da matriz 5x5: ajudam a enquadrar severidade e probabilidade. Pontos de partida: a organização pode adotar critérios próprios.
+  // Escalas descritivas: ajudam a enquadrar severidade (por lente) e probabilidade. A lente de pessoas segue o guia de classificação;
+  // as de meio ambiente e de processo e patrimônio são pontos de partida para a organização validar.
   const SEV_DESC = [
-    { n: 1, nome: 'Insignificante', pessoas: 'Sem lesão ou lesão tratada com primeiros socorros no local, sem afastamento.', ambiente: 'Sem liberação, ou liberação mínima retida na embalagem ou na contenção.', patrimonio: 'Dano desprezível; sem interrupção da operação.' },
-    { n: 2, nome: 'Leve', pessoas: 'Lesão ou exposição com atendimento ambulatorial, sem afastamento.', ambiente: 'Vazamento pequeno contido na bacia ou no dique do armazém.', patrimonio: 'Dano pequeno e reparável; interrupção curta.' },
-    { n: 3, nome: 'Moderada', pessoas: 'Lesão com afastamento ou exposição que exige acompanhamento médico.', ambiente: 'Vazamento que ultrapassa a contenção, mas é retido dentro da área da empresa.', patrimonio: 'Dano relevante; interrupção parcial da operação.' },
-    { n: 4, nome: 'Grave', pessoas: 'Lesão grave ou incapacitante, doença ocupacional, ou várias pessoas atingidas.', ambiente: 'Liberação para fora da área, atingindo solo, drenagem ou corpo d\'água; comunicação a órgãos ambientais.', patrimonio: 'Dano grande; paralisação prolongada do armazém.' },
-    { n: 5, nome: 'Catastrófica', pessoas: 'Morte ou múltiplas vítimas graves; efeito sobre a vizinhança.', ambiente: 'Contaminação extensa ou irreversível, ou que afete a população.', patrimonio: 'Perda total do armazém ou interdição.' },
+    { n: 1, nome: 'Desprezível', nomeAlt: 'Desprezível', pessoas: 'Sem potencial de lesão. Apenas desconforto momentâneo ou inconveniência; não requer atendimento médico.', ambiente: 'Sem liberação de produto, ou liberação mínima retida na própria embalagem; sem efeito ambiental.', patrimonio: 'Sem perda de contenção; dano desprezível; sem interrupção da operação.' },
+    { n: 2, nome: 'Baixa', nomeAlt: 'Baixa', pessoas: 'Lesões leves tratáveis com primeiros socorros; sem afastamento nem atendimento médico externo; recuperação em horas.', ambiente: 'Vazamento pequeno retido na contenção primária (bacia, dique ou piso estanque), sem contato com solo ou drenagem; limpeza imediata na rotina do local.', patrimonio: 'Perda de contenção pequena, controlada pelo operador; dano pequeno e reparável; parada breve (horas) sem efeito na entrega.' },
+    { n: 3, nome: 'Média', nomeAlt: 'Média', pessoas: 'Lesões que requerem atendimento médico; afastamento temporário (dias ou semanas); recuperação completa esperada.', ambiente: 'Vazamento que ultrapassa a contenção primária, mas é retido dentro da área da empresa (canaleta, caixa separadora, contenção secundária); recuperação completa, com resíduo a destinar e sem comunicação externa obrigatória.', patrimonio: 'Perda de contenção relevante, controlada pela brigada ou por procedimento; dano relevante a carga ou equipamento; interrupção parcial (dias).' },
+    { n: 4, nome: 'Grave', nomeAlt: 'Grave', pessoas: 'Lesões permanentes ou incapacitantes; hospitalização prolongada; perda de função ou de membro; múltiplas vítimas possíveis.', ambiente: 'Liberação para fora da área da empresa ou para solo, drenagem pluvial, corpo d\'água ou atmosfera, com efeito mensurável; comunicação ao órgão ambiental; remediação necessária.', patrimonio: 'Perda de contenção maior, incêndio ou reação sem controle imediato; acionamento do plano de emergência; dano grande; paralisação prolongada (semanas) do armazém.' },
+    { n: 5, nome: 'Fatal', nomeAlt: 'Catastrófica', pessoas: 'Morte; lesões catastróficas; múltiplas fatalidades; evento com repercussão nacional ou internacional.', ambiente: 'Contaminação extensa ou irreversível de solo, água subterrânea, manancial ou ecossistema; população atingida; repercussão regulatória e pública (incluindo água de extinção contaminada fora da contenção).', patrimonio: 'Incêndio, explosão ou reação com perda total ou interdição do armazém; efeito dominó sobre instalações vizinhas.' },
   ];
   const PROB_DESC = [
-    { n: 1, nome: 'Improvável', desc: 'Não há registro no setor nem em armazéns semelhantes; exige falha simultânea de várias barreiras. Controles do cenário todos conformes e verificados.' },
-    { n: 2, nome: 'Remota', desc: 'Já ocorreu em armazéns semelhantes, mas não aqui; exige falha de pelo menos duas barreiras. Controles em sua maioria conformes.' },
-    { n: 3, nome: 'Possível', desc: 'Pode ocorrer durante a vida útil do armazém, ou já houve quase-acidente aqui. Controles parcialmente implantados ou ainda não verificados.' },
-    { n: 4, nome: 'Provável', desc: 'Ocorre de forma ocasional ou há falhas conhecidas nos controles (não conformidade aberta no checklist ou pendência de inspeção).' },
-    { n: 5, nome: 'Frequente', desc: 'Ocorre rotineiramente ou o controle não existe ou é ignorado na operação.' },
+    { n: 1, nome: 'Muito baixa', desc: 'Cenário hipotético e extremamente improvável; exige falha simultânea de vários sistemas. Frequência: pode ocorrer 1 vez em mais de 10 anos. Barreiras: 3 ou mais barreiras independentes e eficazes. Histórico: nunca ocorreu no local nem em instalações semelhantes.' },
+    { n: 2, nome: 'Baixa', desc: 'Improvável, mas possível; exige falha de múltiplas barreiras. Frequência: 1 vez a cada 5 a 10 anos. Barreiras: 2 barreiras independentes e eficazes. Histórico: raros casos na indústria.' },
+    { n: 3, nome: 'Média', desc: 'Pode ocorrer eventualmente; depende de falha humana. Frequência: 1 vez a cada 1 a 5 anos. Barreiras: 1 barreira eficaz ou várias parciais, presentes mas não totalmente confiáveis. Histórico: casos ocasionais no local ou na indústria.' },
+    { n: 4, nome: 'Alta', desc: 'Provável de ocorrer em breve; condições perigosas observadas repetidamente. Frequência: 1 vez a cada 6 a 12 meses. Barreiras: ausentes ou reconhecidamente ineficazes (por exemplo, não conformidade aberta no checklist ou inspeção vencida). Histórico: eventos similares recorrentes.' },
+    { n: 5, nome: 'Muito alta', desc: 'Iminente: ocorrerá se não for corrigido imediatamente. Frequência: várias vezes por ano (mensal ou semanal). Barreiras: completamente ausentes. Histórico: eventos frequentes e documentados.' },
   ];
-  // situações típicas para apoiar o enquadramento (sugestão de severidade e de probabilidade)
+  // situações típicas para apoiar o enquadramento (sugestão de severidade por lente e de probabilidade)
   const EXEMPLOS = [
-    { situacao: 'Queda de embalagem sem ruptura, sem vazamento', sev: 1 },
-    { situacao: 'Derramamento de uma embalagem pequena de corrosivo ou solvente retido na bacia', sev: 2 },
-    { situacao: 'Vazamento de tambor ou IBC de líquido inflamável retido no dique, sem ignição', sev: 3 },
-    { situacao: 'Exposição de trabalhador a vapor irritante ou corrosivo com atendimento médico', sev: 3 },
-    { situacao: 'Vazamento de produto tóxico ou corrosivo que ultrapassa a contenção e chega à drenagem', sev: 4 },
-    { situacao: 'Intoxicação aguda com internação, ou mistura de incompatíveis liberando gás tóxico', sev: 4 },
-    { situacao: 'Incêndio de líquidos inflamáveis com propagação para outros setores', sev: 5 },
-    { situacao: 'Explosão de atmosfera inflamável ou reação violenta entre incompatíveis com vítimas', sev: 5 },
-    { situacao: 'Controles do cenário conformes e verificados, sem histórico de ocorrência', prob: 1 },
-    { situacao: 'Ocorreu em armazém semelhante, mas nunca no local', prob: 2 },
-    { situacao: 'Houve quase-acidente ou há controle ainda não verificado', prob: 3 },
+    { situacao: 'Queda de embalagem sem ruptura, sem vazamento', dim: 'pessoas', sev: 1 },
+    { situacao: 'Respingo de produto irritante com primeiros socorros no local', dim: 'pessoas', sev: 2 },
+    { situacao: 'Exposição de trabalhador a vapor irritante ou corrosivo com atendimento médico e afastamento', dim: 'pessoas', sev: 3 },
+    { situacao: 'Intoxicação aguda com internação, ou mistura de incompatíveis liberando gás tóxico', dim: 'pessoas', sev: 4 },
+    { situacao: 'Explosão de atmosfera inflamável ou reação violenta entre incompatíveis com vítimas', dim: 'pessoas', sev: 5 },
+    { situacao: 'Embalagem pequena derramada e retida na bacia, sem chegar ao piso', dim: 'amb', sev: 2 },
+    { situacao: 'Vazamento de tambor ou IBC que passa da bacia, mas fica na canaleta ou na caixa separadora da empresa', dim: 'amb', sev: 3 },
+    { situacao: 'Vazamento que chega à drenagem pluvial, ao solo fora da contenção ou a um corpo d\'água', dim: 'amb', sev: 4 },
+    { situacao: 'Incêndio com água de extinção contaminada saindo da contenção e atingindo manancial', dim: 'amb', sev: 5 },
+    { situacao: 'Perda de contenção pequena controlada pelo operador, sem parada', dim: 'psm', sev: 2 },
+    { situacao: 'Vazamento de líquido inflamável retido no dique, sem ignição, com interrupção parcial', dim: 'psm', sev: 3 },
+    { situacao: 'Incêndio de inflamáveis com acionamento do plano de emergência e paralisação do armazém', dim: 'psm', sev: 4 },
+    { situacao: 'Incêndio ou explosão com perda total ou interdição do armazém e efeito dominó', dim: 'psm', sev: 5 },
+    { situacao: 'Três ou mais barreiras independentes eficazes e verificadas; nunca ocorreu', prob: 1 },
+    { situacao: 'Duas barreiras eficazes; casos raros na indústria', prob: 2 },
+    { situacao: 'Uma barreira eficaz, ou manutenção atrasada; depende de comportamento correto', prob: 3 },
     { situacao: 'Há não conformidade aberta ou inspeção vencida relacionada ao cenário', prob: 4 },
     { situacao: 'Controle inexistente ou desrespeitado na rotina', prob: 5 },
   ];
@@ -149,5 +174,5 @@
     return { n: 2, txt: 'todos os itens relacionados estão conformes no checklist' };
   }
 
-  O.RISCO = { SEV_DESC, PROB_DESC, EXEMPLOS, ORIGENS, sugestaoProb, ASPECTOS, CONSIDERACOES, ANEXO_A, CENARIOS, SEV, PROB, nivel };
+  O.RISCO = { SEV_DESC, PROB_DESC, EXEMPLOS, ORIGENS, sugestaoProb, ASPECTOS, CONSIDERACOES, ANEXO_A, CENARIOS, SEV, PROB, nivel, nivelCenario, sevNome, DIMS };
 })(window.O360 = window.O360 || {});

@@ -123,18 +123,21 @@
   // critério de risco: matriz 5x5, escalas e situações de enquadramento
   V.criterioView = () => {
     const RK = O.RISCO;
-    const cor = (n) => (n >= 15 ? '#dc2626' : n >= 10 ? '#f59e0b' : n >= 5 ? '#64748b' : '#16a34a');
-    const grade = h('table', { class: 't', style: 'text-align:center;width:auto' }, h('thead', {}, h('tr', {}, h('th', {}, 'Sev. \\ Prob.'), [1, 2, 3, 4, 5].map((p) => h('th', {}, p + ' ' + RK.PROB_DESC[p - 1].nome)))),
-      h('tbody', {}, [5, 4, 3, 2, 1].map((s) => h('tr', {}, h('th', {}, s + ' ' + RK.SEV_DESC[s - 1].nome), [1, 2, 3, 4, 5].map((p) => h('td', { style: 'background:' + cor(s * p) + ';color:#fff;font-weight:700' }, String(s * p)))))));
+    const corN = (n) => (n.grave ? '#dc2626' : n.nome === 'Médio' ? '#f59e0b' : n.nome === 'Baixo' ? '#16a34a' : '#0ea5e9');
+    const grade = (dim) => h('table', { class: 't', style: 'text-align:center;width:auto' }, h('thead', {}, h('tr', {}, h('th', {}, 'Prob. \\ Sev.'), RK.SEV.map((x) => h('th', {}, x[0] + ' ' + RK.sevNome(x[0], dim))))),
+      h('tbody', {}, [5, 4, 3, 2, 1].map((p) => h('tr', {}, h('th', {}, p + ' ' + RK.PROB[p - 1][1]), [1, 2, 3, 4, 5].map((s) => { const n = RK.nivel(s, p, dim); return h('td', { style: 'background:' + corN(n) + ';color:#fff;font-weight:700' }, String(s * p) + (n.psif ? ' ★PSIF' : '')); })))));
+    const tab = (cab, linhas) => h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, cab.map((x) => h('th', {}, x)))), h('tbody', {}, linhas)));
     return h('div', {},
-      h('p', { class: 'small' }, 'Risco = severidade x probabilidade. Crítico: 15 a 25 (vermelho). Alto: 10 a 14 (amarelo). Médio: 5 a 9 (cinza). Baixo: 1 a 4 (verde). O critério é ponto de partida: use o da sua organização se for diferente.'),
-      h('div', { class: 'scroll' }, grade),
-      h('h4', { style: 'margin-top:10px' }, 'Escala de severidade'),
-      h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Nível', 'Pessoas', 'Meio ambiente', 'Patrimônio e operação'].map((x) => h('th', {}, x)))), h('tbody', {}, RK.SEV_DESC.map((x) => h('tr', {}, h('td', {}, h('b', {}, x.n + ' ' + x.nome)), h('td', {}, x.pessoas), h('td', {}, x.ambiente), h('td', {}, x.patrimonio)))))),
+      h('p', { class: 'small' }, 'O risco é avaliado em três lentes: pessoas (acidente do trabalho), meio ambiente e processo e patrimônio (PSM). A severidade é escolhida em cada lente; a probabilidade é uma só. Risco = severidade x probabilidade. A severidade é soberana: severidade 4 ou 5, ou score 12 ou mais, é Grave. Médio: score 6 a 11 com severidade abaixo de 4. Baixo: 3 a 5. Desprezível: 2 ou menos. O nível do cenário é o mais alto entre as lentes avaliadas.'),
+      h('p', { class: 'small' }, h('b', {}, 'PSIF '), '(potencial de causar fatalidade) só vale para a lente de pessoas. Meio ambiente e PSM usam as mesmas classes, sem PSIF.'),
+      h('h4', { style: 'margin-top:10px' }, 'Matriz da lente de pessoas (com PSIF)'), h('div', { class: 'scroll' }, grade('pessoas')),
+      h('h4', { style: 'margin-top:10px' }, 'Matriz das lentes de meio ambiente e PSM (sem PSIF)'), h('div', { class: 'scroll' }, grade('amb')),
+      h('h4', { style: 'margin-top:10px' }, 'Escala de severidade por lente'),
+      tab(['Nível', 'Pessoas (acidente do trabalho)', 'Meio ambiente', 'Processo e patrimônio (PSM)'], RK.SEV_DESC.map((x) => h('tr', {}, h('td', {}, h('b', {}, x.n + ' ' + x.nome + (x.nomeAlt !== x.nome ? ' (ambiente e PSM: ' + x.nomeAlt + ')' : ''))), h('td', {}, x.pessoas), h('td', {}, x.ambiente), h('td', {}, x.patrimonio)))),
       h('h4', { style: 'margin-top:10px' }, 'Escala de probabilidade'),
-      h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Nível', 'Descrição'].map((x) => h('th', {}, x)))), h('tbody', {}, RK.PROB_DESC.map((x) => h('tr', {}, h('td', {}, h('b', {}, x.n + ' ' + x.nome)), h('td', {}, x.desc)))))),
+      tab(['Nível', 'Descrição'], RK.PROB_DESC.map((x) => h('tr', {}, h('td', {}, h('b', {}, x.n + ' ' + x.nome)), h('td', {}, x.desc)))),
       h('h4', { style: 'margin-top:10px' }, 'Situações típicas para enquadramento'),
-      h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Situação', 'Sugestão'].map((x) => h('th', {}, x)))), h('tbody', {}, RK.EXEMPLOS.map((x) => h('tr', {}, h('td', {}, x.situacao), h('td', {}, x.sev ? 'Severidade ' + x.sev + ' (' + RK.SEV_DESC[x.sev - 1].nome + ')' : 'Probabilidade ' + x.prob + ' (' + RK.PROB_DESC[x.prob - 1].nome + ')')))))));
+      tab(['Situação', 'Sugestão'], RK.EXEMPLOS.map((x) => h('tr', {}, h('td', {}, x.situacao), h('td', {}, x.sev ? 'Severidade ' + x.sev + ' (' + RK.sevNome(x.sev, x.dim) + ') na lente ' + RK.DIMS.find((d) => d.id === x.dim).curto : 'Probabilidade ' + x.prob + ' (' + RK.PROB[x.prob - 1][1] + ')')))));
   };
 
   V._rascunho = V._rascunho || {};
@@ -154,21 +157,25 @@
     });
     card.appendChild(det('Aspectos (5.1) e considerações (5.2)', lista));
     card.appendChild(det('Informações adicionais (Anexo A)', h('div', {}, h('ul', { style: 'margin:0 0 6px 18px' }, a.anexoA.map((x) => h('li', {}, h('b', {}, x[0] + ' '), x[1]))), U.input(holder, 'l.analise.campos.ameacas', { rows: 2, label: 'Análise de ameaças e vulnerabilidades (A.8)', onInput: salva }))));
-    card.appendChild(det('Matriz de risco 5x5 e situações para enquadramento', V.criterioView()));
+    card.appendChild(det('Matriz de risco (pessoas, meio ambiente e PSM) e situações para enquadramento', V.criterioView()));
 
     const resumo = h('p', { class: 'small' });
-    const pinta = () => { const r = E.analiseRiscoLocal(l, S.produtos()).resumo; resumo.textContent = r.crit + ' crítico(s), ' + r.alto + ' alto(s), ' + r.medio + ' médio(s), ' + r.baixo + ' baixo(s), ' + r.semAvaliar + ' sem avaliação.'; };
+    const pinta = () => { const r = E.analiseRiscoLocal(l, S.produtos()).resumo; resumo.textContent = r.grave + ' grave(s)' + (r.psif ? ' (' + r.psif + ' PSIF)' : '') + ', ' + r.medio + ' médio(s), ' + r.baixo + ' baixo(s), ' + r.desprezivel + ' desprezível(is), ' + r.semAvaliar + ' sem avaliação.'; };
     const linhasTxt = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
     const campoTxt = (obj, chave, rotulo, atual, rows, depois) => { const ta = h('textarea', { rows: rows || 2 }); ta.value = atual || ''; ta.addEventListener('input', () => { obj[chave] = ta.value; salva(); depois && depois(); }); return h('label', { class: 'f' }, h('span', {}, rotulo), ta); };
-    const selSP = (obj, vazio, mostra) => h('div', { class: 'grid g2' },
-      U.select(obj, 'sev', RK.SEV.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Severidade', empty: vazio ? false : 'Selecione', onChange: () => { obj.sev = Number(obj.sev) || ''; salva(); mostra(); pinta(); } }),
-      U.select(obj, 'prob', RK.PROB.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Probabilidade', empty: vazio ? false : 'Selecione', onChange: () => { obj.prob = Number(obj.prob) || ''; salva(); mostra(); pinta(); } }));
+    const optSev = (dim) => RK.SEV.map((x) => [x[0], x[0] + ' ' + RK.sevNome(x[0], dim)]);
+    const selSev = (obj, campo, dim, rotulo, vazio, mostra) => U.select(obj, campo, optSev(dim), { label: rotulo, empty: 'Não se aplica', onChange: () => { obj[campo] = Number(obj[campo]) || ''; salva(); mostra(); pinta(); } });
+    const selSP = (obj, vazio, mostra) => h('div', {},
+      h('div', { class: 'grid g2' }, selSev(obj, 'sev', 'pessoas', 'Severidade: pessoas (com PSIF)', vazio, mostra), selSev(obj, 'sevAmb', 'amb', 'Severidade: meio ambiente', vazio, mostra)),
+      h('div', { class: 'grid g2' }, selSev(obj, 'sevPsm', 'psm', 'Severidade: processo e patrimônio (PSM)', vazio, mostra),
+        U.select(obj, 'prob', RK.PROB.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Probabilidade', empty: vazio ? false : 'Selecione', onChange: () => { obj.prob = Number(obj.prob) || ''; salva(); mostra(); pinta(); } })));
+    const mostraNivel = (badge, o) => { const n = RK.nivelCenario(o); badge.replaceChildren(n.v ? U.badge(n.tom || 'info', n.nome + ' (' + n.v + ', ' + n.det + ')') : U.badge('info', 'Não avaliado')); };
 
     // ---- cenários padrão
     const cen = h('div');
     a.cenarios.filter((c) => c.padrao).forEach((c) => {
-      const o = l.analise.cenarios[c.k] = l.analise.cenarios[c.k] || { sev: '', prob: '', obs: '' };
-      const badge = h('span'); const mostra = () => { const n = RK.nivel(o.sev, o.prob); badge.replaceChildren(n.v ? U.badge(n.tom || 'info', n.nome + ' (' + n.v + ')') : U.badge('info', 'Não avaliado')); };
+      const o = l.analise.cenarios[c.k] = l.analise.cenarios[c.k] || { sev: '', sevAmb: '', sevPsm: '', prob: '', obs: '' };
+      const badge = h('span'); const mostra = () => mostraNivel(badge, o);
       const edit = h('details', {}, h('summary', { class: 'small', style: 'cursor:pointer' }, 'Editar os textos deste cenário' + (c.editado ? ' (editado)' : '')),
         campoTxt(o, 'causas', 'Causas', c.causas, 2), campoTxt(o, 'consequencias', 'Consequências', c.consequencias, 2), campoTxt(o, 'medidasTxt', 'Medidas de controle (uma por linha)', c.medidas.join('\n'), 4),
         h('button', { class: 'btn sm ghost', onclick: () => { delete o.causas; delete o.consequencias; delete o.medidasTxt; salva(); O.route(); } }, 'Voltar ao texto padrão'));
@@ -190,7 +197,7 @@
     const proprios = h('div');
     a.cenarios.filter((c) => c.proprio).forEach((c) => {
       const o = l.analise.proprios.find((x) => x.id === c.id); if (!o) return;
-      const badge = h('span'); const mostra = () => { const n = RK.nivel(o.sev, o.prob); badge.replaceChildren(U.badge(n.tom || 'info', n.nome + ' (' + n.v + ')')); };
+      const badge = h('span'); const mostra = () => mostraNivel(badge, o);
       proprios.appendChild(h('div', { style: 'padding:8px 0;border-top:1px solid #26324d' }, h('div', { class: 'row' }, h('b', {}, o.titulo), h('span', { class: 'spacer' }), badge),
         h('p', { class: 'small', style: 'margin:2px 0' }, 'Origem: ' + (o.origem || '—') + (o.ref ? ' | ' + o.ref : '') + (o.data ? ' | ' + D.fmtData(o.data) : '')),
         U.input(o, 'titulo', { label: 'Título', onInput: salva }), campoTxt(o, 'causas', 'Causas', o.causas, 2), campoTxt(o, 'consequencias', 'Consequências', o.consequencias, 2), campoTxt(o, 'medidas', 'Medidas de controle (uma por linha)', o.medidas, 3),
@@ -200,17 +207,18 @@
       mostra();
     });
     // formulário de novo cenário
-    const ras = V._rascunho[l.id]; const novo = Object.assign({ titulo: '', origem: RK.ORIGENS[0], ref: '', causas: '', consequencias: '', medidas: '', sev: '', prob: '', obs: '' }, ras || {});
+    const ras = V._rascunho[l.id]; const novo = Object.assign({ titulo: '', origem: RK.ORIGENS[0], ref: '', causas: '', consequencias: '', medidas: '', sev: '', sevAmb: '', sevPsm: '', prob: '', obs: '' }, ras || {});
     const nf = h('details', ras ? { open: true } : {}, h('summary', { style: 'cursor:pointer;font-weight:600;padding:6px 0' }, 'Adicionar cenário'),
       U.input({ n: novo }, 'n.titulo', { label: 'Título do cenário' }),
       h('div', { class: 'grid g2' }, U.select({ n: novo }, 'n.origem', RK.ORIGENS.map((x) => [x, x]), { label: 'Origem', empty: false }), U.input({ n: novo }, 'n.ref', { label: 'Referência (inspeção, incidente, produto)', ph: 'Ex.: inspeção de 10/11/2026' })),
       campoTxt(novo, 'causas', 'Causas', novo.causas, 2), campoTxt(novo, 'consequencias', 'Consequências', novo.consequencias, 2), campoTxt(novo, 'medidas', 'Medidas de controle (uma por linha)', novo.medidas, 3),
-      h('div', { class: 'grid g2' }, U.select({ n: novo }, 'n.sev', RK.SEV.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Severidade (obrigatória)', empty: 'Selecione' }), U.select({ n: novo }, 'n.prob', RK.PROB.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Probabilidade (obrigatória)', empty: 'Selecione' })),
+      h('div', { class: 'grid g2' }, U.select({ n: novo }, 'n.sev', optSev('pessoas'), { label: 'Severidade: pessoas (com PSIF)', empty: 'Não se aplica' }), U.select({ n: novo }, 'n.sevAmb', optSev('amb'), { label: 'Severidade: meio ambiente', empty: 'Não se aplica' })),
+      h('div', { class: 'grid g2' }, U.select({ n: novo }, 'n.sevPsm', optSev('psm'), { label: 'Severidade: processo e patrimônio (PSM)', empty: 'Não se aplica' }), U.select({ n: novo }, 'n.prob', RK.PROB.map((x) => [x[0], x[0] + ' ' + x[1]]), { label: 'Probabilidade (obrigatória)', empty: 'Selecione' })),
       U.input({ n: novo }, 'n.obs', { rows: 2, label: 'Observações' }),
       h('button', { class: 'btn', onclick: () => {
         if (!(novo.titulo || '').trim()) { U.toast('Informe o título do cenário.'); return; }
-        if (!Number(novo.sev) || !Number(novo.prob)) { U.toast('Informe a severidade e a probabilidade.'); return; }
-        l.analise.proprios.push({ id: 'c' + Date.now().toString(36), titulo: novo.titulo.trim(), origem: novo.origem, ref: novo.ref || '', data: new Date().toISOString().slice(0, 10), causas: novo.causas, consequencias: novo.consequencias, medidas: novo.medidas, sev: Number(novo.sev), prob: Number(novo.prob), obs: novo.obs || '' });
+        if (!(Number(novo.sev) || Number(novo.sevAmb) || Number(novo.sevPsm)) || !Number(novo.prob)) { U.toast('Informe a probabilidade e a severidade em pelo menos uma lente.'); return; }
+        l.analise.proprios.push({ id: 'c' + Date.now().toString(36), titulo: novo.titulo.trim(), origem: novo.origem, ref: novo.ref || '', data: new Date().toISOString().slice(0, 10), causas: novo.causas, consequencias: novo.consequencias, medidas: novo.medidas, sev: Number(novo.sev) || '', sevAmb: Number(novo.sevAmb) || '', sevPsm: Number(novo.sevPsm) || '', prob: Number(novo.prob), obs: novo.obs || '' });
         delete V._rascunho[l.id]; salva(); O.route(); } }, 'Adicionar cenário'));
     const lib = cfgLib(); let escolhido = '';
     const selLib = h('select', {}, h('option', { value: '' }, lib.length ? 'Escolher modelo da biblioteca' : 'Biblioteca vazia'), lib.map((m) => h('option', { value: m.id }, m.titulo)));
@@ -241,7 +249,7 @@
     const ckA = h('input', { type: 'checkbox', id: 'cn-a' }), ckP = h('input', { type: 'checkbox', id: 'cn-p', checked: true });
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'O que imprimir ou enviar'),
       h('p', { class: 'small' }, 'Escolha um local para levar os cenários dele, com os níveis de risco avaliados, ou o catálogo geral. O documento tem uma ficha por cenário, perguntas para discussão, espaço para anotações e lista de presença. Baixe em Word ou PDF, imprima ou copie o texto para colar em um e-mail.'),
-      h('div', { class: 'row' }, h('div', { style: 'flex:1;min-width:240px' }, sel), h('label', { for: 'cn-a', class: 'row small' }, ckA, 'Somente risco alto e crítico'), h('label', { for: 'cn-p', class: 'row small' }, ckP, 'Um cenário por página')),
+      h('div', { class: 'row' }, h('div', { style: 'flex:1;min-width:240px' }, sel), h('label', { for: 'cn-a', class: 'row small' }, ckA, 'Somente risco grave'), h('label', { for: 'cn-p', class: 'row small' }, ckP, 'Um cenário por página')),
       h('div', { id: 'cn-btn', style: 'margin-top:10px' })));
     root.appendChild(area);
     const draw = () => {
@@ -443,7 +451,7 @@
   V.acoesLocalCard = (l) => {
     l.acoesPlano = l.acoesPlano || {};
     const prods = S.produtos(); const acoes = D.listaAcoesLocal(l, prods);
-    return V.painelAcoes({ titulo: 'Ações do local: não conformidades e inspeções ', intro: 'Reúne os cenários de risco alto e crítico da análise de risco, o que ficou não conforme no checklist da NBR 17160, a inspeção que falta ou venceu e as pendências das inspeções. Informe o responsável e o e-mail e envie o pedido, com a descrição do local e do que está em estoque nele.',
+    return V.painelAcoes({ titulo: 'Ações do local: não conformidades e inspeções ', intro: 'Reúne os cenários de risco grave da análise de risco, o que ficou não conforme no checklist da NBR 17160, a inspeção que falta ou venceu e as pendências das inspeções. Informe o responsável e o e-mail e envie o pedido, com a descrição do local e do que está em estoque nele.',
       reg: l.acoesPlano, acoes, email: (sel, dest) => D.emailAcoesLocal(l, prods, sel, dest), salva: () => S.salvarLocal(l) });
   };
 
