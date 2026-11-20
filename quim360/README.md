@@ -34,7 +34,7 @@ Abrir `quim360/index.html` por um servidor estático (ex.: `python3 -m http.serv
 
 ## Base técnico-legal
 
-Resolução ANTT 5.947/21 e IMDG; ABNT NBR 17160:2024; NR-20; Manual ABIQUIM; ABNT NBR 14725 e GHS; NR-29 e ABNT NBR 7500; NBR 7503; NR-26; NR-01 e NR-15.
+Resolução ANTT 5.998/2022 e IMDG; ABNT NBR 17160:2024; NR-20; Manual ABIQUIM; ABNT NBR 14725 e GHS; NR-29 e ABNT NBR 7500; NBR 7503; NR-26; NR-01 e NR-15.
 
 ## Limites
 

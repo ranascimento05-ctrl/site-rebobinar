@@ -419,9 +419,9 @@
             U.select(p, 'imdg.classe', T.CLASSES.concat(T.CLASS_EXTRA).map((c) => [c[0], c[0] + ' ' + c[1]]), { label: 'Classe de risco', onChange: api.rerender }),
             U.select(p, 'imdg.pg', ['I', 'II', 'III'], { label: 'Grupo de embalagem', empty: 'Não se aplica' })));
           w.appendChild(U.input(p, 'imdg.nome', { label: 'Nome apropriado para embarque' }));
-          w.appendChild(h('div', { class: 'grid g3' }, U.input(p, 'imdg.subrisco', { label: 'Risco subsidiário', ph: 'Ex.: 8' }), U.input(p, 'imdg.numeroRisco', { label: 'Número de risco (ANTT 5.947/21)' }), U.input(p, 'imdg.ems', { label: 'EmS (IMDG)' })));
+          w.appendChild(h('div', { class: 'grid g3' }, U.input(p, 'imdg.subrisco', { label: 'Risco subsidiário', ph: 'Ex.: 8' }), U.input(p, 'imdg.numeroRisco', { label: 'Número de risco (ANTT 5.998/2022)' }), U.input(p, 'imdg.ems', { label: 'EmS (IMDG)' })));
           const sug = T.riscoSugerido(p.imdg.classe, p.imdg.pg, p.imdg.pontoFulgor === '' ? null : parseFloat(p.imdg.pontoFulgor));
-          if (sug && !p.imdg.numeroRisco) w.appendChild(h('div', { class: 'sug' }, 'Número de risco usual para a classe ' + p.imdg.classe + ': ', h('b', {}, sug), '. ', h('button', { class: 'btn sm sec', onclick: () => { p.imdg.numeroRisco = sug; U.salvarJa(p); api.rerender(); } }, 'Usar'), h('small', { style: 'display:block' }, 'Confirme na relação de produtos perigosos da Resolução ANTT 5.947/21.')));
+          if (sug && !p.imdg.numeroRisco) w.appendChild(h('div', { class: 'sug' }, 'Número de risco usual para a classe ' + p.imdg.classe + ': ', h('b', {}, sug), '. ', h('button', { class: 'btn sm sec', onclick: () => { p.imdg.numeroRisco = sug; U.salvarJa(p); api.rerender(); } }, 'Usar'), h('small', { style: 'display:block' }, 'Confirme na relação de produtos perigosos da Resolução ANTT 5.998/2022.')));
           w.appendChild(h('div', { class: 'opts' }, U.flag(p, 'imdg.poluente', 'Poluente marinho (IMDG)', 'Atenção à operação portuária e ao derramamento')));
         }
         w.appendChild(U.input(p, 'imdg.pontoFulgor', { type: 'number', label: 'Ponto de fulgor (°C), Seção 9', hint: 'Define a aplicação da NR-20.' }));
@@ -429,7 +429,7 @@
         if (n20.aplica) w.appendChild(h('div', { class: 'alert warn' }, h('b', {}, 'NR-20 aplicável: ' + n20.categoria, ' ', U.disc('PSM')), n20.texto));
         if (['1', '6.2', '7'].includes(p.imdg.classe)) w.appendChild(U.alert('crit', 'Classe fora do escopo geral', 'Explosivos (1), substâncias infectantes (6.2) e radioativos (7) têm armazenamento proibido ou restrito em área comum e exigem análise especial. Avalie a incompatibilidade com a operação.'));
         w.appendChild(h('div', { class: 'opts' }, U.flag(p, 'imdg.incompativelOperacao', 'Classificação incompatível com as operações do local', 'Marcar reprova o produto')));
-        w.appendChild(U.alert('', 'Referência', 'Resolução ANTT 5.947/21 (transporte terrestre) e Código IMDG (marítimo). Número ONU, classe e grupo vêm da Seção 14: confirme contra a relação oficial.'));
+        w.appendChild(U.alert('', 'Referência', 'Resolução ANTT 5.998/2022 (transporte terrestre) e Código IMDG (marítimo). Número ONU, classe e grupo vêm da Seção 14: confirme contra a relação oficial.'));
         return w;
       },
       validar: (p) => {

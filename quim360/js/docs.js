@@ -150,7 +150,7 @@
       ['Avaliação quantitativa antes da liberação', sn(p.hig.dosimetria)], ['Justificativa', nz(p.hig.justificativa)],
     ] });
 
-    B.push({ t: 'h1', text: '7 Classificação de transporte (ANTT 5.947/21 e IMDG)' });
+    B.push({ t: 'h1', text: '7 Classificação de transporte (ANTT 5.998/2022 e IMDG)' });
     const n20 = E.nr20(p);
     B.push({ t: 'kv', rows: [
       ['Número ONU', nz(p.imdg.onu)], ['Nome apropriado para embarque', nz(p.imdg.nome)],
@@ -223,7 +223,7 @@
   function fichaEmergencia(p) {
     const s = p.fds.secoes || {};
     const B = [];
-    B.push(capa('Ficha de emergência', 'QUIM 360 | Ficha de Emergência | ' + nz(p.nome), p, [['Estrutura', 'ABNT NBR 7503, Resolução ANTT 5.947/21 e Manual ABIQUIM']]));
+    B.push(capa('Ficha de emergência', 'QUIM 360 | Ficha de Emergência | ' + nz(p.nome), p, [['Estrutura', 'ABNT NBR 7503, Resolução ANTT 5.998/2022 e Manual ABIQUIM']]));
     B.push(...prelim(p));
     B.push({ t: 'imgs', items: [{ svg: O.Pic.painel(p.imdg.numeroRisco, p.imdg.onu, 240), w: 240, h: 120, cap: 'Número de risco e número ONU' }].concat(E.classesDoProduto(p).map((cl, i) => ({ svg: O.Pic.transporte(cl, 110), w: 110, h: 110, cap: (i === 0 ? 'Risco principal ' : 'Risco subsidiário ') + cl }))) });
     B.push({ t: 'table', head: ['Nome apropriado para embarque', 'Classe ou subclasse', 'Grupo de embalagem'], widths: [58, 24, 18], rows: [[nz(p.imdg.nome || p.nome), nz(p.imdg.classe) + (p.imdg.subrisco ? ' (subsidiário ' + p.imdg.subrisco + ')' : ''), nz(p.imdg.pg)]] });
@@ -311,7 +311,7 @@
     const cl = E.classesDoProduto(p);
     const inner = [];
     inner.push({ t: 'p', bold: true, text: 'ENVELOPE PARA TRANSPORTE' });
-    inner.push({ t: 'p', small: true, text: 'Transporte terrestre de produtos perigosos | ABNT NBR 7503 | Resolução ANTT 5.947/21' });
+    inner.push({ t: 'p', small: true, text: 'Transporte terrestre de produtos perigosos | ABNT NBR 7503 | Resolução ANTT 5.998/2022' });
     inner.push({ t: 'imgs', items: [{ svg: O.Pic.painel(p.imdg.numeroRisco, p.imdg.onu, 280), w: 280, h: 140, cap: 'Número de risco e número ONU' }].concat(cl.map((x, i) => ({ svg: O.Pic.transporte(x, 120), w: 120, h: 120, cap: (i === 0 ? 'Risco principal ' : 'Risco subsidiário ') + x }))) });
     inner.push({ t: 'table', head: ['Nome apropriado para embarque', 'Classe ou subclasse', 'Grupo de embalagem'], widths: [56, 24, 20], rows: [[nz(p.imdg.nome || p.nome), nz(p.imdg.classe) + (p.imdg.subrisco ? ' / ' + p.imdg.subrisco : ''), nz(p.imdg.pg)]] });
     inner.push({ t: 'p', bold: true, text: 'Telefones de emergência' });
@@ -427,7 +427,7 @@
       add('Disponibilizar a FDS em português no ponto de uso e no local de armazenamento', 'NR-26', 'Gestor do local', 'Antes do primeiro uso');
       if (p.trein.gerar !== false) add('Treinar a equipe com o checklist de treinamento e arquivar a lista de presença', 'Etapa 14 | SST', 'SST / Gestor da área', 'Antes do primeiro uso');
       add('Disponibilizar a ficha de emergência e o kit de derramamento no local de armazenamento', 'ABIQUIM | NBR 7503', 'Gestor do local', 'Antes do primeiro uso');
-      if (p.imdg.classe) add('Usar o envelope e a ficha de emergência em todo transporte do produto', 'NBR 7503 | ANTT 5.947/21', 'Logística', 'Em cada transporte');
+      if (p.imdg.classe) add('Usar o envelope e a ficha de emergência em todo transporte do produto', 'NBR 7503 | ANTT 5.998/2022', 'Logística', 'Em cada transporte');
       add('Cadastrar o produto na lista de homologados e fixar o QR Code no local de armazenamento', 'Etapa 13 | Rastreabilidade', 'Responsável técnico', 'Na homologação');
       if (p.fds.dataRevisao) { const d = new Date(p.fds.dataRevisao); d.setFullYear(d.getFullYear() + lim); add('Solicitar nova versão da FDS ao fornecedor', 'ABNT NBR 14725', 'Compras / SST', fmtData(d.toISOString())); }
     }
