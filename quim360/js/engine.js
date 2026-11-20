@@ -591,6 +591,25 @@
     return (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
   }
 
+  // ---------- Gestão de mudança (MOC) ----------
+  // O app não faz o MOC (feito em outro sistema): levanta se é necessário e registra se foi feito.
+  const MOC_SIT = [['nao_aberto', 'Ainda não aberto'], ['andamento', 'Em andamento'], ['concluido', 'Concluído'], ['dispensado', 'Dispensado (com justificativa)']];
+  function mudancaDe(p) { return Object.assign({ exige: null, substituiId: '', motivo: '', situacao: '', ref: '', resp: '', data: '', just: '' }, p.mudanca || {}); }
+  function mudancaSugestao(p, produtos) {
+    const m = mudancaDe(p); const motivos = []; let dv = []; let ref = null;
+    if (m.substituiId) {
+      ref = (produtos || []).find((x) => x.id === m.substituiId) || O.Store.produto(m.substituiId);
+      if (ref) {
+        dv = divergencias(p, ref).filter((x) => x.tipo === 'relevante');
+        motivos.push('Troca de produto: substitui "' + ref.nome + '".' + (dv.length ? ' O perfil mudou em relação ao produto substituído (ver diferenças).' : ' Pelos dados do app o perfil não mudou de forma relevante: confirme nas FDS.'));
+      }
+    }
+    if (p.armazenamento === 'granel') motivos.push('Produto a granel nos tanques do terminal: confirme se a frota recebe o produto sem modificação (teto, material, vedação, aquecimento, contenção, combate). Se exigir obra, é necessário MOC de engenharia.');
+    if (p.comp && p.comp.localOk === 'conflito' && ['alternativo', 'condicionar'].includes(p.comp.solucao)) motivos.push('Segregação física ou local alternativo implica mudança no armazenamento.');
+    return { sugere: motivos.length > 0, motivos, divergencias: dv, ref };
+  }
+  function substituidoPor(p, produtos) { return (produtos || []).filter((q) => q.id !== p.id && mudancaDe(q).substituiId === p.id); }
+
   // ---------- Avaliação consolidada ----------
   function avaliar(p, produtos) {
     const cfg = O.Store.config();
@@ -641,6 +660,16 @@
       else r.pendencias.push('Conflito de segregação sem solução definida (etapa 11.2).');
     }
     if (p.par.pgrIndicador === '' && p.confirmadas['12']) r.pendencias.push('Indicador de PGR não registrado (etapa 12.2).');
+    {
+      const m = mudancaDe(p); const sg = mudancaSugestao(p, produtos);
+      if (m.exige === true) {
+        if (m.situacao === 'concluido') { if (!String(m.ref).trim()) r.pendencias.push('MOC concluído sem número ou referência registrada (etapa 12.3).'); }
+        else if (m.situacao === 'dispensado') { if (!String(m.just).trim()) r.pendencias.push('MOC dispensado sem justificativa (etapa 12.3).'); }
+        else r.condicionantes.push('Gestão de mudança (MOC) necessária e ainda não concluída' + (m.ref ? ' (ref. ' + m.ref + ')' : '') + ': ' + ((MOC_SIT.find((x) => x[0] === m.situacao) || [0, 'situação não informada'])[1]).toLowerCase() + '.');
+      } else if (m.exige === false) {
+        if (sg.sugere && !String(m.just).trim()) r.pendencias.push('Justificativa de que não há MOC não registrada (etapa 12.3).');
+      } else if (sg.sugere) r.pendencias.push('Definir se o produto exige gestão de mudança (MOC), etapa 12.3: ' + sg.motivos[0]);
+    }
     if (simplificadaVigente(p)) {
       const ref = O.Store.produto(p.sim.refId);
       const dv = divergencias(p, ref).filter((x) => x.tipo === 'relevante');
@@ -654,5 +683,5 @@
     return r;
   }
 
-  O.Engine = { emEstoque, estoqueAtivo, registrarEntrada, registrarAjuste, registrarSaida, historicoLocal, analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { emEstoque, estoqueAtivo, registrarEntrada, registrarAjuste, registrarSaida, historicoLocal, analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal, MOC_SIT, mudancaDe, mudancaSugestao, substituidoPor };
 })(window.O360 = window.O360 || {});

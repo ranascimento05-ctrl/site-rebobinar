@@ -23100,6 +23100,11 @@ var vfs = {
     ['nenhum', 'Nenhum controle adicional'],
   ];
 
+  // Fontes de consulta externa: o analista consulta e transcreve o resultado; o app só guarda a fonte e a data
+  const FONTES_CONSULTA = [
+    { sigla: 'CAMEO Chemicals', titulo: 'NOAA CAMEO Chemicals e Chemical Reactivity Worksheet', uso: 'Reatividade e incompatibilidade na mistura de produtos (vazamento de mais de um tanque na mesma bacia ou na drenagem comum). Consulte o par de produtos, transcreva o resultado no app e registre a data.', url: 'https://cameochemicals.noaa.gov/' },
+  ];
+
   const BASE_LEGAL = [
     { sigla: 'NBR 17160', titulo: 'ABNT NBR 17160:2024 Armazenamento seguro de produtos químicos', uso: 'Armazenamento de produtos químicos perigosos embalados: 25 classes de armazenamento (Anexo D), matriz de incompatibilidade para armazenamento conjunto (Figura 1), restrições por quantidade (Tabelas 3 e 4) e quantidades-limite (Tabela 1). Exemplar de uso licenciado: não redistribuir.', onde: 'Compatibilidade e segregação, classe de armazenamento, matriz' },
     { sigla: 'ANTT 5.998/2022', titulo: 'Resolução ANTT nº 5.998/2022', uso: 'Transporte terrestre de produtos perigosos: número ONU, classe, grupo de embalagem, número de risco, ficha de emergência e envelope. Atualizada pelas instruções complementares.', onde: 'Classificação de transporte, ficha de emergência, envelope' },
@@ -23130,7 +23135,7 @@ var vfs = {
 
   O.TRANSPORT = {
     CLASSES, CLASS_EXTRA, ORDER, MATRIX, SEG_LEGEND, LABELS, riscoSugerido,
-    RG, RG_RULES, WATCH, PFAS_TERMS, LOCAIS_TIPO, FINALIDADES, CONTROLES_ARM, BASE_LEGAL,
+    RG, RG_RULES, WATCH, PFAS_TERMS, LOCAIS_TIPO, FINALIDADES, CONTROLES_ARM, BASE_LEGAL, FONTES_CONSULTA,
     classeNome(c) { const f = CLASSES.concat(CLASS_EXTRA).find((x) => x[0] === c); return f ? f[1] : ''; },
     // retorna código da matriz entre duas classes; null se fora do escopo
     seg(a, b) {
@@ -24478,6 +24483,25 @@ var vfs = {
     return (Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000);
   }
 
+  // ---------- Gestão de mudança (MOC) ----------
+  // O app não faz o MOC (feito em outro sistema): levanta se é necessário e registra se foi feito.
+  const MOC_SIT = [['nao_aberto', 'Ainda não aberto'], ['andamento', 'Em andamento'], ['concluido', 'Concluído'], ['dispensado', 'Dispensado (com justificativa)']];
+  function mudancaDe(p) { return Object.assign({ exige: null, substituiId: '', motivo: '', situacao: '', ref: '', resp: '', data: '', just: '' }, p.mudanca || {}); }
+  function mudancaSugestao(p, produtos) {
+    const m = mudancaDe(p); const motivos = []; let dv = []; let ref = null;
+    if (m.substituiId) {
+      ref = (produtos || []).find((x) => x.id === m.substituiId) || O.Store.produto(m.substituiId);
+      if (ref) {
+        dv = divergencias(p, ref).filter((x) => x.tipo === 'relevante');
+        motivos.push('Troca de produto: substitui "' + ref.nome + '".' + (dv.length ? ' O perfil mudou em relação ao produto substituído (ver diferenças).' : ' Pelos dados do app o perfil não mudou de forma relevante: confirme nas FDS.'));
+      }
+    }
+    if (p.armazenamento === 'granel') motivos.push('Produto a granel nos tanques do terminal: confirme se a frota recebe o produto sem modificação (teto, material, vedação, aquecimento, contenção, combate). Se exigir obra, é necessário MOC de engenharia.');
+    if (p.comp && p.comp.localOk === 'conflito' && ['alternativo', 'condicionar'].includes(p.comp.solucao)) motivos.push('Segregação física ou local alternativo implica mudança no armazenamento.');
+    return { sugere: motivos.length > 0, motivos, divergencias: dv, ref };
+  }
+  function substituidoPor(p, produtos) { return (produtos || []).filter((q) => q.id !== p.id && mudancaDe(q).substituiId === p.id); }
+
   // ---------- Avaliação consolidada ----------
   function avaliar(p, produtos) {
     const cfg = O.Store.config();
@@ -24528,6 +24552,16 @@ var vfs = {
       else r.pendencias.push('Conflito de segregação sem solução definida (etapa 11.2).');
     }
     if (p.par.pgrIndicador === '' && p.confirmadas['12']) r.pendencias.push('Indicador de PGR não registrado (etapa 12.2).');
+    {
+      const m = mudancaDe(p); const sg = mudancaSugestao(p, produtos);
+      if (m.exige === true) {
+        if (m.situacao === 'concluido') { if (!String(m.ref).trim()) r.pendencias.push('MOC concluído sem número ou referência registrada (etapa 12.3).'); }
+        else if (m.situacao === 'dispensado') { if (!String(m.just).trim()) r.pendencias.push('MOC dispensado sem justificativa (etapa 12.3).'); }
+        else r.condicionantes.push('Gestão de mudança (MOC) necessária e ainda não concluída' + (m.ref ? ' (ref. ' + m.ref + ')' : '') + ': ' + ((MOC_SIT.find((x) => x[0] === m.situacao) || [0, 'situação não informada'])[1]).toLowerCase() + '.');
+      } else if (m.exige === false) {
+        if (sg.sugere && !String(m.just).trim()) r.pendencias.push('Justificativa de que não há MOC não registrada (etapa 12.3).');
+      } else if (sg.sugere) r.pendencias.push('Definir se o produto exige gestão de mudança (MOC), etapa 12.3: ' + sg.motivos[0]);
+    }
     if (simplificadaVigente(p)) {
       const ref = O.Store.produto(p.sim.refId);
       const dv = divergencias(p, ref).filter((x) => x.tipo === 'relevante');
@@ -24541,7 +24575,7 @@ var vfs = {
     return r;
   }
 
-  O.Engine = { emEstoque, estoqueAtivo, registrarEntrada, registrarAjuste, registrarSaida, historicoLocal, analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { emEstoque, estoqueAtivo, registrarEntrada, registrarAjuste, registrarSaida, historicoLocal, analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal, MOC_SIT, mudancaDe, mudancaSugestao, substituidoPor };
 })(window.O360 = window.O360 || {});
 
 </script>
@@ -25511,6 +25545,18 @@ var vfs = {
       ['Indicador de PGR', p.par.pgrIndicador === 'requer' ? 'PGR: requer atualização' + (p.par.pgrPrazo ? ' | prazo ' + p.par.pgrPrazo : '') + (p.par.pgrResponsavel ? ' | responsável ' + p.par.pgrResponsavel : '') : p.par.pgrIndicador === 'nao_requer' ? 'PGR: não requer atualização (parecer anexo)' : '—'],
     ] });
 
+    {
+      const mu = E.mudancaDe(p); const trocado = mu.substituiId ? O.Store.produto(mu.substituiId) : null;
+      B.push({ t: 'h2', text: 'Gestão de mudança (MOC)' });
+      B.push({ t: 'kv', rows: [
+        ['Substitui outro produto', trocado ? trocado.nome + (trocado.fornecedor ? ' (' + trocado.fornecedor + ')' : '') : 'Não'],
+        ...(trocado ? [['Motivo da troca', nz(mu.motivo)]] : []),
+        ['MOC necessário', mu.exige === true ? 'Sim' : mu.exige === false ? 'Não' : 'Não avaliado'],
+        ...(mu.exige === true ? [['Situação', (E.MOC_SIT.find((x) => x[0] === mu.situacao) || [0, 'não informada'])[1]], ['Referência (sistema externo)', nz(mu.ref)], ['Responsável', nz(mu.resp)], ['Data de conclusão', mu.data ? fmtData(mu.data) : '—']] : []),
+        ...(mu.exige === false || mu.situacao === 'dispensado' ? [['Justificativa', nz(mu.just)]] : []),
+      ] });
+      B.push({ t: 'p', small: true, text: 'O MOC é conduzido em sistema próprio da organização: este registro só informa se é necessário e se foi concluído.' });
+    }
     B.push({ t: 'h1', text: '10 Decisão e rastreabilidade' });
     B.push({ t: 'kv', rows: [
       ['Decisão', st[0]], ['Número do registro', nz(p.dec.numero)], ['Data da decisão', fmtData(p.dec.data)],
@@ -25703,6 +25749,13 @@ var vfs = {
     }
     av.pendencias.forEach((x) => add(x, 'Pendência da análise', 'Responsável técnico', '', 'Pendente'));
     av.condicionantes.forEach((x) => add(x, 'Condicionante de liberação', 'Responsável técnico', '', 'Pendente'));
+    {
+      const mu = E.mudancaDe(p); const trocado = mu.substituiId ? O.Store.produto(mu.substituiId) : null;
+      if (trocado) {
+        if (ok && E.emEstoque(trocado)) add('Dar baixa no estoque do produto substituído "' + trocado.nome + '" e retirá-lo do local quando o novo produto entrar', 'Troca de produto | MOC', 'Gestor do local', 'Na troca');
+        if (E.mudancaSugestao(p, produtos).divergencias.length) add('Atualizar treinamento, ficha de emergência e rotulagem: o perfil do produto novo difere do substituído', 'Troca de produto | MOC', 'SST / Gestor da área', 'Antes do primeiro uso');
+      }
+    }
     if (p.par.pgrIndicador === 'requer') add('Atualizar o PGR e o Inventário de Riscos com este produto antes da liberação de uso', 'NR-01 | Etapa 12', p.par.pgrResponsavel, p.par.pgrPrazo ? fmtData(p.par.pgrPrazo) : '', 'Pendente');
     if (E.cmrCarga(p) && !E.ehCarga(p)) { E.alternativas(p).itens.forEach((i) => add('Avaliar com o fornecedor e o solicitante alternativa a ' + i.nome + ' (orientações no relatório) e registrar o resultado', 'Etapa 7 | Substituição', 'Solicitante / SST', 'Em até 90 dias', 'Pendente')); add('Reavaliar periodicamente a viabilidade de substituição do agente CMR ou PFC', 'NR-01 | Hierarquia de controle', 'SST', 'A cada revisão do PGR', 'Pendente'); }
     if (E.cmrCarga(p)) {
@@ -27271,9 +27324,26 @@ var vfs = {
         if (!p.par.pgrIndicador) p.par.pgrIndicador = p.hig.pgr === 'requer' ? 'requer' : (p.hig.pgr === 'coberto' ? 'nao_requer' : '');
         w.appendChild(U.radio(p, 'par.pgrIndicador', [{ v: 'requer', label: 'PGR: requer atualização', hint: 'Informar prazo e responsável' }, { v: 'nao_requer', label: 'PGR: não requer atualização (parecer anexo)' }], { uid: '122', onChange: api.rerender }));
         if (p.par.pgrIndicador === 'requer') w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'par.pgrPrazo', { type: 'date', label: 'Prazo' }), U.input(p, 'par.pgrResponsavel', { label: 'Responsável' })));
+        // 12.3 gestão de mudança: o app só levanta se é necessário e registra se foi feito
+        p.mudanca = E.mudancaDe(p);
+        w.appendChild(U.q('12.3', 'Gestão de mudança (MOC): este produto troca outro ou exige alguma mudança no terminal?'));
+        w.appendChild(h('p', { class: 'small' }, 'O app não faz o MOC: levanta se é necessário e registra se foi feito. O MOC em si é conduzido no seu sistema de gestão de mudança. Produto trocado por outro é mudança, mesmo que seja do mesmo tipo.'));
+        const outros = S.produtos().filter((x) => x.id !== p.id && ['homologado', 'condicionado'].includes(x.status));
+        w.appendChild(U.select(p, 'mudanca.substituiId', outros.map((x) => [x.id, x.nome]), { label: 'Este produto substitui qual produto já homologado?', empty: 'Nenhum (produto novo, sem troca)', onChange: api.rerender }));
+        if (p.mudanca.substituiId) w.appendChild(U.input(p, 'mudanca.motivo', { rows: 2, label: 'Motivo da troca (fornecedor, reformulação, custo, restrição regulatória, gatilho CMR ou PFC etc.)' }));
+        const sg = E.mudancaSugestao(p, S.produtos());
+        if (sg.sugere) w.appendChild(U.alert('warn', 'O app sugere avaliar MOC', sg.motivos.join(' ')));
+        if (sg.divergencias.length) w.appendChild(h('div', { class: 'card' }, h('h4', {}, 'Diferenças em relação ao produto substituído'), h('ul', { style: 'margin:0 0 0 18px' }, sg.divergencias.map((x) => h('li', { class: 'small' }, x.texto)))));
+        w.appendChild(U.radio(p, 'mudanca.exige', [{ v: true, label: 'Sim, exige MOC', hint: 'Registrar a situação e a referência do MOC no seu sistema' }, { v: false, label: 'Não exige MOC', hint: 'Registrar a justificativa' }], { uid: '123', onChange: api.rerender }));
+        if (p.mudanca.exige === true) {
+          w.appendChild(h('div', { class: 'grid g2' }, U.select(p, 'mudanca.situacao', E.MOC_SIT, { label: 'Situação do MOC', empty: 'Selecione', onChange: api.rerender }), U.input(p, 'mudanca.ref', { label: 'Número ou referência do MOC (sistema externo)' })));
+          w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'mudanca.resp', { label: 'Responsável' }), U.input(p, 'mudanca.data', { type: 'date', label: 'Data de conclusão (se concluído)' })));
+          if (p.mudanca.situacao === 'dispensado') w.appendChild(U.input(p, 'mudanca.just', { rows: 2, label: 'Justificativa da dispensa' }));
+          else if (p.mudanca.situacao && p.mudanca.situacao !== 'concluido') w.appendChild(U.alert('info', 'MOC pendente', 'O produto sairá como condicionado enquanto o MOC não for concluído. Nada é bloqueado: a decisão é do responsável técnico.'));
+        } else if (p.mudanca.exige === false) w.appendChild(U.input(p, 'mudanca.just', { rows: 2, label: 'Justificativa de que não há mudança a gerenciar' }));
         return w;
       },
-      validar: (p) => [p.par.tem === null && 'Responda 12.1.', !p.par.pgrIndicador && 'Registre o indicador do PGR (12.2).', p.par.pgrIndicador === 'requer' && (!p.par.pgrPrazo || !p.par.pgrResponsavel) && 'Informe prazo e responsável pela atualização do PGR.', p.par.pgrIndicador === 'nao_requer' && !p.par.tem && 'Indicador "não requer atualização" exige parecer anexo (12.1).'].filter(Boolean),
+      validar: (p) => [p.par.tem === null && 'Responda 12.1.', !p.par.pgrIndicador && 'Registre o indicador do PGR (12.2).', p.par.pgrIndicador === 'requer' && (!p.par.pgrPrazo || !p.par.pgrResponsavel) && 'Informe prazo e responsável pela atualização do PGR.', p.par.pgrIndicador === 'nao_requer' && !p.par.tem && 'Indicador "não requer atualização" exige parecer anexo (12.1).', E.mudancaDe(p).exige == null && E.mudancaSugestao(p, S.produtos()).sugere && 'Responda 12.3 (gestão de mudança).', E.mudancaDe(p).exige === true && !E.mudancaDe(p).situacao && 'Informe a situação do MOC (12.3).'].filter(Boolean),
     },
     // ------------------------------------------------ 13
     decisao: {
@@ -28079,6 +28149,11 @@ var vfs = {
     if (tab === 'resumo') {
       root.appendChild(U.alert(st[1], 'Status: ' + st[0], p.dec.justificativa || av.reprovacoes.concat(av.pendencias, av.condicionantes).join(' ') || 'Análise em andamento.'));
       av.alertas.forEach((a) => root.appendChild(U.alert('warn', 'Alerta', a)));
+      {
+        const mu = E.mudancaDe(p); const trocado = mu.substituiId ? S.produto(mu.substituiId) : null; const nov = E.substituidoPor(p, S.produtos());
+        if (trocado) root.appendChild(U.alert('info', 'Troca de produto', 'Substitui "' + trocado.nome + '"' + (mu.motivo ? '. Motivo: ' + mu.motivo : '') + '. Gestão de mudança: ' + (mu.exige === true ? 'necessária' + (mu.situacao ? ' (' + (E.MOC_SIT.find((x) => x[0] === mu.situacao) || [0, mu.situacao])[1].toLowerCase() + ')' : '') + (mu.ref ? ', ref. ' + mu.ref : '') : mu.exige === false ? 'não exigida' : 'ainda não avaliada') + '.'));
+        nov.forEach((n) => root.appendChild(U.alert('warn', 'Produto substituído', 'Substituído por "' + n.nome + '"' + (E.emEstoque(p) ? '. Ainda consta em estoque: registre a saída quando for retirado.' : '.'))));
+      }
       const loc = S.local(p.ctx.localId);
       const n20 = E.nr20(p);
       root.appendChild(h('div', { class: 'grid g2' },
@@ -28395,6 +28470,9 @@ var vfs = {
   V.legal = (root) => {
     root.appendChild(head('Base técnico-legal', 'Normas que sustentam cada regra do aplicativo'));
     root.appendChild(h('div', { class: 'card' }, T.BASE_LEGAL.map((b) => h('div', { class: 'legalrow' }, h('div', {}, h('b', { class: 'sky' }, b.sigla)), h('div', {}, h('b', {}, b.titulo), h('p', { style: 'margin:2px 0' }, b.uso), h('small', {}, 'Aplicada em: ' + b.onde))))));
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Fontes de consulta externa'),
+      h('p', { class: 'small' }, 'Você consulta o site, transcreve o resultado no app e o registro guarda a fonte e a data da consulta. O app não consulta nada sozinho.'),
+      T.FONTES_CONSULTA.map((b) => h('div', { class: 'legalrow' }, h('div', {}, h('b', { class: 'sky' }, b.sigla)), h('div', {}, h('b', {}, b.titulo), h('p', { style: 'margin:2px 0' }, b.uso), h('a', { href: b.url, target: '_blank', rel: 'noopener noreferrer' }, 'Abrir ' + b.url))))));
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Critérios internos de rejeição automática'), h('ul', {}, h('li', {}, 'Cancerígeno: frases H350, H350i, H351 e CAS da lista de alerta.'), h('li', {}, 'Mutagênico: H340 e H341.'), h('li', {}, 'Teratogênico e tóxico à reprodução: H360 e H361 (D e F).'), h('li', {}, 'Contém PFCs ou PFAS: CAS da lista de alerta, ou marcação do analista; termos no texto geram alerta.'), h('li', {}, 'Categoria 2 (suspeita) reprova por padrão. Altere em Configurações.')), h('p', { class: 'small' }, 'A lista de alerta por CAS é de triagem e não exaustiva. Substâncias fora dela dependem das frases H e da Seção 3 da FDS.')));
   };
 

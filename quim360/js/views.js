@@ -622,6 +622,11 @@
     if (tab === 'resumo') {
       root.appendChild(U.alert(st[1], 'Status: ' + st[0], p.dec.justificativa || av.reprovacoes.concat(av.pendencias, av.condicionantes).join(' ') || 'Análise em andamento.'));
       av.alertas.forEach((a) => root.appendChild(U.alert('warn', 'Alerta', a)));
+      {
+        const mu = E.mudancaDe(p); const trocado = mu.substituiId ? S.produto(mu.substituiId) : null; const nov = E.substituidoPor(p, S.produtos());
+        if (trocado) root.appendChild(U.alert('info', 'Troca de produto', 'Substitui "' + trocado.nome + '"' + (mu.motivo ? '. Motivo: ' + mu.motivo : '') + '. Gestão de mudança: ' + (mu.exige === true ? 'necessária' + (mu.situacao ? ' (' + (E.MOC_SIT.find((x) => x[0] === mu.situacao) || [0, mu.situacao])[1].toLowerCase() + ')' : '') + (mu.ref ? ', ref. ' + mu.ref : '') : mu.exige === false ? 'não exigida' : 'ainda não avaliada') + '.'));
+        nov.forEach((n) => root.appendChild(U.alert('warn', 'Produto substituído', 'Substituído por "' + n.nome + '"' + (E.emEstoque(p) ? '. Ainda consta em estoque: registre a saída quando for retirado.' : '.'))));
+      }
       const loc = S.local(p.ctx.localId);
       const n20 = E.nr20(p);
       root.appendChild(h('div', { class: 'grid g2' },
@@ -938,6 +943,9 @@
   V.legal = (root) => {
     root.appendChild(head('Base técnico-legal', 'Normas que sustentam cada regra do aplicativo'));
     root.appendChild(h('div', { class: 'card' }, T.BASE_LEGAL.map((b) => h('div', { class: 'legalrow' }, h('div', {}, h('b', { class: 'sky' }, b.sigla)), h('div', {}, h('b', {}, b.titulo), h('p', { style: 'margin:2px 0' }, b.uso), h('small', {}, 'Aplicada em: ' + b.onde))))));
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Fontes de consulta externa'),
+      h('p', { class: 'small' }, 'Você consulta o site, transcreve o resultado no app e o registro guarda a fonte e a data da consulta. O app não consulta nada sozinho.'),
+      T.FONTES_CONSULTA.map((b) => h('div', { class: 'legalrow' }, h('div', {}, h('b', { class: 'sky' }, b.sigla)), h('div', {}, h('b', {}, b.titulo), h('p', { style: 'margin:2px 0' }, b.uso), h('a', { href: b.url, target: '_blank', rel: 'noopener noreferrer' }, 'Abrir ' + b.url))))));
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Critérios internos de rejeição automática'), h('ul', {}, h('li', {}, 'Cancerígeno: frases H350, H350i, H351 e CAS da lista de alerta.'), h('li', {}, 'Mutagênico: H340 e H341.'), h('li', {}, 'Teratogênico e tóxico à reprodução: H360 e H361 (D e F).'), h('li', {}, 'Contém PFCs ou PFAS: CAS da lista de alerta, ou marcação do analista; termos no texto geram alerta.'), h('li', {}, 'Categoria 2 (suspeita) reprova por padrão. Altere em Configurações.')), h('p', { class: 'small' }, 'A lista de alerta por CAS é de triagem e não exaustiva. Substâncias fora dela dependem das frases H e da Seção 3 da FDS.')));
   };
 

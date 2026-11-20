@@ -187,6 +187,18 @@
       ['Indicador de PGR', p.par.pgrIndicador === 'requer' ? 'PGR: requer atualização' + (p.par.pgrPrazo ? ' | prazo ' + p.par.pgrPrazo : '') + (p.par.pgrResponsavel ? ' | responsável ' + p.par.pgrResponsavel : '') : p.par.pgrIndicador === 'nao_requer' ? 'PGR: não requer atualização (parecer anexo)' : '—'],
     ] });
 
+    {
+      const mu = E.mudancaDe(p); const trocado = mu.substituiId ? O.Store.produto(mu.substituiId) : null;
+      B.push({ t: 'h2', text: 'Gestão de mudança (MOC)' });
+      B.push({ t: 'kv', rows: [
+        ['Substitui outro produto', trocado ? trocado.nome + (trocado.fornecedor ? ' (' + trocado.fornecedor + ')' : '') : 'Não'],
+        ...(trocado ? [['Motivo da troca', nz(mu.motivo)]] : []),
+        ['MOC necessário', mu.exige === true ? 'Sim' : mu.exige === false ? 'Não' : 'Não avaliado'],
+        ...(mu.exige === true ? [['Situação', (E.MOC_SIT.find((x) => x[0] === mu.situacao) || [0, 'não informada'])[1]], ['Referência (sistema externo)', nz(mu.ref)], ['Responsável', nz(mu.resp)], ['Data de conclusão', mu.data ? fmtData(mu.data) : '—']] : []),
+        ...(mu.exige === false || mu.situacao === 'dispensado' ? [['Justificativa', nz(mu.just)]] : []),
+      ] });
+      B.push({ t: 'p', small: true, text: 'O MOC é conduzido em sistema próprio da organização: este registro só informa se é necessário e se foi concluído.' });
+    }
     B.push({ t: 'h1', text: '10 Decisão e rastreabilidade' });
     B.push({ t: 'kv', rows: [
       ['Decisão', st[0]], ['Número do registro', nz(p.dec.numero)], ['Data da decisão', fmtData(p.dec.data)],
@@ -379,6 +391,13 @@
     }
     av.pendencias.forEach((x) => add(x, 'Pendência da análise', 'Responsável técnico', '', 'Pendente'));
     av.condicionantes.forEach((x) => add(x, 'Condicionante de liberação', 'Responsável técnico', '', 'Pendente'));
+    {
+      const mu = E.mudancaDe(p); const trocado = mu.substituiId ? O.Store.produto(mu.substituiId) : null;
+      if (trocado) {
+        if (ok && E.emEstoque(trocado)) add('Dar baixa no estoque do produto substituído "' + trocado.nome + '" e retirá-lo do local quando o novo produto entrar', 'Troca de produto | MOC', 'Gestor do local', 'Na troca');
+        if (E.mudancaSugestao(p, produtos).divergencias.length) add('Atualizar treinamento, ficha de emergência e rotulagem: o perfil do produto novo difere do substituído', 'Troca de produto | MOC', 'SST / Gestor da área', 'Antes do primeiro uso');
+      }
+    }
     if (p.par.pgrIndicador === 'requer') add('Atualizar o PGR e o Inventário de Riscos com este produto antes da liberação de uso', 'NR-01 | Etapa 12', p.par.pgrResponsavel, p.par.pgrPrazo ? fmtData(p.par.pgrPrazo) : '', 'Pendente');
     if (E.cmrCarga(p) && !E.ehCarga(p)) { E.alternativas(p).itens.forEach((i) => add('Avaliar com o fornecedor e o solicitante alternativa a ' + i.nome + ' (orientações no relatório) e registrar o resultado', 'Etapa 7 | Substituição', 'Solicitante / SST', 'Em até 90 dias', 'Pendente')); add('Reavaliar periodicamente a viabilidade de substituição do agente CMR ou PFC', 'NR-01 | Hierarquia de controle', 'SST', 'A cada revisão do PGR', 'Pendente'); }
     if (E.cmrCarga(p)) {

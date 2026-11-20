@@ -556,9 +556,26 @@
         if (!p.par.pgrIndicador) p.par.pgrIndicador = p.hig.pgr === 'requer' ? 'requer' : (p.hig.pgr === 'coberto' ? 'nao_requer' : '');
         w.appendChild(U.radio(p, 'par.pgrIndicador', [{ v: 'requer', label: 'PGR: requer atualização', hint: 'Informar prazo e responsável' }, { v: 'nao_requer', label: 'PGR: não requer atualização (parecer anexo)' }], { uid: '122', onChange: api.rerender }));
         if (p.par.pgrIndicador === 'requer') w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'par.pgrPrazo', { type: 'date', label: 'Prazo' }), U.input(p, 'par.pgrResponsavel', { label: 'Responsável' })));
+        // 12.3 gestão de mudança: o app só levanta se é necessário e registra se foi feito
+        p.mudanca = E.mudancaDe(p);
+        w.appendChild(U.q('12.3', 'Gestão de mudança (MOC): este produto troca outro ou exige alguma mudança no terminal?'));
+        w.appendChild(h('p', { class: 'small' }, 'O app não faz o MOC: levanta se é necessário e registra se foi feito. O MOC em si é conduzido no seu sistema de gestão de mudança. Produto trocado por outro é mudança, mesmo que seja do mesmo tipo.'));
+        const outros = S.produtos().filter((x) => x.id !== p.id && ['homologado', 'condicionado'].includes(x.status));
+        w.appendChild(U.select(p, 'mudanca.substituiId', outros.map((x) => [x.id, x.nome]), { label: 'Este produto substitui qual produto já homologado?', empty: 'Nenhum (produto novo, sem troca)', onChange: api.rerender }));
+        if (p.mudanca.substituiId) w.appendChild(U.input(p, 'mudanca.motivo', { rows: 2, label: 'Motivo da troca (fornecedor, reformulação, custo, restrição regulatória, gatilho CMR ou PFC etc.)' }));
+        const sg = E.mudancaSugestao(p, S.produtos());
+        if (sg.sugere) w.appendChild(U.alert('warn', 'O app sugere avaliar MOC', sg.motivos.join(' ')));
+        if (sg.divergencias.length) w.appendChild(h('div', { class: 'card' }, h('h4', {}, 'Diferenças em relação ao produto substituído'), h('ul', { style: 'margin:0 0 0 18px' }, sg.divergencias.map((x) => h('li', { class: 'small' }, x.texto)))));
+        w.appendChild(U.radio(p, 'mudanca.exige', [{ v: true, label: 'Sim, exige MOC', hint: 'Registrar a situação e a referência do MOC no seu sistema' }, { v: false, label: 'Não exige MOC', hint: 'Registrar a justificativa' }], { uid: '123', onChange: api.rerender }));
+        if (p.mudanca.exige === true) {
+          w.appendChild(h('div', { class: 'grid g2' }, U.select(p, 'mudanca.situacao', E.MOC_SIT, { label: 'Situação do MOC', empty: 'Selecione', onChange: api.rerender }), U.input(p, 'mudanca.ref', { label: 'Número ou referência do MOC (sistema externo)' })));
+          w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'mudanca.resp', { label: 'Responsável' }), U.input(p, 'mudanca.data', { type: 'date', label: 'Data de conclusão (se concluído)' })));
+          if (p.mudanca.situacao === 'dispensado') w.appendChild(U.input(p, 'mudanca.just', { rows: 2, label: 'Justificativa da dispensa' }));
+          else if (p.mudanca.situacao && p.mudanca.situacao !== 'concluido') w.appendChild(U.alert('info', 'MOC pendente', 'O produto sairá como condicionado enquanto o MOC não for concluído. Nada é bloqueado: a decisão é do responsável técnico.'));
+        } else if (p.mudanca.exige === false) w.appendChild(U.input(p, 'mudanca.just', { rows: 2, label: 'Justificativa de que não há mudança a gerenciar' }));
         return w;
       },
-      validar: (p) => [p.par.tem === null && 'Responda 12.1.', !p.par.pgrIndicador && 'Registre o indicador do PGR (12.2).', p.par.pgrIndicador === 'requer' && (!p.par.pgrPrazo || !p.par.pgrResponsavel) && 'Informe prazo e responsável pela atualização do PGR.', p.par.pgrIndicador === 'nao_requer' && !p.par.tem && 'Indicador "não requer atualização" exige parecer anexo (12.1).'].filter(Boolean),
+      validar: (p) => [p.par.tem === null && 'Responda 12.1.', !p.par.pgrIndicador && 'Registre o indicador do PGR (12.2).', p.par.pgrIndicador === 'requer' && (!p.par.pgrPrazo || !p.par.pgrResponsavel) && 'Informe prazo e responsável pela atualização do PGR.', p.par.pgrIndicador === 'nao_requer' && !p.par.tem && 'Indicador "não requer atualização" exige parecer anexo (12.1).', E.mudancaDe(p).exige == null && E.mudancaSugestao(p, S.produtos()).sugere && 'Responda 12.3 (gestão de mudança).', E.mudancaDe(p).exige === true && !E.mudancaDe(p).situacao && 'Informe a situação do MOC (12.3).'].filter(Boolean),
     },
     // ------------------------------------------------ 13
     decisao: {

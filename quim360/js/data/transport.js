@@ -166,6 +166,11 @@
     ['nenhum', 'Nenhum controle adicional'],
   ];
 
+  // Fontes de consulta externa: o analista consulta e transcreve o resultado; o app só guarda a fonte e a data
+  const FONTES_CONSULTA = [
+    { sigla: 'CAMEO Chemicals', titulo: 'NOAA CAMEO Chemicals e Chemical Reactivity Worksheet', uso: 'Reatividade e incompatibilidade na mistura de produtos (vazamento de mais de um tanque na mesma bacia ou na drenagem comum). Consulte o par de produtos, transcreva o resultado no app e registre a data.', url: 'https://cameochemicals.noaa.gov/' },
+  ];
+
   const BASE_LEGAL = [
     { sigla: 'NBR 17160', titulo: 'ABNT NBR 17160:2024 Armazenamento seguro de produtos químicos', uso: 'Armazenamento de produtos químicos perigosos embalados: 25 classes de armazenamento (Anexo D), matriz de incompatibilidade para armazenamento conjunto (Figura 1), restrições por quantidade (Tabelas 3 e 4) e quantidades-limite (Tabela 1). Exemplar de uso licenciado: não redistribuir.', onde: 'Compatibilidade e segregação, classe de armazenamento, matriz' },
     { sigla: 'ANTT 5.998/2022', titulo: 'Resolução ANTT nº 5.998/2022', uso: 'Transporte terrestre de produtos perigosos: número ONU, classe, grupo de embalagem, número de risco, ficha de emergência e envelope. Atualizada pelas instruções complementares.', onde: 'Classificação de transporte, ficha de emergência, envelope' },
@@ -196,7 +201,7 @@
 
   O.TRANSPORT = {
     CLASSES, CLASS_EXTRA, ORDER, MATRIX, SEG_LEGEND, LABELS, riscoSugerido,
-    RG, RG_RULES, WATCH, PFAS_TERMS, LOCAIS_TIPO, FINALIDADES, CONTROLES_ARM, BASE_LEGAL,
+    RG, RG_RULES, WATCH, PFAS_TERMS, LOCAIS_TIPO, FINALIDADES, CONTROLES_ARM, BASE_LEGAL, FONTES_CONSULTA,
     classeNome(c) { const f = CLASSES.concat(CLASS_EXTRA).find((x) => x[0] === c); return f ? f[1] : ''; },
     // retorna código da matriz entre duas classes; null se fora do escopo
     seg(a, b) {
