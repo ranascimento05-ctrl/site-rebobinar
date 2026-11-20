@@ -347,6 +347,43 @@
     draw();
   };
 
+  // ------------------------------------------------------------ estoque: entradas, ajustes e saídas
+  V.estoqueCard = (p) => {
+    const ok = ['homologado', 'condicionado'].includes(p.status);
+    const c = h('div', { class: 'card' }, h('h3', {}, 'Estoque no terminal ', U.disc('PSM')),
+      h('p', { class: 'small' }, 'Só o que está armazenado ou em uso agora entra nos cálculos do local (segregação, quantidades-limite, checklist, análise de risco). Homologar não coloca o produto em estoque: registre a entrada quando ele chegar e a saída quando sair. Todos os movimentos ficam no histórico.'));
+    if (!ok) { c.appendChild(h('p', { class: 'muted' }, 'Disponível depois da homologação.')); return c; }
+    const ativo = E.emEstoque(p); const legado = !p.estoque;
+    const loc = S.local((p.estoque && p.estoque.localId) || p.ctx.localId);
+    const hoje = new Date().toISOString().slice(0, 10);
+    const f = { localId: (loc && loc.id) || p.ctx.localId || '', qtdKg: p.comp.qtdKg === undefined ? '' : p.comp.qtdKg, data: hoje, resp: D.signer(p).nome, obs: '' };
+    c.appendChild(h('div', { class: 'row' }, ativo ? U.badge('ok', 'Em estoque' + (loc ? ' em ' + loc.nome : '')) : U.badge('info', 'Sem estoque agora'), p.estoque && p.estoque.qtdKg !== '' && ativo ? h('span', { class: 'small' }, String(p.estoque.qtdKg).replace('.', ',') + ' kg' + (p.estoque.desde ? ' desde ' + D.fmtData(p.estoque.desde) : '')) : null, legado ? h('span', { class: 'small' }, '(registro anterior ao controle de estoque: considerado em estoque)') : null));
+    const det = h('details', ativo ? {} : { open: true }, h('summary', { style: 'cursor:pointer;font-weight:600;padding:6px 0' }, ativo ? 'Registrar ajuste de quantidade ou saída' : 'Registrar entrada'),
+      h('div', { class: 'grid g2' }, U.select(f, 'localId', S.locais().map((l) => [l.id, l.nome + ' (' + l.tipo + ')']), { label: 'Local', empty: 'Selecione o local' }), U.input(f, 'qtdKg', { type: 'number', label: 'Quantidade (kg; gases em L)' })),
+      h('div', { class: 'grid g2' }, U.input(f, 'data', { type: 'date', label: 'Data' }), U.input(f, 'resp', { label: 'Responsável pelo registro' })), U.input(f, 'obs', { rows: 2, label: 'Observações (lote, nota fiscal, motivo)' }));
+    const mov = (fn, msg) => { fn(); U.salvarJa(p); U.toast(msg); O.route(); };
+    const bt = h('div', { class: 'row' });
+    if (!ativo) bt.appendChild(h('button', { class: 'btn', onclick: () => { if (!f.localId) { U.toast('Escolha o local.'); return; } mov(() => E.registrarEntrada(p, f), 'Entrada registrada.'); } }, 'Registrar entrada'));
+    else {
+      bt.appendChild(h('button', { class: 'btn', onclick: () => { if (f.qtdKg === '' || f.qtdKg == null) { U.toast('Informe a nova quantidade.'); return; } mov(() => E.registrarAjuste(p, f), 'Quantidade ajustada.'); } }, 'Registrar ajuste de quantidade'));
+      bt.appendChild(h('button', { class: 'btn ghost', onclick: () => mov(() => E.registrarSaida(p, f), 'Saída registrada. O produto sai dos cálculos do local.') }, 'Registrar saída'));
+    }
+    det.appendChild(bt); c.appendChild(det);
+    const movs = (p.movs || []).slice().sort((a, b) => String(b.data).localeCompare(String(a.data)));
+    if (movs.length) c.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Data', 'Movimento', 'Local', 'Quantidade', 'Responsável', 'Observação'].map((x) => h('th', {}, x)))), h('tbody', {}, movs.map((m) => h('tr', {}, h('td', {}, D.fmtData(m.data)), h('td', {}, { entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste' }[m.tipo] || m.tipo), h('td', {}, (S.local(m.localId) || {}).nome || '—'), h('td', {}, m.qtdKg !== '' && m.qtdKg != null ? String(m.qtdKg).replace('.', ',') + ' kg' : '—'), h('td', {}, m.resp || '—'), h('td', {}, m.obs || '—')))))));
+    else c.appendChild(h('p', { class: 'small' }, 'Nenhum movimento registrado.'));
+    return c;
+  };
+  // histórico do local: todas as entradas, ajustes e saídas
+  V.historicoLocal = (l) => {
+    const hs = E.historicoLocal(l, S.produtos());
+    const d = h('details', {}, h('summary', { style: 'cursor:pointer;font-weight:600;padding:6px 0' }, 'Histórico de entradas e saídas (' + hs.movs.length + ')'));
+    if (hs.semEstoque.length) d.appendChild(h('p', { class: 'small' }, 'Homologados para este local, sem estoque agora: ' + hs.semEstoque.join('; ') + '.'));
+    if (!hs.movs.length) d.appendChild(h('p', { class: 'small' }, 'Nenhum movimento registrado. Registre as entradas na página de cada produto (cartão Estoque no terminal).'));
+    else d.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Data', 'Produto', 'Movimento', 'Quantidade', 'Responsável', 'Observação'].map((x) => h('th', {}, x)))), h('tbody', {}, hs.movs.map((m) => h('tr', {}, h('td', {}, D.fmtData(m.data)), h('td', {}, h('a', { href: '#/produto/' + m.pid + '/resumo' }, m.produto)), h('td', {}, { entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste' }[m.tipo] || m.tipo), h('td', {}, m.qtdKg !== '' && m.qtdKg != null ? String(m.qtdKg).replace('.', ',') + ' kg' : '—'), h('td', {}, m.resp || '—'), h('td', {}, m.obs || '—')))))));
+    return d;
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -355,7 +392,7 @@
     const lida = !!(p.fds.analisada || p.nome) && p.status !== 'reprovado'; // ficha, rótulo e envelope saem já com a FDS lida (preliminares até a decisão)
     const c = [{ id: 'relatorio', nome: 'Relatório de homologação', desc: 'Decisão, FDS, triagem GHS, impactos, PGR, IMDG, segregação e rastreabilidade.', fn: () => D.relatorio(p, prods), on: true }];
     c.splice(1, 0, { id: 'analise', nome: 'Relatório da análise da FDS', desc: 'Leitura da FDS: validade, GHS, composição, triagem CMR e PFC, transporte, classe de armazenamento e controles sugeridos. Disponível a qualquer momento.', fn: () => D.analiseFds(p, prods), on: !!(p.fds.analisada || p.nome) });
-    c.push({ id: 'quadro', nome: 'Quadro de compatibilidade', desc: 'Este produto e os homologados comparados dois a dois, com grupos que podem dividir o setor de armazém.', fn: () => D.quadroCompat(p, prods), on: E.homologados(prods).filter((x) => x.id !== p.id && x.armazenamento !== 'granel').length >= 1 && p.armazenamento !== 'granel' });
+    c.push({ id: 'quadro', nome: 'Quadro de compatibilidade', desc: 'Este produto e os homologados comparados dois a dois, com grupos que podem dividir o setor de armazém.', fn: () => D.quadroCompat(p, prods), on: E.estoqueAtivo(prods).filter((x) => x.id !== p.id && x.armazenamento !== 'granel').length >= 1 && p.armazenamento !== 'granel' });
     c.push({ id: 'plano', nome: 'Plano de ação', desc: 'Ações, origem, responsável e prazo para colocar o produto em uso (ou encerrar, se reprovado).', fn: () => D.planoAcao(p, prods), on: decidido });
     c.push({ id: 'ficha', nome: 'Ficha de emergência', desc: 'Estrutura NBR 7503 e Manual ABIQUIM: riscos, isolamento, fogo, derramamento, primeiros socorros.', fn: () => D.fichaEmergencia(p), on: ok || lida });
     c.push({ id: 'rotulo', nome: 'Rotulagem', desc: 'Rótulo GHS (NBR 14725), etiqueta de uso (NR-26) e rótulos de risco (NBR 7500).', fn: () => D.rotulagem(p), on: ok || lida });
@@ -503,14 +540,15 @@
         h('div', { class: 'card' }, h('h3', {}, 'Transporte ', U.disc('PSM')), kv([['ONU', p.imdg.onu], ['Nome', p.imdg.nome], ['Classe', p.imdg.classe], ['Grupo de embalagem', p.imdg.pg], ['Número de risco', p.imdg.numeroRisco], ['NR-20', n20.aplica ? n20.categoria : 'Não aplicável pelo ponto de fulgor']])),
         h('div', { class: 'card' }, h('h3', {}, 'Triagem CMR e PFC'), av.tri.criticos.length ? U.alert('warn', 'Gatilho de reprovação automática (CMR ou PFC)', av.tri.criticos.map((c) => c.detalhe).concat(['Apenas sinalizado: a decisão é do responsável técnico, com justificativa, controles de exposição e parecer de Higiene Ocupacional.'])) : U.alert('ok', 'Sem evidência de cancerígeno, mutagênico, teratogênico ou PFC', 'Com base nas frases H, nos CAS e no texto da FDS analisada.'))));
       { const alt = V.alternativasCard(p, false); if (alt) root.appendChild(alt); }
+      root.appendChild(V.estoqueCard(p));
     } else if (tab === 'fds') {
       root.appendChild(O.Wizard.fdsPanel(p, () => O.route()));
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Seções da FDS (editáveis)'), h('p', { class: 'small' }, 'O texto das seções 4, 5, 6, 8, 9, 12, 13 e 14 alimenta a ficha de emergência, o envelope e o checklist.'),
         O.FDS.SEC_TITLES.map((t, i) => { const n = i + 1; const ta = h('textarea', { rows: 3 }); ta.value = (p.fds.secoes || {})[n] || ''; ta.addEventListener('input', () => { p.fds.secoes = p.fds.secoes || {}; p.fds.secoes[n] = ta.value; U.salvar(p); }); return h('label', { class: 'f' }, h('span', {}, n + ' ' + t), ta); })));
     } else if (tab === 'compat') {
-      const outros = E.homologados(S.produtos()).filter((x) => x.id !== p.id);
+      const outros = E.estoqueAtivo(S.produtos()).filter((x) => x.id !== p.id);
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática da matriz de segregação ', U.disc('PSM')),
-        h('p', { class: 'small' }, 'Este produto contra cada produto homologado: matriz de incompatibilidade da ABNT NBR 17160:2024 mais reatividade pela Seção 10 da FDS. Classe de armazenamento deste produto: ' + E.classeArm(p).id + ' (' + E.classeArm(p).motivo + ').'),
+        h('p', { class: 'small' }, 'Este produto contra cada produto que está em estoque agora (os homologados sem estoque não entram): matriz de incompatibilidade da ABNT NBR 17160:2024 mais reatividade pela Seção 10 da FDS. Classe de armazenamento deste produto: ' + E.classeArm(p).id + ' (' + E.classeArm(p).motivo + ').'),
         V.resumoCompat(p, outros), outros.length ? V.quadroDoProduto(p, outros) : null, V.tabelaCompat(p, outros)));
       if (p.armazenamento !== 'granel') {
         const lq = S.local(p.ctx.localId);
@@ -595,30 +633,32 @@
   };
   V.quadro = (root) => {
     root.appendChild(head('Quadro de compatibilidade', 'Produtos comparados dois a dois pela ABNT NBR 17160:2024 e pela reatividade da FDS'));
-    const st = { local: '', analise: false };
+    const st = { local: '', analise: false, plan: false };
     const area = h('div');
     const locais = S.locais().filter((l) => S.produtos().some((p) => p.ctx.localId === l.id));
     const sel = h('select', { 'aria-label': 'Filtrar por local', style: 'max-width:300px' }, h('option', { value: '' }, 'Todos os locais'), locais.map((l) => h('option', { value: l.id }, l.nome)));
     const ck = h('input', { type: 'checkbox', id: 'cq-an' });
-    root.appendChild(h('div', { class: 'row', style: 'margin-bottom:12px' }, sel, h('label', { for: 'cq-an', class: 'row small' }, ck, 'Incluir produtos ainda em análise')));
+    const ckP = h('input', { type: 'checkbox', id: 'cq-pl' });
+    root.appendChild(h('div', { class: 'row', style: 'margin-bottom:12px' }, sel, h('label', { for: 'cq-an', class: 'row small' }, ck, 'Incluir produtos ainda em análise'), h('label', { for: 'cq-pl', class: 'row small' }, ckP, 'Incluir homologados sem estoque (planejamento)')));
+    root.appendChild(h('p', { class: 'small', style: 'margin-bottom:8px' }, 'Por padrão o quadro compara só o que está em estoque agora no terminal.'));
     root.appendChild(area);
     const draw = () => {
       area.innerHTML = '';
       const todos = S.produtos().filter((p) => (!st.local || p.ctx.localId === st.local));
       const incluir = st.analise ? todos.filter((p) => !['homologado', 'condicionado', 'reprovado', 'na_lista'].includes(p.status) && p.fds.analisada) : [];
-      const lista = E.homologados(todos).concat(incluir).filter((p) => p.armazenamento !== 'granel');
+      const lista = (st.plan ? E.homologados(todos) : E.estoqueAtivo(todos)).concat(incluir).filter((p) => p.armazenamento !== 'granel');
       if (lista.length < 2) { area.appendChild(h('div', { class: 'empty' }, 'São necessários ao menos 2 produtos em armazenamento embalado para comparar. Homologue produtos ou carregue a demonstração em Configurações.')); return; }
       let nR = 0, nY = 0, nG = 0, nN = 0;
       lista.forEach((a, i) => lista.forEach((b, j) => { if (i < j) { const n = E.compatPar(a, b).nivel; if (n === 'incompativel') nR++; else if (n === 'restricao') nY++; else if (n === 'livre') nG++; else nN++; } }));
       area.appendChild(h('div', { class: 'grid g4', style: 'margin-bottom:12px' }, h('div', { class: 'kpi crit' }, h('b', {}, nR), h('span', {}, 'Pares proibidos')), h('div', { class: 'kpi warn' }, h('b', {}, nY), h('span', {}, 'Com restrição')), h('div', { class: 'kpi ok' }, h('b', {}, nG), h('span', {}, 'Permitidos')), h('div', { class: 'kpi' }, h('b', {}, lista.length), h('span', {}, 'Produtos comparados'))));
       let det = h('div', { class: 'alert' }, h('b', {}, 'Toque em uma célula'), 'Mostra o resultado, a restrição da norma e a orientação para o par.');
-      area.appendChild(h('div', { class: 'card' }, h('div', { class: 'row' }, h('h3', {}, 'Quadro comparativo'), h('span', { class: 'spacer' }), V.docBotoes({ nome: st.local ? (S.local(st.local) || {}).nome : 'Produtos homologados', id: 'x' }, { id: 'quadro', nome: 'Quadro de compatibilidade', fn: () => D.quadroCompat(null, todos, st.local ? (S.local(st.local) || {}).nome : '', incluir) }, true)),
+      area.appendChild(h('div', { class: 'card' }, h('div', { class: 'row' }, h('h3', {}, 'Quadro comparativo'), h('span', { class: 'spacer' }), V.docBotoes({ nome: st.local ? (S.local(st.local) || {}).nome : 'Produtos homologados', id: 'x' }, { id: 'quadro', nome: 'Quadro de compatibilidade', fn: () => D.quadroCompat(null, todos, st.local ? (S.local(st.local) || {}).nome : '', incluir, st.plan) }, true)),
         V.legendaQuadro(), h('div', { class: 'scroll' }, V.heat(lista, (a, b, r, i, j) => { det.replaceWith(det2 = V.detalhePar(a, b, r, i, j)); det = det2; })), det));
       area.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Produtos do quadro'), h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Nº', 'Produto', 'Classe de armazenamento', 'Local', 'Status'].map((x) => h('th', {}, x)))), h('tbody', {}, lista.map((p, i) => h('tr', {}, h('td', {}, String(i + 1)), h('td', {}, h('a', { href: '#/produto/' + p.id + '/compat' }, p.nome)), h('td', {}, E.classeArm(p).id + ' | ' + O.NBR17160.nome(E.classeArm(p).id)), h('td', {}, (S.local(p.ctx.localId) || {}).nome || '—'), h('td', {}, U.statusBadge(p.status)))))))));
       area.appendChild(V.gruposCard(lista));
     };
     let det2;
-    sel.addEventListener('change', () => { st.local = sel.value; draw(); }); ck.addEventListener('change', () => { st.analise = ck.checked; draw(); });
+    sel.addEventListener('change', () => { st.local = sel.value; draw(); }); ck.addEventListener('change', () => { st.analise = ck.checked; draw(); }); ckP.addEventListener('change', () => { st.plan = ckP.checked; draw(); });
     draw();
   };
 
@@ -722,7 +762,7 @@
         card.appendChild(h('div', { class: 'row', style: 'margin-bottom:8px' }, V.docBotoes(ps0, { id: 'inventario', nome: 'Inventário de produtos perigosos', fn: () => D.inventarioLocal(l, S.produtos()) }, true)));
         card.appendChild(V.gatilhos(gat, 'Situação do local'));
         card.appendChild(V.contencao(l));
-        card.appendChild(V.riscoCard(l)); card.appendChild(V.checklistCard(l)); card.appendChild(V.inspecaoCard(l));
+        card.appendChild(V.historicoLocal(l)); card.appendChild(V.riscoCard(l)); card.appendChild(V.checklistCard(l)); card.appendChild(V.inspecaoCard(l));
       } else card.appendChild(h('p', { class: 'muted' }, 'Cadastre itens ou vincule produtos homologados ao local para montar o inventário.'));
       root.appendChild(card);
     });
@@ -759,9 +799,9 @@
     root.appendChild(h('details', { class: 'card' }, h('summary', {}, 'As 25 classes de armazenamento (Tabela 2) e o critério de cada uma'),
       h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Classe', 'Descrição', 'Critério'].map((x) => h('th', {}, x)))), h('tbody', {}, NB.CLASSES.map((c) => h('tr', {}, h('td', {}, c[0]), h('td', {}, c[1]), h('td', {}, c[2]))))))));
     // aplicação prática: produtos homologados
-    const hom = E.homologados(S.produtos());
-    const prat = h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática: produtos homologados ', U.disc('PSM')));
-    if (hom.length < 2) prat.appendChild(h('p', { class: 'muted' }, 'Homologue ao menos 2 produtos para ver a compatibilidade entre eles. Dica: carregue a demonstração em Configurações.'));
+    const hom = E.estoqueAtivo(S.produtos());
+    const prat = h('div', { class: 'card' }, h('h3', {}, 'Aplicação prática: produtos em estoque ', U.disc('PSM')));
+    if (hom.length < 2) prat.appendChild(h('p', { class: 'muted' }, 'Registre a entrada de ao menos 2 produtos homologados no estoque para ver a compatibilidade entre eles. Dica: carregue a demonstração em Configurações.'));
     else {
       const sel = h('select', { 'aria-label': 'Produto' }, hom.map((p) => h('option', { value: p.id }, p.nome + ' | classe ' + E.classeArm(p).id)));
       const out = h('div');

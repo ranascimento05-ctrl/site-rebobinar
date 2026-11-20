@@ -410,6 +410,7 @@
         }
       }
       if (loc && p.armazenamento !== 'granel') {
+        if (!E.emEstoque(p)) add('Registrar a entrada do produto no estoque de ' + loc.nome + ' (data e quantidade) quando ele chegar: só o que está em estoque entra nos cálculos do local', 'Controle de estoque', 'Gestor do local', 'Na chegada do produto');
         const rq = E.requisitosLocal(loc, produtos, p);
         rq.itens.filter((i) => i.resp === 'nc').forEach((i) => add('Local ' + loc.nome + ', item ' + i.id + ': ' + i.texto.split(/;|:/)[0] + (i.obs ? ' (' + i.obs + ')' : ''), 'NBR 17160 | ' + i.id, 'Gestor do local / Engenharia', 'Antes do primeiro recebimento'));
         if (rq.cont.aberto) add('Concluir o checklist da NBR 17160 de ' + loc.nome + ': ' + rq.cont.aberto + ' requisito(s) sem resposta', 'NBR 17160 | Checklist do local', 'Responsável técnico', 'Antes do primeiro recebimento');
@@ -618,6 +619,11 @@
     const fm = (n) => (Math.round(n * 10) / 10).toLocaleString('pt-BR');
     B.push({ t: 'kv', rows: [['Área do setor', ct.areaM2 ? fm(ct.areaM2) + ' m²' : 'não informada'], ['Categoria de segurança', ct.catK || 'não informada (considerada K1/K2)'], ['Classe de perigo à água do local', 'CPA ' + ct.cpa], ['Volume pela Tabela F.1', ct.vol ? fm(ct.vol.base) + ' m³' : 'informe a área do setor'], ['Volume com fator de CPA', ct.vol ? fm(ct.vol.total) + ' m³' : '—'], ['Volume de material que pode vazar', ct.material ? fm(ct.material) + ' m³' : 'não informado'], ['Volume total a reter', ct.total != null ? fm(ct.total) + ' m³' : '—']] });
     B.push({ t: 'p', small: true, text: O.NBR17160.F1_NOTA + ' O Anexo F é informativo; considere as exigências do corpo de bombeiros e do órgão ambiental.' });
+    const hs = E.historicoLocal(local, produtos);
+    B.push({ t: 'h1', text: 'Histórico de entradas e saídas' });
+    B.push({ t: 'p', small: true, text: 'O inventário e os cálculos acima consideram só o que está em estoque agora. Aqui ficam todos os movimentos registrados neste local.' });
+    B.push({ t: 'table', head: ['Data', 'Produto', 'Movimento', 'Quantidade', 'Responsável', 'Observação'], widths: [11, 28, 12, 12, 17, 20], rows: hs.movs.length ? hs.movs.map((m) => [fmtData(m.data), m.produto, { entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste' }[m.tipo] || m.tipo, m.qtdKg !== '' && m.qtdKg != null ? String(m.qtdKg).replace('.', ',') + ' kg' : '—', nz(m.resp), nz(m.obs)]) : [['Sem movimentos registrados', '', '', '', '', '']] });
+    if (hs.semEstoque.length) B.push({ t: 'p', small: true, text: 'Homologados para este local, sem estoque agora: ' + hs.semEstoque.join('; ') + '.' });
     B.push({ t: 'p', small: true, text: 'As seções 7 a 14 e os anexos exigidos devem ser atendidos conforme o texto da norma vigente. Este quadro orienta a análise e não substitui a decisão do responsável técnico.' });
     B.push({ t: 'sign', rows: [[signer(null).nome, signer(null).funcao], ['Gestor do local', '']] });
     return B;
@@ -702,8 +708,8 @@
   }
 
   // ---------------------------------------------------------------- Quadro de compatibilidade
-  function quadroCompat(destaque, produtos, tituloLocal, incluir) {
-    const lista = E.homologados(produtos).filter((x) => x.armazenamento !== 'granel');
+  function quadroCompat(destaque, produtos, tituloLocal, incluir, planejamento) {
+    const lista = (planejamento ? E.homologados(produtos) : E.estoqueAtivo(produtos)).filter((x) => x.armazenamento !== 'granel');
     (incluir || []).forEach((x) => { if (x.armazenamento !== 'granel' && !lista.some((y) => y.id === x.id)) lista.push(x); });
     if (destaque && !lista.some((x) => x.id === destaque.id) && destaque.armazenamento !== 'granel') lista.push(destaque);
     const L = lista.slice().sort((a, b) => ((localDe(a) || {}).nome || '').localeCompare((localDe(b) || {}).nome || '') || a.nome.localeCompare(b.nome));

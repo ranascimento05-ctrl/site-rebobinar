@@ -13,6 +13,8 @@
     return p;
   }
 
+  // produtos homologados da demonstração entram em estoque no local (só o que está em estoque conta nos cálculos)
+  function ativar(p) { if (['homologado', 'condicionado'].includes(p.status) && p.ctx.localId) E.registrarEntrada(p, { localId: p.ctx.localId, qtdKg: p.comp.qtdKg, obs: 'Demonstração' }); }
   O.Demo = {
     criar() {
       const pq = S.novoLocal('Contêiner de PQ 01 (demonstração)', 'Contêiner de PQ');
@@ -36,7 +38,7 @@
       a.trein.gerar = true; a.status = 'homologado';
       ['fds0', 'ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano'].forEach((k) => { a.confirmadas[k] = new Date().toISOString(); });
       a.etapa = 'saida';
-      S.salvarProduto(a);
+      ativar(a); S.salvarProduto(a);
 
       const b = produtoBase('benzeno', of.id);
       b.ghs.cancerigeno = true; b.ghs.mutagenico = true; b.ghs.confirmado = true;
@@ -60,7 +62,7 @@
       c.trein.gerar = true; c.status = 'homologado';
       ['ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano'].forEach((k) => { c.confirmadas[k] = new Date().toISOString(); });
       c.etapa = 'saida';
-      S.salvarProduto(c);
+      ativar(c); S.salvarProduto(c);
 
       const mk = (chave, localId, justif) => {
         const q = produtoBase(chave, localId);
@@ -74,7 +76,7 @@
         q.trein.gerar = true; q.status = 'homologado';
         ['fds0', 'ctx', 'ident', 'finalidade', 'lista', 'sim', 'fds', 'fds2', 'ghs', 'impactos', 'pgr', 'imdg', 'compat', 'pareceres', 'decisao', 'plano'].forEach((k) => { q.confirmadas[k] = new Date().toISOString(); });
         q.etapa = 'saida'; q.natureza = 'insumo'; q.armazenamento = 'embalado';
-        S.salvarProduto(q);
+        ativar(q); S.salvarProduto(q);
       };
       const cl = S.novoLocal('Almoxarifado de cloro (demonstração)', 'Almoxarifado'); cl.espacoM = 6; S.salvarLocal(cl);
       const ac = S.novoLocal('Contêiner de ácidos (demonstração)', 'Contêiner de PQ'); ac.espacoM = 0; S.salvarLocal(ac);

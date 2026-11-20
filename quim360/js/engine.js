@@ -15,6 +15,7 @@
       nome: '', fornecedor: '', codigoFornecedor: '',
       assina: { nome: '', registro: '', funcao: '' },
       cpa: { semToxAguda: false, semAmbiental: false, biodegradavel: false, ensaio: '' },
+      estoque: { ativo: false, localId: '', qtdKg: '', desde: '' }, movs: [],
       natureza: '', armazenamento: '', cmr: { justificativa: '', alternativas: '', controles: [], controlesOk: false },
       finalidade: '', aplicacao: '',
       lista: { naLista: null, numero: '' },
@@ -179,7 +180,7 @@
     const itens = (local.itens || []).map((i) => ({ nome: i.nome, arm: armDoItem(i), aprox: !i.classeArm, grupos: i.grupos || [], incompativeis: i.incompativeis || [], origem: 'manual', h: O.GHS.splitCodes(i.h || '', 'H'), qtd: numQtd(i.qtdKg) }));
     (produtos || []).forEach((q) => {
       if (q.id === excluirId) return;
-      if (q.ctx && q.ctx.localId === local.id && ['homologado', 'condicionado'].includes(q.status) && q.armazenamento !== 'granel') {
+      if (q.ctx && q.ctx.localId === local.id && ['homologado', 'condicionado'].includes(q.status) && q.armazenamento !== 'granel' && emEstoque(q)) {
         itens.push({ nome: q.nome, arm: classeArm(q).id, grupos: q.comp.grupos || [], incompativeis: q.comp.incompativeis || [], origem: 'homologado', pid: q.id, h: q.ghs.h || [], qtd: numQtd(q.comp.qtdKg) });
       }
     });
@@ -467,6 +468,40 @@
   }
   function homologados(produtos) { return (produtos || []).filter((x) => ['homologado', 'condicionado'].includes(x.status)); }
 
+  // ---------- Estoque: só o que está armazenado ou em uso agora entra nos cálculos do local; o resto fica no histórico ----------
+  // Produtos anteriores ao controle de estoque (sem o campo) contam como em estoque, para não mudar registros antigos.
+  function emEstoque(p) { return p.estoque ? !!p.estoque.ativo : true; }
+  function estoqueAtivo(produtos) { return homologados(produtos).filter(emEstoque); }
+  const hoje = () => new Date().toISOString().slice(0, 10);
+  function addMov(p, m) { p.movs = p.movs || []; p.movs.push(Object.assign({ id: O.Store.uid('mov'), data: hoje(), resp: '', obs: '' }, m)); }
+  function registrarEntrada(p, d) {
+    const q = numQtd(d.qtdKg);
+    p.estoque = { ativo: true, localId: d.localId, qtdKg: q == null ? '' : q, desde: d.data || hoje() };
+    p.ctx.localId = d.localId; if (q != null) p.comp.qtdKg = q;
+    addMov(p, { tipo: 'entrada', data: d.data || hoje(), localId: d.localId, qtdKg: q == null ? '' : q, resp: d.resp || '', obs: d.obs || '' });
+  }
+  function registrarAjuste(p, d) {
+    const q = numQtd(d.qtdKg); if (q == null) return;
+    const loc = (p.estoque && p.estoque.localId) || p.ctx.localId;
+    p.estoque = Object.assign({ ativo: true, localId: loc, desde: hoje() }, p.estoque, { ativo: true, qtdKg: q }); p.comp.qtdKg = q;
+    addMov(p, { tipo: 'ajuste', data: d.data || hoje(), localId: loc, qtdKg: q, resp: d.resp || '', obs: d.obs || '' });
+  }
+  function registrarSaida(p, d) {
+    const loc = (p.estoque && p.estoque.localId) || p.ctx.localId; const q = p.estoque && p.estoque.qtdKg !== undefined ? p.estoque.qtdKg : p.comp.qtdKg;
+    addMov(p, { tipo: 'saida', data: d.data || hoje(), localId: loc, qtdKg: q === undefined ? '' : q, resp: d.resp || '', obs: d.obs || '' });
+    p.estoque = { ativo: false, localId: loc, qtdKg: '', desde: '' };
+  }
+  // movimentos de entrada, ajuste e saída dos produtos num local, e produtos homologados para o local que não estão em estoque
+  function historicoLocal(local, produtos) {
+    const movs = []; const semEstoque = [];
+    (produtos || []).forEach((q) => {
+      (q.movs || []).forEach((m) => { if (m.localId === local.id) movs.push(Object.assign({ produto: q.nome, pid: q.id }, m)); });
+      if (['homologado', 'condicionado'].includes(q.status) && q.ctx && q.ctx.localId === local.id && q.armazenamento !== 'granel' && !emEstoque(q)) semEstoque.push(q.nome);
+    });
+    movs.sort((a, b) => String(b.data).localeCompare(String(a.data)));
+    return { movs, semEstoque };
+  }
+
   // ---------- Sugestões prontas (hierarquia de controles) ----------
   function sugestoes(p) {
     const h = p.ghs.h || [];
@@ -619,5 +654,5 @@
     return r;
   }
 
-  O.Engine = { analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
+  O.Engine = { emEstoque, estoqueAtivo, registrarEntrada, registrarAjuste, registrarSaida, historicoLocal, analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal };
 })(window.O360 = window.O360 || {});

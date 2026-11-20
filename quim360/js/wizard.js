@@ -447,6 +447,7 @@
       render(p, api) {
         const w = h('div');
         const loc = S.local(p.ctx.localId);
+        w.appendChild(U.alert('', 'Só o que está em estoque agora', 'A verificação de segregação e de quantidades considera apenas os produtos que estão armazenados ou em uso hoje neste local, mais este produto com a quantidade informada. Os produtos da lista ou homologados que não estão em estoque não entram.'));
         w.appendChild(U.q('11.1', 'Conforme as Seções 7 e 10 da FDS, o produto apresenta incompatibilidades químicas declaradas?'));
         w.appendChild(U.radio(p, 'comp.incompDeclaradas', [{ v: true, label: 'Sim', hint: 'Listar e verificar conflito com o que já está no local' }, { v: false, label: 'Não', hint: 'Registrar a ausência' }], { uid: '111', onChange: api.rerender }));
         if (p.fds.analisada) w.appendChild(U.alert('', 'Leitura da FDS', (p.comp.incompativeis || []).length ? 'Incompatibilidades identificadas: ' + p.comp.incompativeis.map(nomeG).join('; ') + '.' : 'Nenhuma incompatibilidade identificada no texto das Seções 7 e 10.'));
