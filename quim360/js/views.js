@@ -82,6 +82,9 @@
       card.appendChild(det);
     });
     card.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, V.docBotoes({ nome: l.nome, id: 'chk' }, { id: 'checklist', nome: 'Checklist NBR 17160', fn: () => D.checklistLocal(l, S.produtos()) }, true)));
+    card.appendChild(h('div', { style: 'margin-top:10px' }, h('b', {}, 'Dossiê de evidência do local'), h('p', { class: 'small', style: 'margin:2px 0 6px' }, 'Documento único com estoque vigente, rastreabilidade da homologação, compatibilidade, risco, checklist, inspeções e ações, com a data da emissão. A versão resumida é para cliente ou órgão e não traz detalhes internos (não conformidades, observações e ações).'),
+      h('div', { class: 'small' }, 'Versão completa (uso interno)'), V.docBotoes({ nome: l.nome, id: 'dos' }, { id: 'dossie', nome: 'Dossiê do local, completo', fn: () => D.dossieLocal(l, S.produtos(), { externo: false }) }, true),
+      h('div', { class: 'small', style: 'margin-top:6px' }, 'Versão resumida (cliente ou órgão)'), V.docBotoes({ nome: l.nome, id: 'dosr' }, { id: 'dossier', nome: 'Dossiê do local, resumido', fn: () => D.dossieLocal(l, S.produtos(), { externo: true }) }, true)));
     card.appendChild(h('div', { style: 'margin-top:10px' }, h('b', {}, 'Lista de inspeção em campo'), h('p', { class: 'small', style: 'margin:2px 0 6px' }, 'Para imprimir e levar à área: itens com caixas de marcar (C, NC, NA), espaço para evidência, conferência de estoque e resultado. Na volta, registre as respostas acima.'),
       V.docBotoes({ nome: l.nome, id: 'insp' }, { id: 'inspecao', nome: 'Lista de inspeção em campo', fn: () => D.listaInspecao(l, S.produtos()) }, true)));
     return card;
@@ -818,6 +821,9 @@
     const dias = S.config().alertaDiasBacia || 30;
     root.appendChild(head('Bacias de contenção', 'Quais produtos a granel estão em cada bacia, para analisar a compatibilidade em caso de vazamento'));
     root.appendChild(U.alert('info', 'Os tanques são multiuso', 'O app não vincula produto a tanque: só guarda quais produtos estão em cada bacia. Mantenha a lista atualizada: a análise de compatibilidade perde valor se ela envelhecer (aviso após ' + dias + ' dias sem confirmação).'));
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Dossiê de evidência do terminal (granel)'), h('p', { class: 'small' }, 'Reúne bacias, produtos, rastreabilidade da homologação, compatibilidade entre todos os produtos do terminal, consultas externas e cenário de vazamento simultâneo. A versão resumida é para cliente ou órgão.'),
+      h('div', { class: 'small' }, 'Versão completa (uso interno)'), V.docBotoes({ nome: 'Terminal', id: 'dos' }, { id: 'dossieT', nome: 'Dossiê do terminal, completo', fn: () => D.dossieTerminal(S.produtos(), { externo: false }) }, true),
+      h('div', { class: 'small', style: 'margin-top:6px' }, 'Versão resumida (cliente ou órgão)'), V.docBotoes({ nome: 'Terminal', id: 'dosr' }, { id: 'dossieTR', nome: 'Dossiê do terminal, resumido', fn: () => D.dossieTerminal(S.produtos(), { externo: true }) }, true)));
     const nome = h('input', { type: 'text', placeholder: 'Nome ou código da bacia (ex.: Bacia 03)' });
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Nova bacia'), h('div', { class: 'row' }, h('div', { style: 'flex:1;min-width:220px' }, nome), h('button', { class: 'btn', onclick: () => { if (!nome.value.trim()) return; S.novaBacia(nome.value.trim()); O.route(); } }, 'Adicionar'))));
     const granel = S.produtos().filter((x) => x.armazenamento === 'granel' && x.status !== 'reprovado' && x.nome);

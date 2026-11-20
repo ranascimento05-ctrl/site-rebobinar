@@ -1049,5 +1049,90 @@
     return B;
   }
 
-  O.Docs = { listaInspecao, planoImplantacao, prontidaoGranel, compatTanque, vencimentos, vencimentosDoc, listaAcoesLocal, emailAcoesLocal, listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  // ---------------------------------------------------------------- Dossiê de evidência (local e terminal), versão interna e versão resumida
+  // Reúne e resume os registros do app, com a data da emissão; cada seção remete ao documento de origem. A versão resumida
+  // (para cliente ou órgão) não traz detalhes internos (não conformidades, observações e ações), mas mostra as contagens.
+  function dossieCapa(titulo, nome, externo, extra) {
+    const hoje = new Date();
+    return capa(titulo, 'QUIM 360 | ' + (externo ? 'Versão resumida, para cliente ou órgão' : 'Versão completa, uso interno') + ' | ' + nome, { nome, dec: { numero: '' }, rotulo: 'Escopo', pseudo: true },
+      [['Situação em', hoje.toLocaleDateString('pt-BR') + ' ' + hoje.toLocaleTimeString('pt-BR').slice(0, 5)], ['Versão do documento', externo ? 'Resumida' : 'Completa']].concat(extra || []));
+  }
+  const NOTA_DOSSIE = 'Este dossiê reflete os registros do aplicativo na data de emissão e remete aos documentos de origem (relatórios de homologação, checklist, análise de risco e análise de compatibilidade). Dados desatualizados são sinalizados. Apoio à decisão: a responsabilidade técnica é do profissional que assina.';
+
+  function dossieLocal(local, produtos, op) {
+    op = op || {}; const ext = !!op.externo; const sg = signer(null); const R = O.RISCO;
+    const g = E.gatilhosLocal(local, produtos); const rq = E.requisitosLocal(local, produtos); const ar = E.analiseRiscoLocal(local, produtos); const au = E.auditoriaLocal(local, produtos);
+    const emEst = g.itens; // produtos homologados com entrada registrada e itens cadastrados à mão no local
+    const acoes = listaAcoesLocal(local, produtos).filter((a) => !(a.reg && a.reg.sit === 'concluida'));
+    const nPares = au.itens.length * (au.itens.length - 1) / 2; const proib = au.pares.filter((x) => x.nivel === 'incompativel').length; const rest = au.pares.length - proib;
+    const B = [dossieCapa('Dossiê de evidência de armazenamento e compatibilidade', local.nome, ext, [['Local', local.nome + ' (' + local.tipo + ')'], ['Produtos em estoque', String(emEst.length)]])];
+    const alertas = [];
+    if (!emEst.length) alertas.push('nenhum produto com entrada registrada neste local');
+    if (rq.vencida) alertas.push('inspeção do armazém vencida');
+    if (rq.semInspecao) alertas.push('nenhuma inspeção registrada');
+    if (rq.cont.aberto) alertas.push(rq.cont.aberto + ' item(ns) do checklist sem resposta');
+    B.push({ t: 'callout', tone: alertas.length || rq.cont.nc ? 'warn' : 'ok', title: 'Resumo da situação', text: emEst.length + ' produto(s) em estoque; ' + nPares + ' par(es) avaliado(s) na segregação (' + proib + ' proibido(s), ' + rest + ' com restrição); checklist: ' + rq.cont.c + ' conforme(s), ' + rq.cont.nc + ' não conforme(s), ' + rq.cont.aberto + ' sem resposta; ' + (ext ? acoes.length + ' ação(ões) em tratamento' : acoes.length + ' ação(ões) aberta(s)') + '.' + (alertas.length ? ' Atenção: ' + alertas.join('; ') + '.' : '') });
+    B.push({ t: 'h1', text: '1 Identificação do local' });
+    B.push({ t: 'kv', rows: [['Local', local.nome], ['Tipo', local.tipo], ['Área do setor', local.areaM2 ? local.areaM2 + ' m²' : 'não informada'], ['Ao ar livre', local.aoArLivre ? 'Sim' : 'Não'], ['Armário de segurança', local.armarioSeg ? 'Sim' : 'Não'], ...(ext ? [] : [['Descrição e contenção', nz(local.descricao)]])] });
+    B.push({ t: 'h1', text: '2 Estoque vigente e rastreabilidade da homologação' });
+    B.push(emEst.length ? { t: 'table', head: ['Produto', 'Registro de homologação', 'Decisão', 'Classe de armazenamento', 'Quantidade', 'Em estoque desde'], widths: [26, 16, 14, 18, 12, 14], rows: emEst.map((i) => { const p = i.pid ? produtos.find((x) => x.id === i.pid) : null; return [i.nome, p ? nz(p.dec.numero, 'sem número') : 'Cadastro manual no local', p ? (STATUS[p.status] || STATUS.em_analise)[0] + (p.dec.data ? ' em ' + fmtData(p.dec.data) : '') : 'Sem relatório de homologação no app', (i.arm || 'não definida') + (i.aprox ? ' (aprox.)' : ''), i.qtd == null ? '—' : i.qtd + ' kg', p && p.estoque && p.estoque.desde ? fmtData(p.estoque.desde) : '—']; }) } : { t: 'p', text: 'Nenhum produto com entrada registrada neste local.' });
+    B.push({ t: 'p', small: true, text: 'Cada produto homologado tem relatório próprio (FDS, triagem, impactos, compatibilidade, decisão e assinatura), disponível sob o número de registro acima. Itens de cadastro manual não passaram pela homologação no app.' });
+    B.push({ t: 'h1', text: '3 Análise de compatibilidade e segregação' });
+    B.push({ t: 'p', text: 'Método: cada par de produtos em estoque é avaliado pela matriz de segregação da ABNT NBR 17160 (armazenamento embalado), pela classe de armazenamento de cada um e pelas incompatibilidades declaradas na Seção 10 das FDS. ' + nPares + ' par(es) avaliado(s) entre ' + au.itens.length + ' produto(s).' });
+    B.push(au.pares.length ? { t: 'table', head: ['Produto A', 'Produto B', 'Resultado', ext ? 'Restrição' : 'Orientação'], widths: [26, 26, 16, 32], rows: au.pares.map((x) => [x.a, x.b, x.nivel === 'incompativel' ? 'Proibido junto' : x.nivel === 'verificar' ? 'Verificar' : 'Com restrição' + (x.codigo ? ' ' + x.codigo : ''), ext ? (x.codigo ? 'Restrição ' + x.codigo + ' da NBR 17160' : 'Reatividade declarada') : nz(x.texto)]) } : { t: 'p', text: 'Todos os pares são permitidos pela matriz e sem reatividade declarada.' });
+    B.push({ t: 'h1', text: '4 Quantidades-limite e contenção' });
+    B.push({ t: 'p', text: 'Massa líquida total: ' + Math.round(g.total).toLocaleString('pt-BR') + ' kg. ' + (g.exige.length ? 'Requisitos que passam a valer neste local: ' + (ext ? g.exige.length + ' (detalhados no inventário do local).' : g.exige.join(' ')) : 'Nenhuma quantidade-limite excedida.') });
+    B.push({ t: 'h1', text: '5 Análise de risco do armazém' });
+    B.push({ t: 'p', text: ar.data ? 'Análise datada de ' + fmtData(ar.data) + (ar.revisao ? ', próxima revisão em ' + fmtData(ar.revisao) : '') + '. ' : 'Data da análise não registrada. ' });
+    B.push({ t: 'p', text: ar.cenarios.length + ' cenário(s): ' + ar.resumo.grave + ' grave(s)' + (ar.resumo.psif ? ' (' + ar.resumo.psif + ' com PSIF na lente de pessoas)' : '') + ', ' + ar.resumo.medio + ' médio(s), ' + ar.resumo.baixo + ' baixo(s), ' + ar.resumo.desprezivel + ' desprezível(is), ' + ar.resumo.semAvaliar + ' sem avaliação.' });
+    if (!ext) B.push({ t: 'table', head: ['Cenário', 'Severidade por lente', 'Probabilidade', 'Risco'], widths: [40, 26, 14, 20], rows: ar.cenarios.map((c) => [c.titulo, (c.risco.dims || []).map((x) => x.curto + ' ' + x.sev).join('; ') || '—', c.prob ? c.prob + ' ' + R.PROB[c.prob - 1][1] : '—', c.risco.v ? c.risco.nome + ' (' + c.risco.v + ', ' + c.risco.det + ')' : 'Não avaliado']) });
+    B.push({ t: 'h1', text: '6 Checklist de requisitos e inspeções' });
+    B.push({ t: 'p', text: 'Checklist da NBR 17160: ' + rq.itens.length + ' requisito(s) aplicável(is): ' + rq.cont.c + ' conforme(s), ' + rq.cont.nc + ' não conforme(s), ' + rq.cont.aberto + ' sem resposta, ' + rq.cont.na + ' não aplicável(is). Intervalo de inspeção: ' + (rq.periodo ? rq.periodo + ' dias' : 'não definido') + (rq.proxima ? '; próxima até ' + fmtData(rq.proxima) + (rq.vencida ? ' (vencida)' : '') : '') + '.' });
+    const nc = rq.itens.filter((i) => i.resp === 'nc');
+    if (!ext && nc.length) B.push({ t: 'table', head: ['Item', 'Requisito não conforme', 'Observação'], widths: [10, 60, 30], rows: nc.map((i) => [i.id, i.texto, i.obs || '—']) });
+    B.push(rq.inspecoes.length ? { t: 'table', head: ['Data', ext ? 'Resultado' : 'Responsável', ext ? 'Itens verificados' : 'Resultado'], widths: [20, 40, 40], rows: rq.inspecoes.slice(-6).map((x) => [fmtData(x.data), ext ? (x.resultado === 'conforme' ? 'Conforme' : 'Com não conformidades') : nz(x.resp), ext ? String(x.lista ? x.lista.length : '—') : (x.resultado === 'conforme' ? 'Conforme' : 'Com não conformidades')]) } : { t: 'p', text: 'Nenhuma inspeção registrada.' });
+    if (!ext) {
+      B.push({ t: 'h1', text: '7 Ações em aberto' });
+      B.push(acoes.length ? { t: 'table', head: ['Ação', 'Origem', 'Responsável', 'Prazo'], widths: [50, 22, 18, 10], rows: acoes.map((a) => [a.acao, a.origem, a.reg && a.reg.resp ? a.reg.resp : a.papel, a.reg && a.reg.prazo ? fmtData(a.reg.prazo) : '—']) } : { t: 'p', text: 'Nenhuma ação em aberto.' });
+    }
+    B.push({ t: 'h1', text: (ext ? '7' : '8') + ' Base técnico-legal' });
+    B.push({ t: 'list', items: T.BASE_LEGAL.map((b) => b.sigla + ': ' + b.titulo) });
+    B.push({ t: 'p', small: true, text: NOTA_DOSSIE });
+    B.push({ t: 'sign', rows: [[sg.nome, sg.funcao], ['Gestor do local', '']] });
+    return B;
+  }
+
+  function dossieTerminal(produtos, op) {
+    op = op || {}; const ext = !!op.externo; const sg = signer(null); const R = O.RISCO; const bacias = O.Store.bacias();
+    const at = E.analiseTerminalGranel(bacias, produtos); const N = E.NIVEL_GRANEL; const dias = O.Store.config().alertaDiasBacia || 30;
+    const desat = bacias.filter((b) => !b.atualizadoEm || (Date.now() - new Date(b.atualizadoEm).getTime()) / 86400000 > dias);
+    const consultas = O.Store.all().consultas || {};
+    const nomeDe = (id) => { const p = produtos.find((x) => x.id === id); return p ? p.nome : '(produto removido)'; };
+    const B = [dossieCapa('Dossiê de evidência de compatibilidade do terminal (granel)', 'Terminal', ext, [['Bacias', String(bacias.length)], ['Produtos a granel nas bacias', String(at.produtos.length)]])];
+    B.push({ t: 'callout', tone: at.resumo.incompativel || desat.length ? 'warn' : (!bacias.length ? 'warn' : 'ok'), title: 'Resumo da situação', text: !bacias.length ? 'Nenhuma bacia cadastrada: a compatibilidade do terminal ainda não foi analisada.' : at.produtos.length + ' produto(s) em ' + bacias.length + ' bacia(s); ' + at.pares.length + ' par(es) analisado(s): ' + at.resumo.incompativel + ' incompatível(is), ' + at.resumo.restricao + ' com restrição, ' + at.resumo.sem_dados + ' sem dados, ' + at.resumo.nada + ' sem incompatibilidade declarada.' + (desat.length ? ' Atenção: lista desatualizada em ' + desat.length + ' bacia(s).' : '') });
+    B.push({ t: 'h1', text: '1 Método e limites' });
+    B.push({ t: 'list', items: ['Tanques multiuso: o produto não é vinculado a um tanque; a análise considera os produtos presentes em cada bacia.', 'Base: incompatibilidades declaradas na Seção 10 das FDS e consulta externa registrada pelo analista (por exemplo, NOAA CAMEO Chemicals), com fonte e data. Não usa a matriz da NBR 17160, que é de armazenamento embalado.', '"Sem incompatibilidade declarada" não prova compatibilidade; pares sem dados exigem consulta.', 'Em divergência entre FDS e consulta, prevalece o resultado mais conservador.'] });
+    B.push({ t: 'h1', text: '2 Bacias e produtos' });
+    B.push(bacias.length ? { t: 'table', head: ['Bacia', 'Produtos a granel', 'Lista confirmada em'], widths: [20, 56, 24], rows: bacias.map((b) => [b.nome, (b.produtos || []).map(nomeDe).join('; ') || '—', b.atualizadoEm ? fmtData(b.atualizadoEm) + (desat.includes(b) ? ' (desatualizada)' : '') : 'nunca confirmada']) } : { t: 'p', text: 'Nenhuma bacia cadastrada.' });
+    B.push({ t: 'h1', text: '3 Rastreabilidade dos produtos a granel' });
+    B.push(at.produtos.length ? { t: 'table', head: ['Produto', 'Registro de homologação', 'Decisão', 'Classe NBR 17505-1', ext ? 'MOC' : 'MOC e exigências do tanque'], widths: [24, 16, 18, 14, 28], rows: at.produtos.map((v) => { const p = v.p; const mu = E.mudancaDe(p); const ex = E.exigenciasTanque(p); const moc = mu.exige === true ? 'Exigido' + (mu.situacao ? ' (' + (E.MOC_SIT.find((x) => x[0] === mu.situacao) || [0, mu.situacao])[1].toLowerCase() + ')' : '') : mu.exige === false ? 'Não exigido' : 'Não avaliado'; const exs = ex.filter((x) => ['nao', 'depende'].includes(x.atende)).length; return [p.nome, nz(p.dec.numero, 'sem número'), (STATUS[p.status] || STATUS.em_analise)[0] + (p.dec.data ? ' em ' + fmtData(p.dec.data) : ''), E.classe17505(p).id || '—', ext ? moc : moc + '; exigências com atenção: ' + exs]; }) } : { t: 'p', text: 'Sem produtos nas bacias.' });
+    B.push({ t: 'h1', text: '4 Compatibilidade entre todos os produtos do terminal' });
+    B.push({ t: 'p', text: at.pares.length + ' par(es) analisado(s). ' + (ext ? 'A tabela lista os pares com incompatibilidade, restrição ou sem dados; os demais constam como sem incompatibilidade declarada.' : '') });
+    const linhas = at.pares.filter((x) => !ext || x.res.nivel !== 'nada');
+    B.push(linhas.length ? { t: 'table', head: ['Produto A', 'Produto B', 'Mesma bacia', 'Resultado', 'Base'], widths: [22, 22, 14, 18, 24], rows: linhas.map((x) => [x.a.nome, x.b.nome, x.mesma ? 'Sim (' + x.bacias.join(', ') + ')' : 'Não', N[x.res.nivel], x.res.consulta ? 'Consulta: ' + nz(x.res.consulta.fonte) + ' em ' + fmtData(x.res.consulta.data) : x.res.decl.length ? 'FDS declara incompatibilidade' : x.res.fds === 'sem_dados' ? 'FDS sem dados suficientes' : 'FDS sem incompatibilidade declarada']) } : { t: 'p', text: 'Nenhum par exige atenção.' });
+    const ks = Object.keys(consultas);
+    B.push({ t: 'h1', text: '5 Consultas externas registradas' });
+    B.push(ks.length ? { t: 'table', head: ext ? ['Par de produtos', 'Resultado', 'Fonte', 'Data'] : ['Par de produtos', 'Resultado', 'Fonte', 'Data', 'Transcrição'], widths: ext ? [40, 28, 18, 14] : [26, 20, 14, 12, 28], rows: ks.map((k) => { const c = consultas[k]; const [a, b] = k.split('|'); const base = [nomeDe(a) + ' e ' + nomeDe(b), (E.RES_CONSULTA.find((r) => r[0] === c.resultado) || [0, c.resultado])[1], nz(c.fonte), fmtData(c.data)]; return ext ? base : base.concat([nz(c.obs)]); }) } : { t: 'p', text: 'Nenhuma consulta externa registrada.' });
+    B.push({ t: 'h1', text: '6 Cenário de vazamento simultâneo de mais de um tanque' });
+    B.push({ t: 'p', text: R.CENARIO_TANQUE.consequencias });
+    B.push(at.produtos.length ? { t: 'table', head: ['Produto', 'Nível de risco avaliado'], widths: [50, 50], rows: at.produtos.map((v) => { const nv = R.nivelCenario(E.tanqueDe(v.p).cenario); return [v.p.nome, nv.v ? nv.nome + (ext ? '' : ' (' + nv.v + ', lente ' + nv.det + ')') : 'Não avaliado']; }) } : { t: 'p', text: '—' });
+    if (!ext) { B.push({ t: 'p', bold: true, text: 'Medidas de controle do cenário' }); B.push({ t: 'list', items: R.CENARIO_TANQUE.medidas }); }
+    B.push({ t: 'h1', text: '7 Base técnico-legal' });
+    B.push({ t: 'list', items: T.BASE_LEGAL.map((b) => b.sigla + ': ' + b.titulo).concat(T.FONTES_CONSULTA.map((b) => b.sigla + ': ' + b.titulo + ' (consulta externa)')) });
+    B.push({ t: 'p', small: true, text: NOTA_DOSSIE });
+    B.push({ t: 'sign', rows: [[sg.nome, sg.funcao], ['Gestor do terminal', '']] });
+    return B;
+  }
+
+  O.Docs = { dossieLocal, dossieTerminal, listaInspecao, planoImplantacao, prontidaoGranel, compatTanque, vencimentos, vencimentosDoc, listaAcoesLocal, emailAcoesLocal, listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

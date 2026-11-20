@@ -652,6 +652,18 @@
     }
     return { nivel, fds, decl, consulta: c, diverge };
   }
+  // terminal inteiro: todos os pares de produtos a granel que constam nas bacias (para o dossiê)
+  function analiseTerminalGranel(bacias, produtos) {
+    const reg = {};
+    (bacias || []).forEach((b) => (b.produtos || []).forEach((id) => { const p = (produtos || []).find((x) => x.id === id); if (p) (reg[id] = reg[id] || { p, bacias: [] }).bacias.push(b.nome); }));
+    const lista = Object.values(reg); const pares = []; const resumo = { incompativel: 0, restricao: 0, sem_dados: 0, nada: 0 };
+    for (let i = 0; i < lista.length; i++) for (let j = i + 1; j < lista.length; j++) {
+      const res = compatGranel(lista[i].p, lista[j].p); const comuns = lista[i].bacias.filter((x) => lista[j].bacias.includes(x));
+      pares.push({ a: lista[i].p, b: lista[j].p, mesma: comuns.length > 0, bacias: comuns, res }); resumo[res.nivel]++;
+    }
+    pares.sort((x, y) => ORD_GRANEL[y.res.nivel] - ORD_GRANEL[x.res.nivel] || (y.mesma ? 1 : 0) - (x.mesma ? 1 : 0));
+    return { produtos: lista, pares, resumo };
+  }
   function analiseTanque(p, bacias, produtos) {
     const dias = O.Store.config().alertaDiasBacia || 30;
     const out = { bacias: [], terminal: [], resumo: { incompativel: 0, restricao: 0, sem_dados: 0, nada: 0 }, semBacias: !(bacias || []).length, desatualizadas: [] };
@@ -777,5 +789,5 @@
     return r;
   }
 
-  O.Engine = { emEstoque, estoqueAtivo, registrarEntrada, registrarAjuste, registrarSaida, historicoLocal, analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal, RES_CONSULTA, NIVEL_GRANEL, compatGranel, analiseTanque, MOC_SIT, ATENDE, tanqueDe, classe17505, exigenciasTanque, mudancaDe, mudancaSugestao, substituidoPor };
+  O.Engine = { emEstoque, estoqueAtivo, registrarEntrada, registrarAjuste, registrarSaida, historicoLocal, analiseRiscoLocal, alternativas, requisitosLocal, gatilhoCMR, contencaoLocal, cpaProduto, volumeAgua, gatilhosLocal, itensDoLocal, gruposCompativeis, novoProduto, ehCarga, rejeitaAuto, cmrCarga, triagem, nr20, combustivel, classeArm, armDoItem, avaliaPar, compatibilidade, compatPar, NIVEL, homologados, sugestoes, gruposSugeridos, divergencias, auditoriaLocal, simplificadaVigente, criteriosSimOk, idadeFds, avaliar, classesDoProduto, itensDoLocal, RES_CONSULTA, NIVEL_GRANEL, compatGranel, analiseTanque, analiseTerminalGranel, MOC_SIT, ATENDE, tanqueDe, classe17505, exigenciasTanque, mudancaDe, mudancaSugestao, substituidoPor };
 })(window.O360 = window.O360 || {});
