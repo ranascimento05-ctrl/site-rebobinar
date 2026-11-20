@@ -504,9 +504,11 @@
           const tab = h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Perigo', 'Limite fora de armazém', 'Acima do limite'].map((x) => h('th', {}, x)))), h('tbody', {}, lims.map((l) => h('tr', {}, h('td', {}, l.rotulo), h('td', {}, l.limite), h('td', {}, l.acima)))));
           w.appendChild(h('div', { class: 'sug' }, h('h4', {}, 'Quantidades-limite da NBR 17160 (Tabela 1)'), h('p', { class: 'small' }, 'Quantidade agregada permitida fora de armazéns e seções da norma que passam a valer acima do limite.'), tab, h('p', { class: 'small' }, 'Também vale: ' + O.NBR17160.LIMITE_GERAL.rotulo + ', ' + O.NBR17160.LIMITE_GERAL.limite + '.')));
         }
+        w.appendChild(U.q('', 'Este produto já está no terminal agora?'));
+        w.appendChild(U.radio(p, 'estoqueAgora', [{ v: true, label: 'Sim, já está no terminal', hint: 'Informe abaixo a quantidade que está lá. Ao homologar, o app registra a entrada no estoque do local e passa a considerá-lo nos cálculos.' }, { v: false, label: 'Não, ainda não', hint: 'Só homologa. O produto não entra nos cálculos do local até você registrar a entrada (página do produto).' }], { onChange: api.rerender }));
         const boxQ = h('div');
         const drawQ = () => { boxQ.innerHTML = ''; if (loc && p.comp.qtdKg !== '' && p.comp.qtdKg != null) boxQ.appendChild(O.Views.gatilhos(E.gatilhosLocal(loc, S.produtos(), p), 'Quantidades-limite em ' + loc.nome)); };
-        w.appendChild(U.input(p, 'comp.qtdKg', { type: 'number', label: 'Quantidade a armazenar no local (kg; gases em L)', hint: 'Massa líquida. Inflamáveis: volume nominal da embalagem (6.2.8). Com ela, o app soma o que já está no local e aponta as seções da NBR 17160 que passam a valer.', onInput: drawQ }));
+        w.appendChild(U.input(p, 'comp.qtdKg', { type: 'number', label: (p.estoqueAgora === true ? 'Quantidade que está no terminal' : 'Quantidade a armazenar no local') + ' (kg; gases em L)', hint: 'Massa líquida. Inflamáveis: volume nominal da embalagem (6.2.8). Com ela, o app soma o que já está no local e aponta as seções da NBR 17160 que passam a valer.', onInput: drawQ }));
         drawQ(); w.appendChild(boxQ);
         const boxC = h('div'); const drawC = () => { boxC.innerHTML = ''; if (loc) boxC.appendChild(O.Views.contencao(loc, p)); };
         if (loc) {
@@ -537,6 +539,8 @@
         if (p.comp.localOk === 'sim' && p.comp._motor === 'conflito' && !p.comp.observacoes.trim()) e.push('Justifique a divergência em relação ao motor de segregação.');
         if (p.comp.localOk === 'insuficiente') e.push('Informação insuficiente: registre a pendência e solicite complemento ao fornecedor.');
         if (!(p.comp.controles || []).length) e.push('Responda 11.3 (marque "Nenhum controle adicional" se for o caso).');
+        if (p.estoqueAgora === true && p.armazenamento !== 'granel' && (p.comp.qtdKg === '' || p.comp.qtdKg == null)) e.push('Informe a quantidade que está no terminal (ou marque que o produto ainda não está lá).');
+        if (p.estoqueAgora === true && p.armazenamento !== 'granel' && !p.ctx.localId) e.push('Escolha o local de armazenamento (etapa "Onde será usado e armazenado") para registrar o estoque.');
         return e;
       },
     },
@@ -572,6 +576,7 @@
           h('table', { class: 't' }, h('tbody', {}, autoIds.map((x) => h('tr', {}, h('td', {}, TITLES[x][0].replace(/^\d+ /, '')), h('td', {}, O.Auto.resumo(p, x)), h('td', {}, h('button', { class: 'btn sm ghost', onclick: () => api.ir(x) }, 'Revisar'))))))));
         const opts = [{ v: 'sim', label: av.sugestao === 'condicionado' ? 'Sim, com condicionantes' : 'Sim, homologar', hint: 'Gera relatório, cadastro e QR Code' }, { v: 'nao', label: 'Não homologar', hint: 'Informar justificativa técnica ou legal' }, { v: 'pendente', label: 'Manter pendente', hint: 'Aguardar fornecedor ou parecer' }];
         w.appendChild(U.radio(p, 'dec.valor', opts, { onChange: api.rerender }));
+        if (p.armazenamento !== 'granel') w.appendChild(h('p', { class: 'small' }, p.estoqueAgora === true ? 'Estoque: ao homologar, o app registra a entrada de ' + String(p.comp.qtdKg === '' || p.comp.qtdKg == null ? '(quantidade não informada)' : p.comp.qtdKg) + ' kg em ' + ((S.local(p.ctx.localId) || {}).nome || 'local não definido') + ' e passa a considerá-lo nos cálculos do local.' : 'Estoque: o produto não entra nos cálculos do local até você registrar a entrada (página do produto, cartão Estoque no terminal).'));
         { const alt = O.Views.alternativasCard(p, false); if (alt) w.appendChild(alt); }
         if (p.dec.valor === 'sim' && (av.reprovacoes.length || av.pendencias.length || (av.gatilhos || []).length)) w.appendChild(U.alert('warn', 'Decisão do responsável técnico', 'O app sinaliza ' + (av.gatilhos || []).concat(av.reprovacoes, av.pendencias).length + ' ponto(s) que normalmente impediriam a homologação, mas não bloqueia. Registre abaixo a justificativa técnica e as condições. Os pontos em aberto viram condicionantes e ações do plano.'));
         if (p.dec.valor === 'nao' && !p.dec.justificativa) { p.dec.justificativa = av.reprovacoes.join(' '); }
@@ -594,6 +599,11 @@
           const abertos = (av.gatilhos || []).concat(av.reprovacoes, av.pendencias);
           p.dec.sobrepoe = abertos;
           p.status = (av.sugestao === 'condicionado' || av.pendencias.length || av.reprovacoes.length || (av.gatilhos || []).length) ? 'condicionado' : 'homologado';
+        }
+        // estoque informado na etapa 11: o app adota a quantidade que está no terminal
+        if (['homologado', 'condicionado'].includes(p.status) && p.estoqueAgora === true && p.armazenamento !== 'granel' && p.ctx.localId && p.comp.qtdKg !== '' && p.comp.qtdKg != null) {
+          if (!E.emEstoque(p)) E.registrarEntrada(p, { localId: p.ctx.localId, qtdKg: p.comp.qtdKg, resp: D.signer(p).nome, obs: 'Registrado na homologação' });
+          else if (Number(p.estoque.qtdKg) !== Number(p.comp.qtdKg)) E.registrarAjuste(p, { qtdKg: p.comp.qtdKg, resp: D.signer(p).nome, obs: 'Ajustado na homologação' });
         }
         p.dec.data = new Date().toISOString();
         if (['homologado', 'condicionado'].includes(p.status) && !p.dec.numero) p.dec.numero = S.proximoNumero();

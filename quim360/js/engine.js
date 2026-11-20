@@ -15,7 +15,7 @@
       nome: '', fornecedor: '', codigoFornecedor: '',
       assina: { nome: '', registro: '', funcao: '' },
       cpa: { semToxAguda: false, semAmbiental: false, biodegradavel: false, ensaio: '' },
-      estoque: { ativo: false, localId: '', qtdKg: '', desde: '' }, movs: [],
+      estoque: { ativo: false, localId: '', qtdKg: '', desde: '' }, movs: [], estoqueAgora: null,
       natureza: '', armazenamento: '', cmr: { justificativa: '', alternativas: '', controles: [], controlesOk: false },
       finalidade: '', aplicacao: '',
       lista: { naLista: null, numero: '' },
@@ -469,8 +469,8 @@
   function homologados(produtos) { return (produtos || []).filter((x) => ['homologado', 'condicionado'].includes(x.status)); }
 
   // ---------- Estoque: só o que está armazenado ou em uso agora entra nos cálculos do local; o resto fica no histórico ----------
-  // Produtos anteriores ao controle de estoque (sem o campo) contam como em estoque, para não mudar registros antigos.
-  function emEstoque(p) { return p.estoque ? !!p.estoque.ativo : true; }
+  // Regra estrita: só conta o que teve entrada registrada. Produto sem o campo (registro antigo) não está em estoque.
+  function emEstoque(p) { return !!(p.estoque && p.estoque.ativo); }
   function estoqueAtivo(produtos) { return homologados(produtos).filter(emEstoque); }
   const hoje = () => new Date().toISOString().slice(0, 10);
   function addMov(p, m) { p.movs = p.movs || []; p.movs.push(Object.assign({ id: O.Store.uid('mov'), data: hoje(), resp: '', obs: '' }, m)); }

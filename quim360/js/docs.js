@@ -448,6 +448,34 @@
   }
   function D_STATUS(p) { return STATUS[p.status] || STATUS.em_analise; }
 
+  // ações de um local: não conformidades do checklist, inspeção que falta ou venceu e pendências de inspeção
+  function listaAcoesLocal(local, produtos) {
+    const rq = E.requisitosLocal(local, produtos); const A = []; const reg = local.acoesPlano || {};
+    const add = (acao, origem, papel) => { if (!A.some((x) => x.acao === acao)) { const o = reg[acao] || {}; A.push({ n: String(A.length + 1), acao, origem, papel, prazoTexto: '', reg: o, linha: [String(A.length + 1), acao, origem, o.resp ? o.resp + ' (' + papel + ')' : papel, o.prazo ? fmtData(o.prazo) : '', o.sit ? SIT_ACAO[o.sit] || 'A fazer' : 'A fazer'] }); } };
+    rq.itens.filter((i) => i.resp === 'nc').forEach((i) => add('Corrigir o requisito ' + i.id + ' da NBR 17160: ' + i.texto.split(/;|\. /)[0].replace(/\.$/, '') + (i.obs ? ' (' + i.obs + ')' : ''), 'NBR 17160 | ' + i.id + ' | Checklist do local', 'Gestor do local'));
+    if (rq.semInspecao) add('Realizar e registrar a inspeção do armazém antes da primeira utilização', 'NBR 17160 | 6.3.9.1', 'Gestor do local');
+    else if (rq.vencida) add('Realizar a inspeção do armazém, vencida desde ' + fmtData(rq.proxima), 'NBR 17160 | 6.3.9', 'Gestor do local');
+    (local.inspecoes || []).filter((x) => x.resultado === 'pendencias').forEach((x) => add('Resolver a pendência da inspeção de ' + fmtData(x.data) + ': ' + nz(x.obs, 'sem descrição'), 'Inspeção de ' + fmtData(x.data) + ' | ' + nz(x.resp, 'responsável não informado'), 'Gestor do local'));
+    return A;
+  }
+  function emailAcoesLocal(local, produtos, acoes, destino) {
+    const sg = signer(null); const c = cfg(); const g = E.gatilhosLocal(local, produtos); const fm = (n) => String(Math.round(n * 100) / 100).replace('.', ',');
+    const L = [];
+    L.push('Olá' + (destino && destino.nome ? ', ' + destino.nome : '') + ','); L.push('');
+    L.push('Solicito a sua ação referente ao local de armazenamento abaixo.'); L.push('');
+    L.push('LOCAL DE ARMAZENAMENTO');
+    L.push(local.nome + ' (' + local.tipo + ')' + (local.areaM2 ? ', ' + local.areaM2 + ' m²' : '') + (local.aoArLivre ? ', ao ar livre' : '') + (local.armarioSeg ? ', armário de segurança' : ''));
+    if (local.descricao) L.push('Descrição: ' + local.descricao);
+    L.push(''); L.push('PRODUTOS EM ESTOQUE AGORA');
+    if (g.itens.length) g.itens.forEach((i) => L.push('- ' + i.nome + (i.arm ? ' (classe de armazenamento ' + i.arm + ')' : '') + (i.qtd != null ? ': ' + fm(i.qtd) + ' kg' : ': quantidade não informada'))); else L.push('Nenhum produto em estoque registrado.');
+    L.push(''); L.push('AÇÃO SOLICITADA');
+    acoes.forEach((a, i) => { L.push((i + 1) + '. ' + a.acao); L.push('   Origem: ' + a.origem + (a.linha[4] ? ' | Prazo: ' + a.linha[4] : '')); if (a.reg && a.reg.obs) L.push('   Observação: ' + a.reg.obs); });
+    L.push(''); L.push('Ao concluir, responda este e-mail informando a conclusão e anexe a evidência, se houver (foto, registro ou documento).'); L.push('');
+    L.push('Atenciosamente,'); L.push(sg.nome || '[nome]'); L.push(sg.funcao + (sg.registro ? ' | ' + sg.registro : '')); if (c.organizacao) L.push(c.organizacao);
+    return { para: (destino && destino.email) || '', assunto: '[QUIM 360] Ação solicitada | ' + local.nome, corpo: L.join('\n') };
+  }
+
+
   // e-mail de solicitação de ação ao responsável: descrição do produto, local de armazenamento e ações pedidas
   function emailAcoes(p, produtos, acoes, destino) {
     const G = O.GHS; const loc = localDe(p); const sg = signer(p); const c = cfg();
@@ -787,5 +815,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { listaAcoesLocal, emailAcoesLocal, listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

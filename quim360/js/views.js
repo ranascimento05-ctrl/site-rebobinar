@@ -353,11 +353,11 @@
     const c = h('div', { class: 'card' }, h('h3', {}, 'Estoque no terminal ', U.disc('PSM')),
       h('p', { class: 'small' }, 'Só o que está armazenado ou em uso agora entra nos cálculos do local (segregação, quantidades-limite, checklist, análise de risco). Homologar não coloca o produto em estoque: registre a entrada quando ele chegar e a saída quando sair. Todos os movimentos ficam no histórico.'));
     if (!ok) { c.appendChild(h('p', { class: 'muted' }, 'Disponível depois da homologação.')); return c; }
-    const ativo = E.emEstoque(p); const legado = !p.estoque;
+    const ativo = E.emEstoque(p);
     const loc = S.local((p.estoque && p.estoque.localId) || p.ctx.localId);
     const hoje = new Date().toISOString().slice(0, 10);
     const f = { localId: (loc && loc.id) || p.ctx.localId || '', qtdKg: p.comp.qtdKg === undefined ? '' : p.comp.qtdKg, data: hoje, resp: D.signer(p).nome, obs: '' };
-    c.appendChild(h('div', { class: 'row' }, ativo ? U.badge('ok', 'Em estoque' + (loc ? ' em ' + loc.nome : '')) : U.badge('info', 'Sem estoque agora'), p.estoque && p.estoque.qtdKg !== '' && ativo ? h('span', { class: 'small' }, String(p.estoque.qtdKg).replace('.', ',') + ' kg' + (p.estoque.desde ? ' desde ' + D.fmtData(p.estoque.desde) : '')) : null, legado ? h('span', { class: 'small' }, '(registro anterior ao controle de estoque: considerado em estoque)') : null));
+    c.appendChild(h('div', { class: 'row' }, ativo ? U.badge('ok', 'Em estoque' + (loc ? ' em ' + loc.nome : '')) : U.badge('info', 'Sem estoque agora'), p.estoque && p.estoque.qtdKg !== '' && ativo ? h('span', { class: 'small' }, String(p.estoque.qtdKg).replace('.', ',') + ' kg' + (p.estoque.desde ? ' desde ' + D.fmtData(p.estoque.desde) : '')) : null));
     const det = h('details', ativo ? {} : { open: true }, h('summary', { style: 'cursor:pointer;font-weight:600;padding:6px 0' }, ativo ? 'Registrar ajuste de quantidade ou saída' : 'Registrar entrada'),
       h('div', { class: 'grid g2' }, U.select(f, 'localId', S.locais().map((l) => [l.id, l.nome + ' (' + l.tipo + ')']), { label: 'Local', empty: 'Selecione o local' }), U.input(f, 'qtdKg', { type: 'number', label: 'Quantidade (kg; gases em L)' })),
       h('div', { class: 'grid g2' }, U.input(f, 'data', { type: 'date', label: 'Data' }), U.input(f, 'resp', { label: 'Responsável pelo registro' })), U.input(f, 'obs', { rows: 2, label: 'Observações (lote, nota fiscal, motivo)' }));
@@ -384,35 +384,34 @@
     return d;
   };
 
-  // ------------------------------------------------------------ plano de ação: responsáveis e envio por e-mail
-  V.acoesCard = (p) => {
-    p.acoesPlano = p.acoesPlano || {};
-    const prods = S.produtos(); const info = D.listaAcoes(p, prods); const acoes = info.acoes;
+  // ------------------------------------------------------------ ações: responsáveis e envio por e-mail (produto e local)
+  // c: { titulo, intro, reg (mapa ação -> dados), acoes, email(sel, destino) -> {para, assunto, corpo}, salva() }
+  V.painelAcoes = (c) => {
+    const reg = c.reg; const acoes = c.acoes;
     const SIT = [['fazer', 'A fazer'], ['enviada', 'Enviada'], ['andamento', 'Em andamento'], ['concluida', 'Concluída']];
     const contatos = () => S.config().contatos || [];
-    const salva = () => U.salvarJa(p);
-    const card = h('div', { class: 'card' }, h('h3', {}, 'Plano de ação: responsáveis e envio '), h('p', { class: 'small' }, 'As ações vêm das etapas da análise. Informe o responsável e o e-mail de cada ação (pode ser mais de um e-mail, separados por ponto e vírgula) e envie o pedido: o app abre o seu programa de e-mail com o texto pronto, com o produto, o local de armazenamento e a ação solicitada. O envio é feito por você; o app registra quando o e-mail foi aberto.'));
-    if (!acoes.length) { card.appendChild(h('p', { class: 'muted' }, 'Nenhuma ação gerada para este produto ainda.')); return card; }
-    const dl = h('datalist', { id: 'dl-contatos' }, contatos().map((c) => h('option', { value: c.nome })));
-    card.appendChild(dl);
+    const salva = c.salva;
+    const card = h('div', { class: 'card' }, h('h3', {}, c.titulo), h('p', { class: 'small' }, c.intro));
+    if (!acoes.length) { card.appendChild(h('p', { class: 'muted' }, 'Nenhuma ação gerada ainda.')); return card; }
+    card.appendChild(h('datalist', { id: 'dl-contatos' }, contatos().map((x) => h('option', { value: x.nome }))));
     const lista = (e) => String(e || '').split(/[;,\s]+/).filter((x) => /@/.test(x));
-    const guardaContato = (nome, email) => { if (!nome || !email) return; const cs = contatos().slice(); const i = cs.findIndex((c) => c.nome.toLowerCase() === nome.toLowerCase()); if (i >= 0) cs[i] = { nome: cs[i].nome, email }; else cs.push({ nome, email }); S.setConfig({ contatos: cs }); };
-    const montar = (sel, nome, email) => D.emailAcoes(p, prods, sel, { nome, email: lista(email).join(',') });
+    const guardaContato = (nome, email) => { if (!nome || !email) return; const cs = contatos().slice(); const i = cs.findIndex((x) => x.nome.toLowerCase() === nome.toLowerCase()); if (i >= 0) cs[i] = { nome: cs[i].nome, email }; else cs.push({ nome, email }); S.setConfig({ contatos: cs }); };
+    const montar = (sel, nome, email) => c.email(sel, { nome, email: lista(email).join(',') });
     const abrir = (sel, nome, email) => {
       if (!lista(email).length) { U.toast('Informe o e-mail do responsável.'); return; }
       const em = montar(sel, nome, email); const url = 'mailto:' + em.para + '?subject=' + encodeURIComponent(em.assunto) + '&body=' + encodeURIComponent(em.corpo);
       const agora = new Date().toISOString();
-      sel.forEach((a) => { const r = p.acoesPlano[a.acao] = p.acoesPlano[a.acao] || {}; r.enviados = (r.enviados || []).concat([{ data: agora, para: em.para }]); if (!r.sit || r.sit === 'fazer') r.sit = 'enviada'; });
+      sel.forEach((a) => { const r = reg[a.acao] = reg[a.acao] || {}; r.enviados = (r.enviados || []).concat([{ data: agora, para: em.para }]); if (!r.sit || r.sit === 'fazer') r.sit = 'enviada'; });
       guardaContato(nome, email); salva();
       if (url.length > 1900) U.toast('Texto longo: se o e-mail abrir incompleto, use "Copiar e-mail".');
       location.href = url; setTimeout(() => O.route(), 400);
     };
     const copiar = (sel, nome, email) => { const em = montar(sel, nome, email); U.copiar('Para: ' + em.para + '\nAssunto: ' + em.assunto + '\n\n' + em.corpo); };
     const linhas = acoes.map((a) => {
-      const r = p.acoesPlano[a.acao] = p.acoesPlano[a.acao] || {};
+      const r = reg[a.acao] = reg[a.acao] || {};
       const nome = h('input', { type: 'text', value: r.resp || '', placeholder: a.papel || 'Responsável', list: 'dl-contatos', style: 'min-width:150px' });
       const mail = h('input', { type: 'text', value: r.email || '', placeholder: 'e-mail (;)', style: 'min-width:210px' });
-      nome.addEventListener('input', () => { r.resp = nome.value; const c = contatos().find((x) => x.nome.toLowerCase() === nome.value.trim().toLowerCase()); if (c && !mail.value) { mail.value = c.email; r.email = c.email; } salva(); });
+      nome.addEventListener('input', () => { r.resp = nome.value; const x = contatos().find((k) => k.nome.toLowerCase() === nome.value.trim().toLowerCase()); if (x && !mail.value) { mail.value = x.email; r.email = x.email; } salva(); });
       mail.addEventListener('input', () => { r.email = mail.value; salva(); });
       const prazo = h('input', { type: 'date', value: r.prazo || '', style: 'min-width:150px' }); prazo.addEventListener('input', () => { r.prazo = prazo.value; salva(); });
       const sit = h('select', { style: 'min-width:130px' }, SIT.map((s) => h('option', { value: s[0], ...((r.sit || 'fazer') === s[0] ? { selected: true } : {}) }, s[1]))); sit.addEventListener('change', () => { r.sit = sit.value; salva(); });
@@ -424,15 +423,28 @@
     card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Ação', 'Responsável', 'E-mail', 'Prazo', 'Situação', ''].map((x) => h('th', {}, x)))), h('tbody', {}, linhas))));
     // envio agrupado por responsável: uma mensagem por e-mail, com todas as ações dele
     const grupos = {};
-    acoes.forEach((a) => { const r = p.acoesPlano[a.acao] || {}; const em = lista(r.email).join(','); if (!em || r.sit === 'concluida') return; (grupos[em] = grupos[em] || { nome: r.resp || '', email: r.email, acoes: [] }).acoes.push(a); });
+    acoes.forEach((a) => { const r = reg[a.acao] || {}; const em = lista(r.email).join(','); if (!em || r.sit === 'concluida') return; (grupos[em] = grupos[em] || { nome: r.resp || '', email: r.email, acoes: [] }).acoes.push(a); });
     const ks = Object.keys(grupos);
     if (ks.length) {
       const g = h('div', { style: 'margin-top:12px' }, h('h4', {}, 'Enviar por responsável (uma mensagem com todas as ações de cada um)'));
       ks.forEach((k) => { const x = grupos[k]; g.appendChild(h('div', { class: 'row', style: 'margin:6px 0' }, h('span', {}, (x.nome || x.email) + ': ' + x.acoes.length + ' ação(ões)'), h('span', { class: 'spacer' }), h('button', { class: 'btn sm', onclick: () => abrir(x.acoes, x.nome, x.email) }, 'Abrir e-mail'), h('button', { class: 'btn sm ghost', onclick: () => copiar(x.acoes, x.nome, x.email) }, 'Copiar e-mail'))); });
       card.appendChild(g);
     }
-    card.appendChild(h('p', { class: 'small', style: 'margin-top:8px' }, 'O responsável, o prazo e a situação aparecem no documento "Plano de ação" (Word e PDF). Os nomes e e-mails usados ficam salvos como contatos para as próximas ações.'));
+    card.appendChild(h('p', { class: 'small', style: 'margin-top:8px' }, c.rodape || 'Os nomes e e-mails usados ficam salvos como contatos para as próximas ações.'));
     return card;
+  };
+  V.acoesCard = (p) => {
+    p.acoesPlano = p.acoesPlano || {};
+    const prods = S.produtos(); const info = D.listaAcoes(p, prods);
+    return V.painelAcoes({ titulo: 'Plano de ação: responsáveis e envio ', intro: 'As ações vêm das etapas da análise. Informe o responsável e o e-mail de cada ação (pode ser mais de um e-mail, separados por ponto e vírgula) e envie o pedido: o app abre o seu programa de e-mail com o texto pronto, com o produto, o local de armazenamento e a ação solicitada. O envio é feito por você; o app registra quando o e-mail foi aberto.',
+      reg: p.acoesPlano, acoes: info.acoes, email: (sel, dest) => D.emailAcoes(p, prods, sel, dest), salva: () => U.salvarJa(p), rodape: 'O responsável, o prazo e a situação aparecem no documento "Plano de ação" (Word e PDF). Os nomes e e-mails usados ficam salvos como contatos para as próximas ações.' });
+  };
+  // ações do local: não conformidades do checklist e inspeções
+  V.acoesLocalCard = (l) => {
+    l.acoesPlano = l.acoesPlano || {};
+    const prods = S.produtos(); const acoes = D.listaAcoesLocal(l, prods);
+    return V.painelAcoes({ titulo: 'Ações do local: não conformidades e inspeções ', intro: 'Reúne o que ficou não conforme no checklist da NBR 17160, a inspeção que falta ou venceu e as pendências das inspeções. Informe o responsável e o e-mail e envie o pedido, com a descrição do local e do que está em estoque nele.',
+      reg: l.acoesPlano, acoes, email: (sel, dest) => D.emailAcoesLocal(l, prods, sel, dest), salva: () => S.salvarLocal(l) });
   };
 
   // ------------------------------------------------------------ catálogo de documentos
@@ -815,7 +827,7 @@
         card.appendChild(h('div', { class: 'row', style: 'margin-bottom:8px' }, V.docBotoes(ps0, { id: 'inventario', nome: 'Inventário de produtos perigosos', fn: () => D.inventarioLocal(l, S.produtos()) }, true)));
         card.appendChild(V.gatilhos(gat, 'Situação do local'));
         card.appendChild(V.contencao(l));
-        card.appendChild(V.historicoLocal(l)); card.appendChild(V.riscoCard(l)); card.appendChild(V.checklistCard(l)); card.appendChild(V.inspecaoCard(l));
+        card.appendChild(V.historicoLocal(l)); card.appendChild(V.riscoCard(l)); card.appendChild(V.checklistCard(l)); card.appendChild(V.inspecaoCard(l)); card.appendChild(V.acoesLocalCard(l));
       } else card.appendChild(h('p', { class: 'muted' }, 'Cadastre itens ou vincule produtos homologados ao local para montar o inventário.'));
       root.appendChild(card);
     });
