@@ -369,7 +369,7 @@
     const loc = localDe(p);
     const lim = cfg().anosValidadeFDS;
     const linhas = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
-    const A = [];
+    const A = []; const DET = {};
     const add = (acao, origem, resp, prazo, sit) => { if (acao && !A.some((x) => x[1] === acao)) A.push([String(A.length + 1), acao, origem, resp || '', prazo || '', sit || 'A fazer']); };
     const st = D_STATUS(p);
     if (p.status === 'reprovado') {
@@ -413,6 +413,7 @@
       }
       if (loc && p.armazenamento !== 'granel') {
         if (!E.emEstoque(p)) add('Registrar a entrada do produto no estoque de ' + loc.nome + ' (data e quantidade) quando ele chegar: só o que está em estoque entra nos cálculos do local', 'Controle de estoque', 'Gestor do local', 'Na chegada do produto');
+        E.analiseRiscoLocal(loc, produtos, p).cenarios.filter((c) => c.risco.v >= 10).sort((x, y) => y.risco.v - x.risco.v).forEach((c) => { const ac = 'Reduzir o risco do cenário "' + c.titulo + '" em ' + loc.nome + ' (risco ' + c.risco.nome.toLowerCase() + ', ' + c.risco.v + ')'; add(ac, 'Análise de risco do armazém | severidade ' + c.sev + ', probabilidade ' + c.prob, 'Gestor do local', 'Antes do primeiro recebimento'); DET[ac] = c.medidas.concat(c.obs ? ['Observação: ' + c.obs] : []); });
         const rq = E.requisitosLocal(loc, produtos, p);
         rq.itens.filter((i) => i.resp === 'nc').forEach((i) => add('Local ' + loc.nome + ', item ' + i.id + ': ' + i.texto.split(/;|:/)[0] + (i.obs ? ' (' + i.obs + ')' : ''), 'NBR 17160 | ' + i.id, 'Gestor do local / Engenharia', 'Antes do primeiro recebimento'));
         if (rq.cont.aberto) add('Concluir o checklist da NBR 17160 de ' + loc.nome + ': ' + rq.cont.aberto + ' requisito(s) sem resposta', 'NBR 17160 | Checklist do local', 'Responsável técnico', 'Antes do primeiro recebimento');
@@ -432,7 +433,7 @@
     }
     if (p.status === 'pendente' || (!A.length && p.status === 'em_analise')) add('Registrar o retorno do fornecedor ou do parecer e retomar a análise na etapa pendente', 'Pendência da análise', 'Responsável técnico', '', 'Pendente');
     const reg = p.acoesPlano || {};
-    const acoes = A.map((r) => { const o = reg[r[1]] || {}; const papel = r[3]; const resp = o.resp ? o.resp + (papel ? ' (' + papel + ')' : '') : papel; const prazo = o.prazo ? fmtData(o.prazo) : r[4]; const sit = o.sit ? SIT_ACAO[o.sit] || r[5] : r[5]; return { n: r[0], acao: r[1], origem: r[2], papel, prazoTexto: r[4], sitTexto: r[5], reg: o, linha: [r[0], r[1], r[2], resp, prazo, sit] }; });
+    const acoes = A.map((r) => { const o = reg[r[1]] || {}; const papel = r[3]; const resp = o.resp ? o.resp + (papel ? ' (' + papel + ')' : '') : papel; const prazo = o.prazo ? fmtData(o.prazo) : r[4]; const sit = o.sit ? SIT_ACAO[o.sit] || r[5] : r[5]; return { n: r[0], acao: r[1], origem: r[2], papel, prazoTexto: r[4], sitTexto: r[5], reg: o, detalhe: DET[r[1]] || [], linha: [r[0], r[1], r[2], resp, prazo, sit] }; });
     return { A: acoes.map((x) => x.linha), st, acoes };
   }
   function planoAcao(p, produtos) {
@@ -451,7 +452,8 @@
   // ações de um local: não conformidades do checklist, inspeção que falta ou venceu e pendências de inspeção
   function listaAcoesLocal(local, produtos) {
     const rq = E.requisitosLocal(local, produtos); const A = []; const reg = local.acoesPlano || {};
-    const add = (acao, origem, papel) => { if (!A.some((x) => x.acao === acao)) { const o = reg[acao] || {}; A.push({ n: String(A.length + 1), acao, origem, papel, prazoTexto: '', reg: o, linha: [String(A.length + 1), acao, origem, o.resp ? o.resp + ' (' + papel + ')' : papel, o.prazo ? fmtData(o.prazo) : '', o.sit ? SIT_ACAO[o.sit] || 'A fazer' : 'A fazer'] }); } };
+    const add = (acao, origem, papel, detalhe) => { if (!A.some((x) => x.acao === acao)) { const o = reg[acao] || {}; A.push({ n: String(A.length + 1), acao, origem, papel, prazoTexto: '', reg: o, detalhe: detalhe || [], linha: [String(A.length + 1), acao, origem, o.resp ? o.resp + ' (' + papel + ')' : papel, o.prazo ? fmtData(o.prazo) : '', o.sit ? SIT_ACAO[o.sit] || 'A fazer' : 'A fazer'] }); } };
+    E.analiseRiscoLocal(local, produtos).cenarios.filter((c) => c.risco.v >= 10).sort((x, y) => y.risco.v - x.risco.v).forEach((c) => add('Reduzir o risco do cenário "' + c.titulo + '" (risco ' + c.risco.nome.toLowerCase() + ', ' + c.risco.v + ')', 'Análise de risco do armazém | severidade ' + c.sev + ', probabilidade ' + c.prob, 'Gestor do local', c.medidas.concat(c.obs ? ['Observação: ' + c.obs] : [])));
     rq.itens.filter((i) => i.resp === 'nc').forEach((i) => add('Corrigir o requisito ' + i.id + ' da NBR 17160: ' + i.texto.split(/;|\. /)[0].replace(/\.$/, '') + (i.obs ? ' (' + i.obs + ')' : ''), 'NBR 17160 | ' + i.id + ' | Checklist do local', 'Gestor do local'));
     if (rq.semInspecao) add('Realizar e registrar a inspeção do armazém antes da primeira utilização', 'NBR 17160 | 6.3.9.1', 'Gestor do local');
     else if (rq.vencida) add('Realizar a inspeção do armazém, vencida desde ' + fmtData(rq.proxima), 'NBR 17160 | 6.3.9', 'Gestor do local');
@@ -469,7 +471,7 @@
     L.push(''); L.push('PRODUTOS EM ESTOQUE AGORA');
     if (g.itens.length) g.itens.forEach((i) => L.push('- ' + i.nome + (i.arm ? ' (classe de armazenamento ' + i.arm + ')' : '') + (i.qtd != null ? ': ' + fm(i.qtd) + ' kg' : ': quantidade não informada'))); else L.push('Nenhum produto em estoque registrado.');
     L.push(''); L.push('AÇÃO SOLICITADA');
-    acoes.forEach((a, i) => { L.push((i + 1) + '. ' + a.acao); L.push('   Origem: ' + a.origem + (a.linha[4] ? ' | Prazo: ' + a.linha[4] : '')); if (a.reg && a.reg.obs) L.push('   Observação: ' + a.reg.obs); });
+    acoes.forEach((a, i) => { L.push((i + 1) + '. ' + a.acao); L.push('   Origem: ' + a.origem + (a.linha[4] ? ' | Prazo: ' + a.linha[4] : '')); if ((a.detalhe || []).length) { L.push('   Medidas de controle:'); a.detalhe.forEach((d) => L.push('   - ' + d)); } if (a.reg && a.reg.obs) L.push('   Observação: ' + a.reg.obs); });
     L.push(''); L.push('Ao concluir, responda este e-mail informando a conclusão e anexe a evidência, se houver (foto, registro ou documento).'); L.push('');
     L.push('Atenciosamente,'); L.push(sg.nome || '[nome]'); L.push(sg.funcao + (sg.registro ? ' | ' + sg.registro : '')); if (c.organizacao) L.push(c.organizacao);
     return { para: (destino && destino.email) || '', assunto: '[QUIM 360] Ação solicitada | ' + local.nome, corpo: L.join('\n') };
@@ -496,7 +498,7 @@
     L.push(loc ? loc.nome + ' (' + loc.tipo + ')' + (loc.areaM2 ? ', ' + loc.areaM2 + ' m²' : '') + (loc.aoArLivre ? ', ao ar livre' : '') + (p.comp.qtdKg !== '' && p.comp.qtdKg != null ? '. Quantidade prevista: ' + String(p.comp.qtdKg).replace('.', ',') + ' kg' : '') : 'Local não definido');
     L.push('');
     L.push('AÇÃO SOLICITADA');
-    acoes.forEach((a, i) => { L.push((i + 1) + '. ' + a.acao); L.push('   Origem: ' + a.origem + (a.linha[4] ? ' | Prazo: ' + a.linha[4] : '')); if (a.reg && a.reg.obs) L.push('   Observação: ' + a.reg.obs); });
+    acoes.forEach((a, i) => { L.push((i + 1) + '. ' + a.acao); L.push('   Origem: ' + a.origem + (a.linha[4] ? ' | Prazo: ' + a.linha[4] : '')); if ((a.detalhe || []).length) { L.push('   Medidas de controle:'); a.detalhe.forEach((d) => L.push('   - ' + d)); } if (a.reg && a.reg.obs) L.push('   Observação: ' + a.reg.obs); });
     L.push('');
     L.push('Ao concluir, responda este e-mail informando a conclusão e anexe a evidência, se houver (foto, registro ou documento).');
     L.push('');

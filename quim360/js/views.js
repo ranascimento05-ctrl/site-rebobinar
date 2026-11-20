@@ -443,7 +443,7 @@
   V.acoesLocalCard = (l) => {
     l.acoesPlano = l.acoesPlano || {};
     const prods = S.produtos(); const acoes = D.listaAcoesLocal(l, prods);
-    return V.painelAcoes({ titulo: 'Ações do local: não conformidades e inspeções ', intro: 'Reúne o que ficou não conforme no checklist da NBR 17160, a inspeção que falta ou venceu e as pendências das inspeções. Informe o responsável e o e-mail e envie o pedido, com a descrição do local e do que está em estoque nele.',
+    return V.painelAcoes({ titulo: 'Ações do local: não conformidades e inspeções ', intro: 'Reúne os cenários de risco alto e crítico da análise de risco, o que ficou não conforme no checklist da NBR 17160, a inspeção que falta ou venceu e as pendências das inspeções. Informe o responsável e o e-mail e envie o pedido, com a descrição do local e do que está em estoque nele.',
       reg: l.acoesPlano, acoes, email: (sel, dest) => D.emailAcoesLocal(l, prods, sel, dest), salva: () => S.salvarLocal(l) });
   };
 
