@@ -447,6 +447,24 @@
       reg: l.acoesPlano, acoes, email: (sel, dest) => D.emailAcoesLocal(l, prods, sel, dest), salva: () => S.salvarLocal(l) });
   };
 
+  // ------------------------------------------------------------ vencimentos e pendências (painel)
+  V.vencimentosCard = () => {
+    const todos = D.vencimentos(S.produtos(), S.locais());
+    const N = { vencido: ['crit', 'Vencido'], proximo: ['warn', 'A vencer'], atencao: ['warn', 'Atenção'], sem_registro: ['info', 'Sem registro'] };
+    const c = (n) => todos.filter((i) => i.nivel === n).length;
+    const card = h('div', { class: 'card', style: 'margin-bottom:14px' }, h('div', { class: 'row' }, h('h3', {}, 'Vencimentos e pendências '), h('span', { class: 'spacer' }), V.docBotoes({ nome: 'vencimentos', id: 'venc' }, { id: 'vencimentos', nome: 'Vencimentos e pendências', fn: () => D.vencimentosDoc(D.vencimentos(S.produtos(), S.locais())) }, true)));
+    card.appendChild(h('div', { class: 'grid g4', style: 'margin:8px 0' }, h('div', { class: 'kpi crit' }, h('b', {}, c('vencido')), h('span', {}, 'Vencidos')), h('div', { class: 'kpi warn' }, h('b', {}, c('proximo')), h('span', {}, 'A vencer')), h('div', { class: 'kpi warn' }, h('b', {}, c('atencao')), h('span', {}, 'Pedem atenção')), h('div', { class: 'kpi' }, h('b', {}, c('sem_registro')), h('span', {}, 'Sem registro'))));
+    if (!todos.length) { card.appendChild(U.alert('ok', 'Nada vencendo', 'Sem vencimentos nem pendências no momento, dentro das janelas de alerta (Configurações).')); return card; }
+    const cats = ['Todas'].concat([...new Set(todos.map((i) => i.cat))]);
+    const sel = h('select', { style: 'max-width:240px' }, cats.map((x) => h('option', { value: x }, x)));
+    const corpo = h('div');
+    const draw = () => { corpo.innerHTML = ''; const f = todos.filter((i) => sel.value === 'Todas' || i.cat === sel.value);
+      corpo.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Situação', 'Categoria', 'Item', 'Detalhe', 'Data', ''].map((x) => h('th', {}, x)))), h('tbody', {}, f.slice(0, 100).map((i) => h('tr', {}, h('td', {}, U.badge(N[i.nivel][0], N[i.nivel][1])), h('td', {}, i.cat), h('td', {}, i.titulo), h('td', {}, i.detalhe), h('td', {}, i.data ? D.fmtData(i.data) : '—'), h('td', {}, h('a', { class: 'btn sm sec', href: i.link }, 'Abrir'))))))));
+      if (f.length > 100) corpo.appendChild(h('p', { class: 'small' }, 'Mostrando 100 de ' + f.length + ' itens: use o filtro. O documento traz todos.')); };
+    sel.addEventListener('change', draw); card.appendChild(h('div', { class: 'row', style: 'margin-bottom:8px' }, h('span', { class: 'small' }, 'Categoria:'), sel)); card.appendChild(corpo); draw();
+    return card;
+  };
+
   // ------------------------------------------------------------ catálogo de documentos
   V.catalogo = (p) => {
     const ok = ['homologado', 'condicionado'].includes(p.status);
@@ -532,6 +550,7 @@
       h('div', { class: 'kpi ok' }, h('b', {}, cnt('homologado')), h('span', {}, 'Homologados')),
       h('div', { class: 'kpi warn' }, h('b', {}, cnt('condicionado') + cnt('pendente') + cnt('em_analise')), h('span', {}, 'Condicionados, pendentes e em análise')),
       h('div', { class: 'kpi crit' }, h('b', {}, cnt('reprovado')), h('span', {}, 'Reprovados'))));
+    root.appendChild(V.vencimentosCard());
     const lim = S.config().anosValidadeFDS;
     const alertas = [];
     ps.forEach((p) => {
@@ -940,7 +959,7 @@
     const holder = { c };
     const save = () => S.setConfig(holder.c);
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Padrão da equipe: responsável técnico e organização'), h('p', { class: 'small' }, 'Usado quando a análise não define outro assinante. Cada análise pode ser assinada por outra pessoa na aba Documentos ou na etapa de saída.'), h('div', { class: 'grid g2' }, U.input(holder, 'c.responsavel', { label: 'Responsável técnico', onInput: save }), U.input(holder, 'c.registro', { label: 'Registro profissional', onInput: save }), U.input(holder, 'c.organizacao', { label: 'Organização (aparece na capa dos documentos)', onInput: save }), U.input(holder, 'c.email', { label: 'E-mail', onInput: save }), U.input(holder, 'c.telEmergencia', { label: 'Telefone de emergência da organização', onInput: save }), U.input(holder, 'c.sharepointBase', { label: 'Endereço base do SharePoint (opcional)', onInput: save }))));
-    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Critérios'), U.input(holder, 'c.anosValidadeFDS', { type: 'number', label: 'Validade da FDS em anos (alerta acima deste valor)', onInput: save }), h('div', { class: 'opts' }, U.flag(holder, 'c.cat2Reprova', 'Tratar categoria 2 (suspeita) como gatilho de reprovação automática', 'H341, H351, H361 e H361d. O app apenas sinaliza; a decisão é do responsável técnico.', save))));
+    root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Critérios'), U.input(holder, 'c.anosValidadeFDS', { type: 'number', label: 'Validade da FDS em anos (alerta acima deste valor)', onInput: save }), h('div', { class: 'grid g2' }, U.input(holder, 'c.alertaDiasFds', { type: 'number', label: 'Avisar a validade da FDS com antecedência de (dias)', onInput: save }), U.input(holder, 'c.alertaDias', { type: 'number', label: 'Avisar inspeções, prazos de ações e revisões com antecedência de (dias)', onInput: save })), h('div', { class: 'opts' }, U.flag(holder, 'c.cat2Reprova', 'Tratar categoria 2 (suspeita) como gatilho de reprovação automática', 'H341, H351, H361 e H361d. O app apenas sinaliza; a decisão é do responsável técnico.', save))));
     root.appendChild(V.logoCard());
     { const lib = S.config().bibliotecaCenarios || [];
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Biblioteca de cenários de risco'), h('p', { class: 'small' }, 'Modelos salvos a partir da análise de risco dos locais. Qualquer local pode usá-los (a severidade e a probabilidade são informadas em cada local). A biblioteca vai junto na exportação e na importação em JSON.'),

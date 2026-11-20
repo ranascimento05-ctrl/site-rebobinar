@@ -15,6 +15,7 @@
     logoDoc: '', logoDocW: 0, logoDocH: 0, capaClara: false,
     bibliotecaCenarios: [],
     contatos: [],
+    alertaDias: 30, alertaDiasFds: 90,
   };
 
   function blank() { return { v: 1, seq: 0, produtos: [], locais: [], fila: [], config: { ...DEFAULT_CFG } }; }

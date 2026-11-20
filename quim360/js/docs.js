@@ -449,6 +449,63 @@
   }
   function D_STATUS(p) { return STATUS[p.status] || STATUS.em_analise; }
 
+  // ---------------------------------------------------------------- Vencimentos e pendências (painel)
+  // nivel: vencido | proximo | atencao | sem_registro
+  function vencimentos(produtos, locais) {
+    const c = cfg(); const jan = Number(c.alertaDias) || 30, janFds = Number(c.alertaDiasFds) || 90, anos = Number(c.anosValidadeFDS) || 5;
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const dias = (iso) => Math.round((new Date(String(iso).slice(0, 10) + 'T00:00:00') - hoje) / 86400000);
+    const itens = []; const add = (o) => itens.push(o);
+    const rel = (n, g) => (n < 0 ? 'vencid' + (g || 'o') + ' há ' + (-n) + ' dia(s)' : n === 0 ? 'vence hoje' : 'vence em ' + n + ' dia(s)');
+    // FDS
+    (produtos || []).filter((p) => ['homologado', 'condicionado'].includes(p.status)).forEach((p) => {
+      const estoque = E.emEstoque(p) ? ' (em estoque)' : '';
+      if (p.fds.dataRevisao) { const v = new Date(p.fds.dataRevisao); if (!isNaN(v)) { v.setFullYear(v.getFullYear() + anos); const iso = v.toISOString().slice(0, 10); const n = dias(iso); if (n < 0) add({ cat: 'FDS', nivel: 'vencido', titulo: p.nome + estoque, detalhe: 'FDS ' + rel(n, 'a') + ' (revisão de ' + fmtData(p.fds.dataRevisao) + ', validade de ' + anos + ' anos). Solicitar nova versão ao fornecedor.', data: iso, dias: n, link: '#/produto/' + p.id + '/resumo' }); else if (n <= janFds) add({ cat: 'FDS', nivel: 'proximo', titulo: p.nome + estoque, detalhe: 'FDS ' + rel(n, 'a') + '. Solicitar nova versão ao fornecedor.', data: iso, dias: n, link: '#/produto/' + p.id + '/resumo' }); } }
+      else if (E.emEstoque(p)) add({ cat: 'FDS', nivel: 'sem_registro', titulo: p.nome + estoque, detalhe: 'Data de revisão da FDS não registrada.', data: '', dias: 9999, link: '#/produto/' + p.id + '/fds' });
+    });
+    // locais: inspeção e análise de risco
+    (locais || []).forEach((l) => {
+      const rq = E.requisitosLocal(l, produtos); const temEstoque = rq.gatilhos.itens.length > 0;
+      if (temEstoque && rq.semInspecao) add({ cat: 'Inspeção', nivel: 'sem_registro', titulo: l.nome, detalhe: 'Nenhuma inspeção registrada (NBR 17160, 6.3.9.1).', data: '', dias: 9999, link: '#/locais' });
+      else if (rq.proxima) { const n = dias(rq.proxima); if (n < 0) add({ cat: 'Inspeção', nivel: 'vencido', titulo: l.nome, detalhe: 'Inspeção ' + rel(n, 'a') + '.', data: rq.proxima, dias: n, link: '#/locais' }); else if (n <= jan) add({ cat: 'Inspeção', nivel: 'proximo', titulo: l.nome, detalhe: 'Inspeção ' + rel(n, 'a') + '.', data: rq.proxima, dias: n, link: '#/locais' }); }
+      else if (rq.inspecoes.length && !rq.periodo) add({ cat: 'Inspeção', nivel: 'sem_registro', titulo: l.nome, detalhe: 'Intervalo entre inspeções não definido.', data: '', dias: 9999, link: '#/locais' });
+      const an = l.analise || {};
+      if (an.revisao) { const n = dias(an.revisao); if (n < 0) add({ cat: 'Análise de risco', nivel: 'vencido', titulo: l.nome, detalhe: 'Revisão da análise de risco ' + rel(n, 'a') + '.', data: an.revisao, dias: n, link: '#/locais' }); else if (n <= jan) add({ cat: 'Análise de risco', nivel: 'proximo', titulo: l.nome, detalhe: 'Revisão da análise de risco ' + rel(n, 'a') + '.', data: an.revisao, dias: n, link: '#/locais' }); }
+      else if (temEstoque && !(an.conclusao || '').trim()) add({ cat: 'Análise de risco', nivel: 'sem_registro', titulo: l.nome, detalhe: 'Local com produtos em estoque e sem análise de risco concluída.', data: '', dias: 9999, link: '#/locais' });
+      // ações do local
+      listaAcoesLocal(l, produtos).forEach((a) => acao(a, l.nome, '#/locais'));
+    });
+    // ações dos produtos
+    (produtos || []).filter((p) => p.status !== 'reprovado').forEach((p) => { try { listaAcoes(p, produtos).acoes.forEach((a) => acao(a, p.nome, '#/produto/' + p.id + '/acoes')); } catch (e) { /* produto incompleto */ } });
+    function acao(a, onde, link) {
+      const r = a.reg || {}; if (r.sit === 'concluida') return;
+      if (r.prazo) { const n = dias(r.prazo); if (n < 0) add({ cat: 'Ação', nivel: 'vencido', titulo: onde + ': ' + a.acao.slice(0, 110), detalhe: 'Prazo ' + rel(n) + (r.resp ? '. Responsável: ' + r.resp : ''), data: r.prazo, dias: n, link }); else if (n <= jan) add({ cat: 'Ação', nivel: 'proximo', titulo: onde + ': ' + a.acao.slice(0, 110), detalhe: 'Prazo ' + rel(n) + (r.resp ? '. Responsável: ' + r.resp : ''), data: r.prazo, dias: n, link }); }
+      const ult = (r.enviados || []).slice(-1)[0];
+      if (ult && (!r.sit || r.sit === 'enviada')) { const dd = -dias(ult.data); if (dd >= 15) add({ cat: 'Ação', nivel: 'atencao', titulo: onde + ': ' + a.acao.slice(0, 110), detalhe: 'E-mail aberto há ' + dd + ' dias sem conclusão registrada.', data: ult.data.slice(0, 10), dias: -dd, link }); }
+    }
+    // homologações pendentes há muito tempo
+    (produtos || []).filter((p) => p.status === 'pendente' && p.atualizadoEm).forEach((p) => { const dd = -dias(p.atualizadoEm); if (dd >= 30) add({ cat: 'Homologação', nivel: 'atencao', titulo: p.nome, detalhe: 'Pendente há ' + dd + ' dias.', data: p.atualizadoEm.slice(0, 10), dias: -dd, link: '#/homologar/' + p.id }); });
+    // fila: prioridade alta sem FDS
+    const f = (O.Store.fila ? O.Store.fila() : []).filter((i) => i.prioridade && i.prioridade.nivel === 'alta' && O.Fila.situacao(i).chave === 'fds_levantar').length;
+    if (f) add({ cat: 'Fila', nivel: 'atencao', titulo: f + ' produto(s) de prioridade alta aguardando a FDS', detalhe: 'A composição na lista cita agentes de atenção. Levantar a FDS atual.', data: '', dias: 9998, link: '#/fila' });
+    const ordem = { vencido: 0, proximo: 1, atencao: 2, sem_registro: 3 };
+    itens.sort((a, b) => ordem[a.nivel] - ordem[b.nivel] || a.dias - b.dias);
+    return itens;
+  }
+  function vencimentosDoc(itens) {
+    const sg = signer(null); const pseudo = { nome: 'Vencimentos e pendências', dec: { numero: '' }, rotulo: 'Documento', pseudo: true };
+    const N = { vencido: 'Vencido', proximo: 'A vencer', atencao: 'Atenção', sem_registro: 'Sem registro' };
+    const c = (n) => itens.filter((i) => i.nivel === n).length;
+    const B = [capa('Vencimentos e pendências', 'QUIM 360 | Situação em ' + fmtData(new Date().toISOString()), pseudo, [['Itens', String(itens.length)]])];
+    B.push({ t: 'table', head: ['Situação', 'Itens'], widths: [70, 30], rows: Object.keys(N).map((k) => [N[k], String(c(k))]) });
+    B.push({ t: 'h1', text: 'Itens' });
+    B.push({ t: 'table', head: ['Situação', 'Categoria', 'Item', 'Detalhe', 'Data'], widths: [11, 12, 28, 37, 12], rows: itens.length ? itens.map((i) => [N[i.nivel], i.cat, i.titulo, i.detalhe, i.data ? fmtData(i.data) : '—']) : [['Nenhum item', '', '', '', '']] });
+    B.push({ t: 'p', small: true, text: 'Janelas de alerta definidas em Configurações. Itens "sem registro" indicam dado que falta para o app acompanhar o vencimento.' });
+    B.push({ t: 'sign', rows: [[sg.nome, sg.funcao]] });
+    return B;
+  }
+
+
   // ações de um local: não conformidades do checklist, inspeção que falta ou venceu e pendências de inspeção
   function listaAcoesLocal(local, produtos) {
     const rq = E.requisitosLocal(local, produtos); const A = []; const reg = local.acoesPlano || {};
@@ -817,5 +874,5 @@
       motivos.map((m) => '- ' + m).join('\n') + '\n\nSolicitamos o envio da FDS em português, conforme ABNT NBR 14725:2023, com as 16 seções completas e data de revisão atualizada.\n\nPróximo passo: envio até ____/____/______.\n\n' + cfg().responsavel + (cfg().registro ? ' | ' + cfg().registro : '');
   }
 
-  O.Docs = { listaAcoesLocal, emailAcoesLocal, listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
+  O.Docs = { vencimentos, vencimentosDoc, listaAcoesLocal, emailAcoesLocal, listaAcoes, emailAcoes, filaDoc, cenariosDoc, cenariosDoProduto, criterioRisco, analiseRiscoLocal, checklistLocal, signer, inventarioLocal, STATUS, analiseFds, quadroCompat, planoAcao, relatorio, fichaEmergencia, rotulagem, envelope, treinamento, solicitacaoFornecedor, fmtData, linkRegistro, agrupaP };
 })(window.O360 = window.O360 || {});

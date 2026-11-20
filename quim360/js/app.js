@@ -48,6 +48,8 @@
         default: main.appendChild(h('div', { class: 'empty' }, 'Página não encontrada.'));
       }
     } catch (e) { console.error(e); main.appendChild(U.alert('crit', 'Erro ao exibir a tela', String(e.message))); }
+    // contador de itens vencidos ao lado de Painel
+    try { const n = O.Docs.vencimentos(O.Store.produtos(), O.Store.locais()).filter((i) => i.nivel === 'vencido').length; const lk = side.querySelector('a[data-h="#/painel"]'); if (lk) { const x = lk.querySelector('.cnt'); if (x) x.remove(); if (n) lk.appendChild(h('span', { class: 'cnt', title: n + ' item(ns) vencido(s)' }, String(n))); } } catch (e) { /* contador é opcional */ }
     window.scrollTo(0, 0);
     document.title = 'QUIM 360 | Orbit 360';
   }
