@@ -56,7 +56,12 @@
   }
   O.route = route;
   window.addEventListener('hashchange', route);
-  O.Views.aplicarWatch();
-  try { document.querySelector('link[rel=icon]').href = O.LOGO.mark.src; } catch (e) { /* ícone padrão */ }
-  route();
+  const iniciar = () => {
+    O.Views.aplicarWatch();
+    try { document.querySelector('link[rel=icon]').href = O.LOGO.mark.src; } catch (e) { /* ícone padrão */ }
+    route();
+  };
+  // os dados vêm do IndexedDB: a tela só é desenhada depois do carregamento
+  root.textContent = 'Carregando os dados...';
+  O.Store.init().then(iniciar, iniciar);
 })(window.O360 = window.O360 || {});

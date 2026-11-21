@@ -1048,7 +1048,7 @@
     extra.addEventListener('change', () => { holder.c.watchExtra = extra.value; save(); V.aplicarWatch(); U.toast('Lista de alerta atualizada.'); });
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Lista de alerta de triagem'), h('p', { class: 'small' }, 'Adicione substâncias de interesse da organização. Já constam ' + Object.values(T.WATCH).reduce((n, a) => n + a.length, 0) + ' registros (benzeno, formaldeído, tricloroetileno, PFOA, PFOS, entre outros).'), extra));
     const file = h('input', { type: 'file', accept: '.json', style: 'display:none' });
-    file.addEventListener('change', async () => { try { S.importar(await file.files[0].text()); U.toast('Dados importados.'); O.route(); } catch (e) { U.toast(e.message); } });
+    file.addEventListener('change', async () => { try { await S.importar(await file.files[0].text()); U.toast('Dados importados.'); O.route(); } catch (e) { U.toast(e.message); } });
     root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Dados'), h('p', { class: 'small' }, 'Os dados ficam neste navegador. Exporte para backup ou para levar a outro computador.'), h('div', { class: 'row' },
       h('button', { class: 'btn', onclick: () => R.baixar(new Blob([S.exportar()], { type: 'application/json' }), 'quim360-dados-' + new Date().toISOString().slice(0, 10) + '.json') }, 'Exportar JSON'), h('button', { class: 'btn ghost', onclick: () => file.click() }, 'Importar JSON'), file,
       h('button', { class: 'btn ghost', onclick: async () => { if (await U.confirm('Carregar demonstração', 'Serão adicionados 2 locais e 2 produtos fictícios.', 'Carregar')) { O.Demo.criar(); O.route(); } } }, 'Carregar demonstração'),
@@ -1056,14 +1056,14 @@
 
     // espaço de armazenamento do navegador
     {
-      const u = S.uso(); const pc = Math.min(1, u.total / u.limite); const mb = (c) => (c * 2 / 1048576).toFixed(2).replace('.', ',') + ' MB';
+      const u = S.uso(); const pc = Math.min(1, u.total / u.limite); const mb = (c) => (c * u.bpc / 1048576).toFixed(2).replace('.', ',') + ' MB';
       const cor = pc >= 0.9 ? '#dc2626' : pc >= 0.7 ? '#f59e0b' : '#16a34a';
       root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Espaço de armazenamento'),
-        h('p', { class: 'small' }, 'Os dados ficam no armazenamento do navegador, que tem limite. Em uso: ' + u.total.toLocaleString('pt-BR') + ' de ' + u.limite.toLocaleString('pt-BR') + ' caracteres (aprox. ' + mb(u.total) + ' de ' + mb(u.limite) + ') = ' + Math.round(pc * 100) + '%. ' + (u.medido ? 'Limite medido neste navegador.' : 'Limite estimado (padrão da maioria dos navegadores): use o botão para medir.')),
+        h('p', { class: 'small' }, 'Armazenamento: ' + u.modo + '. Os dados ficam neste navegador, que tem limite. Em uso: ' + mb(u.total) + ' de ' + mb(u.limite) + (u.bpc === 2 ? ' (' + u.total.toLocaleString('pt-BR') + ' de ' + u.limite.toLocaleString('pt-BR') + ' caracteres)' : '') + ' = ' + Math.round(pc * 100) + '%. ' + (u.medido ? (u.modo === 'IndexedDB' ? 'Limite informado pelo navegador.' : 'Limite medido neste navegador.') : 'Limite estimado (padrão da maioria dos navegadores): use o botão para medir.')),
         h('div', { style: 'background:#26324d;border-radius:6px;height:14px;max-width:520px;overflow:hidden' }, h('div', { style: 'height:100%;width:' + Math.round(pc * 100) + '%;background:' + cor })),
-        h('div', { class: 'scroll', style: 'margin-top:10px' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Parte', 'Caracteres', 'Aprox.'].map((x) => h('th', {}, x)))), h('tbody', {}, u.partes.map((x) => h('tr', {}, h('td', {}, x[0]), h('td', {}, x[1].toLocaleString('pt-BR')), h('td', {}, mb(x[1]))))))),
+        h('div', { class: 'scroll', style: 'margin-top:10px' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Parte', 'Tamanho (caracteres)', 'Aprox.'].map((x) => h('th', {}, x)))), h('tbody', {}, u.partes.map((x) => h('tr', {}, h('td', {}, x[0]), h('td', {}, x[1].toLocaleString('pt-BR')), h('td', {}, mb(x[1]))))))),
         S.avisoBackup() ? U.alert('warn', 'Cópia automática não guardada', S.avisoBackup()) : null,
-        h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'btn sm', onclick: () => { try { S.medirLimite(); U.toast('Limite medido.'); O.route(); } catch (e) { U.toast('Não foi possível medir: ' + e.message); } } }, 'Medir o limite deste navegador'),
+        h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'btn sm', onclick: async () => { try { await S.medirLimite(); U.toast('Limite medido.'); O.route(); } catch (e) { U.toast('Não foi possível medir: ' + e.message); } } }, u.modo === 'IndexedDB' ? 'Atualizar o espaço informado pelo navegador' : 'Medir o limite deste navegador'),
           h('button', { class: 'btn sm ghost', onclick: async () => { try { const ok = navigator.storage && navigator.storage.persist ? await navigator.storage.persist() : false; U.toast(ok ? 'O navegador não apagará estes dados por falta de espaço do computador.' : 'O navegador não concedeu a proteção. Mantenha o backup em arquivo.'); } catch (e) { U.toast('Recurso indisponível neste navegador.'); } } }, 'Pedir proteção contra limpeza automática')),
         h('p', { class: 'small' }, 'Se passar de 70%, exporte um backup e considere apagar textos de FDS de produtos antigos ou cópias automáticas. Quando o espaço acaba, o app não consegue gravar e avisa; as alterações se perdem ao fechar a página.')));
     }
@@ -1078,8 +1078,8 @@
         h('div', { class: 'grid g3' }, U.input(holder, 'c.lembreteBackupDias', { type: 'number', label: 'Lembrar do backup a cada (dias)', onInput: () => { holder.c.lembreteBackupDias = Number(holder.c.lembreteBackupDias) || 30; save(); } })),
         h('h4', { style: 'margin-top:10px' }, 'Cópias automáticas neste navegador'),
         bks.length ? h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Quando', 'Motivo', ''].map((x) => h('th', {}, x)))), h('tbody', {}, bks.map((b) => h('tr', {}, h('td', {}, fmt(b.quando)), h('td', {}, b.motivo),
-          h('td', {}, h('div', { class: 'row' }, h('button', { class: 'btn sm ghost', onclick: () => R.baixar(new Blob([S.backupTexto(b.slot)], { type: 'application/json' }), 'quim360-copia-' + b.slot + '.json') }, 'Baixar'),
-            h('button', { class: 'btn sm', onclick: async () => { if (await U.confirm('Restaurar cópia', 'Os dados atuais serão substituídos pela cópia de ' + fmt(b.quando) + '. Os dados atuais ficam guardados na cópia "antes de importar".', 'Restaurar')) { try { S.restaurarBackup(b.slot); U.toast('Cópia restaurada.'); O.route(); } catch (e) { U.toast(e.message); } } } }, 'Restaurar'))))))))
+          h('td', {}, h('div', { class: 'row' }, h('button', { class: 'btn sm ghost', onclick: async () => R.baixar(new Blob([await S.backupTexto(b.slot)], { type: 'application/json' }), 'quim360-copia-' + b.slot + '.json') }, 'Baixar'),
+            h('button', { class: 'btn sm', onclick: async () => { if (await U.confirm('Restaurar cópia', 'Os dados atuais serão substituídos pela cópia de ' + fmt(b.quando) + '. Os dados atuais ficam guardados na cópia "antes de importar".', 'Restaurar')) { try { await S.restaurarBackup(b.slot); U.toast('Cópia restaurada.'); O.route(); } catch (e) { U.toast(e.message); } } } }, 'Restaurar'))))))))
           : h('p', { class: 'muted' }, 'Nenhuma cópia automática ainda. Elas são criadas antes de migrar, de importar e de apagar tudo.')));
     }
   };
