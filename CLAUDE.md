@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Repositório
 
 - `index.html` (raiz): página de portfólio pessoal, independente do app.
-- `quim360/`: o app **QUIM 360 (Orbit 360)**, gestão de produtos químicos (homologação a partir da FDS, armazenamento, compatibilidade, documentos). É onde se trabalha. O `quim360/README.md` descreve as funções; o `quim360/CONFERENCIA-NBR17160.md` registra o que foi conferido contra o PDF da NBR 17160.
+- `quim360/`: o app **QUIM 360 (Orbit 360)**, gestão de produtos químicos (homologação a partir da FDS, armazenamento, compatibilidade, documentos). É onde se trabalha. O `quim360/README.md` descreve as funções. A pasta `quim360/docs/` guarda a documentação do projeto (índice em `docs/README.md`): `REGRAS-DO-PROJETO.md` (regras de negócio com o motivo; esta seção de regras é a versão curta, mantenha as duas em sincronia), `DECISOES.md`, `conferencia/` (o que foi conferido contra a NBR 17160, em `CONFERENCIA-NBR17160.md`, e a `LISTA-DE-CONFERENCIA.docx`) e `metodologia/` (guia de risco por lente). Documento novo de conferência, metodologia, regra ou decisão vai para essa pasta.
 - Textos de interface, commits e comentários em português do Brasil.
 
 ## Executar, testar, entregar
@@ -14,7 +14,7 @@ Não há build, lint nem suite de testes. É um app estático de scripts clássi
 
 - Rodar: `cd quim360 && python3 -m http.server 8765` e abrir `/` (ou abrir `quim360/index.html` por `file://`, que também funciona).
 - Verificação: Playwright (`require('playwright')`, `chromium.launch()`) abrindo a página e chamando o app por `window.O360` via `page.evaluate` (por exemplo `O360.Demo.criar()` carrega dados de demonstração; `O360.Docs.*` gera blocos de documento; `O360.Render.docx(blocos)` e `O360.Pdf.blob(blocos)` geram Word e PDF). Capture `pageerror` para achar exceções.
-- Entrega: `quim360/QUIM360-standalone.html` (CSS e JS do `index.html` embutidos, abre offline) e `quim360/QUIM360-codigo.zip` são versionados e precisam ser **regerados a cada mudança**. Standalone: substituir no `index.html` o `<link rel="stylesheet" href="css/app.css">` e cada `<script src="...">` pelo conteúdo inline (escapando `</script`). Zip: `zip -qr QUIM360-codigo.zip index.html README.md CONFERENCIA-NBR17160.md LISTA-DE-CONFERENCIA.docx css js vendor`.
+- Entrega: `quim360/QUIM360-standalone.html` (CSS e JS do `index.html` embutidos, abre offline) e `quim360/QUIM360-codigo.zip` são versionados e precisam ser **regerados a cada mudança**. Standalone: substituir no `index.html` o `<link rel="stylesheet" href="css/app.css">` e cada `<script src="...">` pelo conteúdo inline (escapando `</script`). Zip: `zip -qr QUIM360-codigo.zip index.html README.md docs css js vendor`.
 - Desenvolvimento no branch `claude/intelligent-darwin-cif0t0`; não abrir PR sem pedido.
 
 ## Arquitetura
