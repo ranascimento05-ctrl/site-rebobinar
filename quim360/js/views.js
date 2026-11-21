@@ -560,6 +560,8 @@
   // aviso de backup e de versão dos dados (Painel e Configurações)
   V.avisosDados = (root) => {
     if (S.somenteLeitura()) root.appendChild(U.alert('crit', 'Dados de versão mais nova', 'Os dados deste navegador foram criados por uma versão mais nova do app. Para não perder nada, o app não grava alterações. Abra a versão mais nova do app.'));
+    if (S.falhaGravacao()) root.appendChild(U.alert('crit', 'Dados sem gravar', 'O espaço do navegador está cheio e as últimas alterações não foram gravadas: elas se perdem ao fechar a página. Exporte um backup agora e libere espaço (Configurações, Espaço de armazenamento).'));
+    { const u = S.uso(); const pc = u.total / u.limite; if (pc >= 0.7) root.appendChild(h('div', {}, U.alert(pc >= 0.9 ? 'crit' : 'warn', 'Espaço do navegador em ' + Math.round(pc * 100) + '%', 'Os dados ocupam ' + Math.round(pc * 100) + '% do espaço disponível' + (u.medido ? '' : ' (limite estimado)') + '. Exporte um backup e veja o que pode ser liberado.'), h('a', { class: 'btn sm', href: '#/config' }, 'Ver o espaço de armazenamento'))); }
     const d = S.diasSemBackup(); const lim = Number(S.config().lembreteBackupDias) || 30;
     if (S.produtos().length + S.locais().length > 0 && (d == null || d > lim)) root.appendChild(h('div', {}, U.alert('warn', 'Faça um backup dos dados', d == null ? 'Nenhum backup exportado ainda. Os dados ficam só neste navegador.' : 'O último backup foi há ' + d + ' dias (lembrete a cada ' + lim + ').'), h('a', { class: 'btn sm', href: '#/config' }, 'Ir para Configurações')));
   };
@@ -1051,6 +1053,20 @@
       h('button', { class: 'btn', onclick: () => R.baixar(new Blob([S.exportar()], { type: 'application/json' }), 'quim360-dados-' + new Date().toISOString().slice(0, 10) + '.json') }, 'Exportar JSON'), h('button', { class: 'btn ghost', onclick: () => file.click() }, 'Importar JSON'), file,
       h('button', { class: 'btn ghost', onclick: async () => { if (await U.confirm('Carregar demonstração', 'Serão adicionados 2 locais e 2 produtos fictícios.', 'Carregar')) { O.Demo.criar(); O.route(); } } }, 'Carregar demonstração'),
       h('button', { class: 'btn danger', onclick: async () => { if (await U.confirm('Apagar tudo', 'Todos os produtos, locais e configurações deste navegador serão apagados. Uma cópia automática fica guardada para restaurar.', 'Apagar')) { S.limpar(); O.route(); } } }, 'Apagar tudo'))));
+
+    // espaço de armazenamento do navegador
+    {
+      const u = S.uso(); const pc = Math.min(1, u.total / u.limite); const mb = (c) => (c * 2 / 1048576).toFixed(2).replace('.', ',') + ' MB';
+      const cor = pc >= 0.9 ? '#dc2626' : pc >= 0.7 ? '#f59e0b' : '#16a34a';
+      root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Espaço de armazenamento'),
+        h('p', { class: 'small' }, 'Os dados ficam no armazenamento do navegador, que tem limite. Em uso: ' + u.total.toLocaleString('pt-BR') + ' de ' + u.limite.toLocaleString('pt-BR') + ' caracteres (aprox. ' + mb(u.total) + ' de ' + mb(u.limite) + ') = ' + Math.round(pc * 100) + '%. ' + (u.medido ? 'Limite medido neste navegador.' : 'Limite estimado (padrão da maioria dos navegadores): use o botão para medir.')),
+        h('div', { style: 'background:#26324d;border-radius:6px;height:14px;max-width:520px;overflow:hidden' }, h('div', { style: 'height:100%;width:' + Math.round(pc * 100) + '%;background:' + cor })),
+        h('div', { class: 'scroll', style: 'margin-top:10px' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Parte', 'Caracteres', 'Aprox.'].map((x) => h('th', {}, x)))), h('tbody', {}, u.partes.map((x) => h('tr', {}, h('td', {}, x[0]), h('td', {}, x[1].toLocaleString('pt-BR')), h('td', {}, mb(x[1]))))))),
+        S.avisoBackup() ? U.alert('warn', 'Cópia automática não guardada', S.avisoBackup()) : null,
+        h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { class: 'btn sm', onclick: () => { try { S.medirLimite(); U.toast('Limite medido.'); O.route(); } catch (e) { U.toast('Não foi possível medir: ' + e.message); } } }, 'Medir o limite deste navegador'),
+          h('button', { class: 'btn sm ghost', onclick: async () => { try { const ok = navigator.storage && navigator.storage.persist ? await navigator.storage.persist() : false; U.toast(ok ? 'O navegador não apagará estes dados por falta de espaço do computador.' : 'O navegador não concedeu a proteção. Mantenha o backup em arquivo.'); } catch (e) { U.toast('Recurso indisponível neste navegador.'); } } }, 'Pedir proteção contra limpeza automática')),
+        h('p', { class: 'small' }, 'Se passar de 70%, exporte um backup e considere apagar textos de FDS de produtos antigos ou cópias automáticas. Quando o espaço acaba, o app não consegue gravar e avisa; as alterações se perdem ao fechar a página.')));
+    }
 
     // versão dos dados, backup e cópias automáticas
     {

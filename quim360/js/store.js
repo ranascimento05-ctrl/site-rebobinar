@@ -9,7 +9,10 @@
     1: (d) => { d.bacias = d.bacias || []; d.consultas = d.consultas || {}; if (d.config) { if (d.config.email === 'ranascimento05@gmail.com') delete d.config.email; if (d.config.alertaDiasBacia == null) d.config.alertaDiasBacia = 30; } return d; },
   };
   function migrar(d) { let v = d.v || 1; while (v < SCHEMA_VERSION) { if (MIGRACOES[v]) d = MIGRACOES[v](d); v += 1; d.v = v; } return d; }
-  let mem = null; let somenteLeitura = false;
+  let mem = null; let somenteLeitura = false; let falhaGravacao = false; let avisoBackup = '';
+  // Espaço do localStorage: o limite varia por navegador (em geral 5 milhões de caracteres, contando chave e valor, por origem).
+  const LIMITE_PADRAO = 5000000; const KEY_LIM = 'quim360.limite';
+  const tamKeys = (filtro) => { let t = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && (!filtro || filtro(k))) t += k.length + (localStorage.getItem(k) || '').length; } } catch (e) { /* indisponível */ } return t; };
 
   const DEFAULT_CFG = {
     organizacao: '',
@@ -46,11 +49,23 @@
   }
   function save() {
     if (somenteLeitura) return;
-    try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch (e) { /* armazenamento indisponível: segue em memória */ }
+    try { localStorage.setItem(KEY, JSON.stringify(mem)); falhaGravacao = false; }
+    catch (e) {
+      // sem espaço (ou armazenamento bloqueado): os dados seguem só em memória até fechar a página
+      if (!falhaGravacao) { try { O.UI && O.UI.toast && O.UI.toast('Não foi possível gravar: o espaço do navegador está cheio. Exporte um backup agora (Configurações).'); } catch (e2) { /* sem interface */ } }
+      falhaGravacao = true;
+    }
     O.emit && O.emit('store');
   }
   // cópias automáticas (3 espaços): antes de migrar, antes de importar e antes de apagar tudo
-  function guardaBackup(slot, motivo, dados) { try { localStorage.setItem(KEY_BK + slot, JSON.stringify({ quando: new Date().toISOString(), motivo, dados })); } catch (e) { /* sem espaço: segue sem a cópia */ } }
+  // a cópia automática nunca pode tirar o espaço dos dados principais: só é guardada se couber com folga
+  function guardaBackup(slot, motivo, dados) {
+    const reg = JSON.stringify({ quando: new Date().toISOString(), motivo, dados });
+    let limite = LIMITE_PADRAO; try { limite = Number(sessionStorage.getItem(KEY_LIM)) || LIMITE_PADRAO; } catch (e) { /* padrão */ }
+    const atual = (() => { try { const x = localStorage.getItem(KEY_BK + slot); return x ? KEY_BK.length + slot.length + x.length : 0; } catch (e) { return 0; } })();
+    if (tamKeys() - atual + KEY_BK.length + slot.length + reg.length > limite * 0.85) { avisoBackup = 'A cópia automática "' + slot + '" não foi guardada por falta de espaço. Exporte um backup em arquivo.'; return false; }
+    try { localStorage.setItem(KEY_BK + slot, reg); avisoBackup = ''; return true; } catch (e) { avisoBackup = 'A cópia automática "' + slot + '" não foi guardada por falta de espaço. Exporte um backup em arquivo.'; return false; }
+  }
   function uid(p) { return p + '-' + Math.random().toString(36).slice(2, 8); }
 
   const Store = {
@@ -97,6 +112,26 @@
     salvarConsulta(a, b, c) { load().consultas[[a, b].sort().join('|')] = c; save(); },
     removerConsulta(a, b) { delete load().consultas[[a, b].sort().join('|')]; save(); },
     uid,
+    // uso do espaço do navegador, em caracteres (chave + valor), por parte
+    uso() {
+      const d = load(); const len = (x) => JSON.stringify(x == null ? '' : x).length;
+      const fds = d.produtos.reduce((a, p) => a + len(p.fds && p.fds.texto) + len(p.fds && p.fds.secoes), 0);
+      const logo = len(d.config && d.config.logoDoc);
+      const backups = tamKeys((k) => k.indexOf(KEY_BK) === 0);
+      const principal = tamKeys((k) => k === KEY); const total = tamKeys();
+      const partes = [['Texto das FDS (texto e seções)', fds], ['Demais dados dos produtos', Math.max(0, len(d.produtos) - fds)], ['Locais e inventários', len(d.locais)], ['Fila de homologação', len(d.fila)], ['Bacias e consultas', len(d.bacias) + len(d.consultas)], ['Logotipo', logo], ['Cópias automáticas', backups]];
+      return { total, principal, partes, limite: this.limite(), medido: this.limiteMedido() };
+    },
+    limiteMedido() { try { return !!Number(sessionStorage.getItem(KEY_LIM)); } catch (e) { return false; } },
+    limite() { try { return Number(sessionStorage.getItem(KEY_LIM)) || LIMITE_PADRAO; } catch (e) { return LIMITE_PADRAO; } },
+    // mede o limite real deste navegador gravando uma chave temporária (removida em seguida)
+    medirLimite() {
+      const usado = tamKeys(); let lo = 0; let hi = 40 * 1024 * 1024;
+      try { while (hi - lo > 4096) { const m = Math.floor((lo + hi) / 2); try { localStorage.setItem('__sonda', 'x'.repeat(m)); lo = m; } catch (e) { hi = m; } } } finally { try { localStorage.removeItem('__sonda'); } catch (e) { /* ok */ } }
+      const lim = usado + lo; try { sessionStorage.setItem(KEY_LIM, String(lim)); } catch (e) { /* ok */ } return lim;
+    },
+    falhaGravacao() { return falhaGravacao; },
+    avisoBackup() { return avisoBackup; },
     versao() { return load().v || 1; },
     versaoApp() { return SCHEMA_VERSION; },
     somenteLeitura() { load(); return somenteLeitura; },
@@ -114,7 +149,9 @@
       guardaBackup('importacao', 'Antes de importar um arquivo', JSON.stringify(load()));
       delete o.app; delete o.exportadoEm;
       const novo = migrar({ ...blank(), ...o, config: { ...DEFAULT_CFG, ...(o.config || {}) } }); novo.v = SCHEMA_VERSION;
-      mem = novo; save(); mem = null; load();
+      const anterior = mem; mem = novo; save();
+      if (falhaGravacao) { mem = anterior; falhaGravacao = false; throw new Error('Sem espaço no navegador para gravar os dados importados. Nada foi alterado: libere espaço (apague textos de FDS ou cópias automáticas) e tente de novo.'); }
+      mem = null; load();
     },
     limpar() { guardaBackup('apagar', 'Antes de apagar tudo', JSON.stringify(load())); mem = blank(); save(); },
     // cópias automáticas guardadas neste navegador
