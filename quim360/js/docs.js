@@ -191,7 +191,7 @@
     B.push({ t: 'h1', text: '9 Pareceres externos e gatilho do PGR' });
     B.push({ t: 'kv', rows: [
       ['Parecer arquivado', sn(p.par.tem)], ['Descrição / referência', nz(p.par.descricao)],
-      ['Indicador de PGR', p.par.pgrIndicador === 'requer' ? 'PGR: requer atualização' + (p.par.pgrPrazo ? ' | prazo ' + p.par.pgrPrazo : '') + (p.par.pgrResponsavel ? ' | responsável ' + p.par.pgrResponsavel : '') : p.par.pgrIndicador === 'nao_requer' ? 'PGR: não requer atualização (parecer anexo)' : '—'],
+      ['Indicador de PGR', p.par.pgrIndicador === 'requer' ? 'PGR: requer atualização' + (p.par.pgrPrazo ? ' | prazo ' + p.par.pgrPrazo : '') + (p.par.pgrResponsavel ? ' | responsável ' + p.par.pgrResponsavel : '') : p.par.pgrIndicador === 'nao_requer' ? 'PGR: não requer atualização' + (p.par.tem ? ' (parecer anexo)' : ' (sem parecer; justificativa do responsável técnico: ' + nz(p.par.pgrJustificativa, 'não registrada') + ')') : '—'],
     ] });
 
     {

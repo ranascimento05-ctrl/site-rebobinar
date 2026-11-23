@@ -602,7 +602,8 @@
         if (p.par.tem === false && p.hig.tlv) w.appendChild(U.alert('crit', 'Parecer exigível', 'A etapa 9.1 exige parecer de Higiene Ocupacional. Solicite antes de concluir.'));
         w.appendChild(U.q('12.2', 'Indicador de saída obrigatório: situação do PGR'));
         if (!p.par.pgrIndicador) p.par.pgrIndicador = p.hig.pgr === 'requer' ? 'requer' : (p.hig.pgr === 'coberto' ? 'nao_requer' : '');
-        w.appendChild(U.radio(p, 'par.pgrIndicador', [{ v: 'requer', label: 'PGR: requer atualização', hint: 'Informar prazo e responsável' }, { v: 'nao_requer', label: 'PGR: não requer atualização (parecer anexo)' }], { uid: '122', onChange: api.rerender }));
+        w.appendChild(U.radio(p, 'par.pgrIndicador', [{ v: 'requer', label: 'PGR: requer atualização', hint: 'Informar prazo e responsável' }, { v: 'nao_requer', label: 'PGR: não requer atualização', hint: 'Com parecer anexo, ou com justificativa do responsável técnico se não houver parecer' }], { uid: '122', onChange: api.rerender }));
+        if (p.par.pgrIndicador === 'nao_requer' && !p.par.tem) w.appendChild(h('div', {}, U.alert('warn', 'Sem parecer arquivado', 'O PGR será dado como não alterado sem parecer de Higiene Ocupacional ou do elaborador do PGR. Registre a justificativa: ela entra no relatório e a decisão é do responsável técnico.'), U.input(p, 'par.pgrJustificativa', { rows: 3, label: 'Justificativa de que o PGR não muda (por exemplo, perigos já cobertos por outro produto do mesmo grupo)' })));
         if (p.par.pgrIndicador === 'requer') w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'par.pgrPrazo', { type: 'date', label: 'Prazo' }), U.input(p, 'par.pgrResponsavel', { label: 'Responsável' })));
         // 12.3 gestão de mudança: o app só levanta se é necessário e registra se foi feito
         p.mudanca = E.mudancaDe(p);
@@ -623,7 +624,7 @@
         } else if (p.mudanca.exige === false) w.appendChild(U.input(p, 'mudanca.just', { rows: 2, label: 'Justificativa de que não há mudança a gerenciar' }));
         return w;
       },
-      validar: (p) => [p.par.tem === null && 'Responda 12.1.', !p.par.pgrIndicador && 'Registre o indicador do PGR (12.2).', p.par.pgrIndicador === 'requer' && (!p.par.pgrPrazo || !p.par.pgrResponsavel) && 'Informe prazo e responsável pela atualização do PGR.', p.par.pgrIndicador === 'nao_requer' && !p.par.tem && 'Indicador "não requer atualização" exige parecer anexo (12.1).', E.mudancaDe(p).exige == null && E.mudancaSugestao(p, S.produtos()).sugere && 'Responda 12.3 (gestão de mudança).', E.mudancaDe(p).exige === true && !E.mudancaDe(p).situacao && 'Informe a situação do MOC (12.3).'].filter(Boolean),
+      validar: (p) => [p.par.tem === null && 'Responda 12.1.', !p.par.pgrIndicador && 'Registre o indicador do PGR (12.2).', p.par.pgrIndicador === 'requer' && (!p.par.pgrPrazo || !p.par.pgrResponsavel) && 'Informe prazo e responsável pela atualização do PGR.', p.par.pgrIndicador === 'nao_requer' && !p.par.tem && !String(p.par.pgrJustificativa || '').trim() && 'Sem parecer arquivado: registre a justificativa de que o PGR não muda (12.2).', E.mudancaDe(p).exige == null && E.mudancaSugestao(p, S.produtos()).sugere && 'Responda 12.3 (gestão de mudança).', E.mudancaDe(p).exige === true && !E.mudancaDe(p).situacao && 'Informe a situação do MOC (12.3).'].filter(Boolean),
     },
     // ------------------------------------------------ 13
     decisao: {

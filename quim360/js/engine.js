@@ -753,6 +753,7 @@
       else if (p.comp.solucao === 'condicionar') r.condicionantes.push('Conflito de segregação: homologação condicionada a medida de segregação ou local alternativo.');
       else r.pendencias.push('Conflito de segregação sem solução definida (etapa 11.2).');
     }
+    if (p.par.pgrIndicador === 'nao_requer' && p.par.tem === false) r.alertas.push('PGR dado como não alterado sem parecer de Higiene Ocupacional ou do elaborador do PGR' + (String(p.par.pgrJustificativa || '').trim() ? ': justificativa registrada pelo responsável técnico.' : ' e sem justificativa registrada.'));
     if (p.par.pgrIndicador === '' && p.confirmadas['12']) r.pendencias.push('Indicador de PGR não registrado (etapa 12.2).');
     if (p.armazenamento === 'granel') {
       const at = analiseTanque(p, O.Store.bacias(), produtos);

@@ -6,6 +6,8 @@ Decisões do responsável do projeto, por tema. Cada item diz o que foi decidido
 - Gatilho de reprovação (CMR e PFC) **só sinaliza**; a decisão é do responsável técnico com justificativa. Descartado: reprovação automática que bloqueia.
 - Sem "engessar": o app aponta, o responsável decide.
 
+- PGR "não requer atualização" sem parecer é permitido com justificativa registrada. Descartado: exigir parecer anexo para dispensar a atualização do PGR.
+
 ## Estoque
 - Regra **estrita**: só conta o que teve entrada registrada. Descartado: tratar produtos antigos como em estoque. A lista importada da era FISPQ é fila de trabalho, não estoque.
 
