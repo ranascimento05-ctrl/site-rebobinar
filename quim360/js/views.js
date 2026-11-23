@@ -406,7 +406,14 @@
     const contatos = () => S.config().contatos || [];
     const salva = c.salva;
     const card = h('div', { class: 'card' }, h('h3', {}, c.titulo), h('p', { class: 'small' }, c.intro));
-    if (!acoes.length) { card.appendChild(h('p', { class: 'muted' }, 'Nenhuma ação gerada ainda.')); return card; }
+    // ações eliminadas ficam registradas (com o motivo) e podem ser restauradas
+    const elimSec = () => {
+      const ks = Object.keys(reg).filter((k) => reg[k] && reg[k].eliminada);
+      if (!ks.length) return null;
+      return h('details', { style: 'margin-top:12px' }, h('summary', { style: 'cursor:pointer;font-weight:600' }, 'Ações eliminadas (' + ks.length + ')'),
+        ks.map((k) => { const r = reg[k]; return h('div', { class: 'row', style: 'padding:6px 0;border-top:1px solid #26324d' }, h('div', { style: 'flex:1;min-width:240px' }, h('b', {}, r.texto || k), h('div', { class: 'small' }, 'Eliminada em ' + (r.eliminadaEm ? D.fmtData(r.eliminadaEm) : '—') + ' | Motivo: ' + (r.motivoElim || '—'))), h('button', { class: 'btn sm ghost', onclick: () => { delete r.eliminada; delete r.motivoElim; delete r.eliminadaEm; salva(); O.route(); } }, 'Restaurar')); }));
+    };
+    if (!acoes.length) { card.appendChild(h('p', { class: 'muted' }, 'Nenhuma ação em aberto.')); const es = elimSec(); if (es) card.appendChild(es); return card; }
     card.appendChild(h('datalist', { id: 'dl-contatos' }, contatos().map((x) => h('option', { value: x.nome }))));
     const lista = (e) => String(e || '').split(/[;,\s]+/).filter((x) => /@/.test(x));
     const guardaContato = (nome, email) => { if (!nome || !email) return; const cs = contatos().slice(); const i = cs.findIndex((x) => x.nome.toLowerCase() === nome.toLowerCase()); if (i >= 0) cs[i] = { nome: cs[i].nome, email }; else cs.push({ nome, email }); S.setConfig({ contatos: cs }); };
@@ -430,11 +437,30 @@
       const prazo = h('input', { type: 'date', value: r.prazo || '', style: 'min-width:150px' }); prazo.addEventListener('input', () => { r.prazo = prazo.value; salva(); });
       const sit = h('select', { style: 'min-width:130px' }, SIT.map((s) => h('option', { value: s[0], ...((r.sit || 'fazer') === s[0] ? { selected: true } : {}) }, s[1]))); sit.addEventListener('change', () => { r.sit = sit.value; salva(); });
       const ult = (r.enviados || []).slice(-1)[0];
-      return h('tr', {}, h('td', {}, h('b', {}, a.acao), h('div', { class: 'small' }, a.origem + (a.prazoTexto ? ' | ' + a.prazoTexto : '')), ult ? h('div', { class: 'small' }, 'E-mail aberto em ' + D.fmtData(ult.data) + ' para ' + ult.para) : null),
+      const painelEd = h('tr', { style: 'display:none' }); const mostraEd = (modo) => {
+        painelEd.style.display = ''; painelEd.innerHTML = '';
+        const caixa = h('td', { colspan: 6 });
+        if (modo === 'editar') {
+          const ta = h('textarea', { rows: 3 }); ta.value = r.texto || a.acao;
+          caixa.append(h('div', { class: 'small' }, 'Texto da ação (o original é mantido e pode ser restaurado):'), ta, h('div', { class: 'row', style: 'margin-top:6px' },
+            h('button', { class: 'btn sm', onclick: () => { const t = ta.value.trim(); if (!t) { U.toast('O texto da ação não pode ficar vazio.'); return; } if (t === a.acao) delete r.texto; else r.texto = t; salva(); O.route(); } }, 'Salvar texto'),
+            r.texto ? h('button', { class: 'btn sm ghost', onclick: () => { delete r.texto; salva(); O.route(); } }, 'Voltar ao texto original') : null,
+            h('button', { class: 'btn sm ghost', onclick: () => { painelEd.style.display = 'none'; } }, 'Cancelar')));
+        } else {
+          const mo = h('input', { type: 'text', placeholder: 'Motivo da eliminação (obrigatório)', style: 'min-width:320px' });
+          caixa.append(h('div', { class: 'small' }, 'A ação sai do plano, dos documentos e dos e-mails. Fica registrada em "Ações eliminadas" com o motivo, e pode ser restaurada.'), h('div', { class: 'row', style: 'margin-top:6px' }, mo,
+            h('button', { class: 'btn sm danger', onclick: () => { if (!mo.value.trim()) { U.toast('Informe o motivo da eliminação.'); return; } r.eliminada = true; r.motivoElim = mo.value.trim(); r.eliminadaEm = new Date().toISOString(); r.texto = r.texto || ''; salva(); O.route(); } }, 'Eliminar a ação'),
+            h('button', { class: 'btn sm ghost', onclick: () => { painelEd.style.display = 'none'; } }, 'Cancelar')));
+        }
+        painelEd.appendChild(caixa);
+      };
+      const trAcao = h('tr', {}, h('td', {}, h('b', {}, a.texto || a.acao), r.texto ? h('div', { class: 'small', title: a.acao }, 'Texto editado (original: ' + (a.acao.length > 70 ? a.acao.slice(0, 70) + '...' : a.acao) + ')') : null, h('div', { class: 'small' }, a.origem + (a.prazoTexto ? ' | ' + a.prazoTexto : '')), ult ? h('div', { class: 'small' }, 'E-mail aberto em ' + D.fmtData(ult.data) + ' para ' + ult.para) : null),
         h('td', {}, nome), h('td', {}, mail), h('td', {}, prazo), h('td', {}, sit),
-        h('td', {}, h('div', { class: 'row' }, h('button', { class: 'btn sm', style: 'white-space:nowrap', onclick: () => abrir([a], nome.value.trim(), mail.value) }, 'Enviar e-mail'), h('button', { class: 'btn sm ghost', onclick: () => copiar([a], nome.value.trim(), mail.value) }, 'Copiar'))));
+        h('td', {}, h('div', { class: 'row' }, h('button', { class: 'btn sm', style: 'white-space:nowrap', onclick: () => abrir([a], nome.value.trim(), mail.value) }, 'Enviar e-mail'), h('button', { class: 'btn sm ghost', onclick: () => copiar([a], nome.value.trim(), mail.value) }, 'Copiar'),
+          h('button', { class: 'btn sm sec', onclick: () => mostraEd('editar') }, 'Editar'), h('button', { class: 'btn sm danger', onclick: () => mostraEd('eliminar') }, 'Eliminar'))));
+      return [trAcao, painelEd];
     });
-    card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Ação', 'Responsável', 'E-mail', 'Prazo', 'Situação', ''].map((x) => h('th', {}, x)))), h('tbody', {}, linhas))));
+    card.appendChild(h('div', { class: 'scroll' }, h('table', { class: 't' }, h('thead', {}, h('tr', {}, ['Ação', 'Responsável', 'E-mail', 'Prazo', 'Situação', ''].map((x) => h('th', {}, x)))), h('tbody', {}, [].concat(...linhas)))));
     // envio agrupado por responsável: uma mensagem por e-mail, com todas as ações dele
     const grupos = {};
     acoes.forEach((a) => { const r = reg[a.acao] || {}; const em = lista(r.email).join(','); if (!em || r.sit === 'concluida') return; (grupos[em] = grupos[em] || { nome: r.resp || '', email: r.email, acoes: [] }).acoes.push(a); });
@@ -444,6 +470,7 @@
       ks.forEach((k) => { const x = grupos[k]; g.appendChild(h('div', { class: 'row', style: 'margin:6px 0' }, h('span', {}, (x.nome || x.email) + ': ' + x.acoes.length + ' ação(ões)'), h('span', { class: 'spacer' }), h('button', { class: 'btn sm', onclick: () => abrir(x.acoes, x.nome, x.email) }, 'Abrir e-mail'), h('button', { class: 'btn sm ghost', onclick: () => copiar(x.acoes, x.nome, x.email) }, 'Copiar e-mail'))); });
       card.appendChild(g);
     }
+    { const es = elimSec(); if (es) card.appendChild(es); }
     card.appendChild(h('p', { class: 'small', style: 'margin-top:8px' }, c.rodape || 'Os nomes e e-mails usados ficam salvos como contatos para as próximas ações.'));
     return card;
   };
