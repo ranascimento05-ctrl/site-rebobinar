@@ -112,7 +112,8 @@
     ghs: (p) => p.fds.analisada && !E.gatilhoCMR(p), // com gatilho CMR ou PFC, o analista registra justificativa e controles
     impactos: (p) => p.fds.analisada && p.ocup.risco !== null && p.amb.risco !== null,
     imdg: (p) => p.fds.analisada && !['1', '6.2', '7'].includes(p.imdg.classe) && (p.imdg.naoRegulado || (p.imdg.onu && p.imdg.classe)),
-    compat: (p) => p.fds.analisada && p.comp.localOk === 'sim' && p.comp._motor !== 'conflito',
+    // produto a granel exige o analista nesta etapa (exigências do tanque, compatibilidade no terminal e cenário): nunca confirma sozinho
+    compat: (p) => p.armazenamento !== 'granel' && p.fds.analisada && p.comp.localOk === 'sim' && p.comp._motor !== 'conflito',
   };
 
   function resumo(p, id) {

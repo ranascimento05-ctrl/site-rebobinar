@@ -28,7 +28,8 @@
   U.get = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
   U.set = (o, path, v) => {
     const ks = path.split('.'); const last = ks.pop();
-    const t = ks.reduce((a, k) => a[k], o); t[last] = v;
+    // cria os níveis intermediários que faltarem (por exemplo, itens de uma lista de exigências ainda não respondida)
+    const t = ks.reduce((a, k) => { if (a[k] == null || typeof a[k] !== 'object') a[k] = {}; return a[k]; }, o); t[last] = v;
   };
 
   let saveT = null;
