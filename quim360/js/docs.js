@@ -105,7 +105,12 @@
       ['16 seções completas', sn(p.fds.completa)], ['Atualizada e em português', sn(p.fds.atualizada)],
       ['Data da revisão', fmtData(p.fds.dataRevisao)], ['Versão', nz(p.fds.versao)],
       ['Seções ausentes', faltam.length ? faltam.join(', ') : 'Nenhuma'],
+      ...(p.fds.completa === false && p.fds.seguirIncompleta ? [['Seguiu com a FDS incompleta', 'Sim, por decisão do responsável técnico: ' + nz(p.fds.justIncompleta, 'sem justificativa')]] : []),
+      ...((p.fds.secoesColadas || []).length ? [['Seções incluídas à mão', (p.fds.secoesColadas || []).join(', ') + ' (texto colado pelo analista porque o leitor de PDF não as encontrou)']] : []),
+      ...(p.fds.manual ? [['Origem dos dados', 'Informados manualmente (sem leitura do texto da FDS)']] : []),
     ] });
+    { const cor = p.fds.corrigidos || {}; const ks = Object.keys(cor);
+      if (ks.length) { B.push({ t: 'p', bold: true, text: 'Dados corrigidos manualmente após a leitura da FDS' }); B.push({ t: 'table', head: ['Campo', 'Valor lido', 'Valor corrigido', 'Data'], widths: [30, 28, 28, 14], rows: ks.map((k) => [cor[k].rotulo, cor[k].lido || 'vazio', cor[k].atual || 'vazio', fmtData(cor[k].em)]) }); } }
 
     B.push({ t: 'h1', text: '4 Triagem GHS: perigos CMR e PFC (gatilho de reprovação automática)' });
     const tri = av.tri;

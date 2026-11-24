@@ -8,6 +8,9 @@ Decisões do responsável do projeto, por tema. Cada item diz o que foi decidido
 
 - PGR "não requer atualização" sem parecer é permitido com justificativa registrada. Descartado: exigir parecer anexo para dispensar a atualização do PGR.
 
+## Leitura de FDS
+- Erro de leitura do PDF não pode travar a tela nem exigir correção de código: o app oferece correção manual dos dados lidos, colar seção e seguir com justificativa. Descartado: tratar cada PDF com ajuste no leitor.
+
 ## Estoque
 - Regra **estrita**: só conta o que teve entrada registrada. Descartado: tratar produtos antigos como em estoque. A lista importada da era FISPQ é fila de trabalho, não estoque.
 

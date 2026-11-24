@@ -5,6 +5,7 @@ Regras de negócio e de engenharia do QUIM 360 que **não devem ser quebradas**,
 ## 1. Postura do app: sinaliza, não bloqueia
 
 - O gatilho de reprovação automática (CMR e PFC) **só sinaliza**. A decisão é do responsável técnico, que registra a justificativa. Produto liberado com gatilhos ou pendências sai como **condicionado**, e o relatório lista o que foi assumido (`dec.sobrepoe`). `Engine.rejeitaAuto` retorna sempre falso.
+- A leitura de FDS é sugestão: **nenhum erro de leitura pode travar o usuário**. Todo dado lido pode ser corrigido à mão no app (registrado e desfazível); seção não encontrada pode ser colada ou marcada como presente; FDS incompleta pode seguir com justificativa. Não depender de ajuste no código a cada PDF.
 - O PGR pode ser dado como "não requer atualização" **sem parecer**, desde que o responsável técnico registre a justificativa (etapa 12.2): o app alerta e leva a justificativa ao relatório, mas não trava.
 - O mesmo vale para MOC pendente, incompatibilidade em bacia, exigência de tanque que a frota não atende e qualquer alerta: viram pendência, condicionante ou ação, nunca bloqueio.
 - Motivo: o app é apoio à decisão. A responsabilidade técnica é do profissional que assina; um app "engessado" seria contornado.

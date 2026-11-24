@@ -33,6 +33,105 @@
     if (c.tempMax && !p.comp.tempMax) p.comp.tempMax = c.tempMax;
     p.fds.analisada = true;
     p.fds.sug = { cmrCas: c.cmrCas, pfas: c.pfasIndicios, hDesc: c.hDesconhecidas, faltantes: res.secoesFaltantes };
+    reaplicarCorrecoes(p); // correções feitas à mão prevalecem sobre a leitura
+  }
+
+
+  // ---------------------------------------------------------- FDS: correção manual dos dados lidos
+  // A leitura de PDF (principalmente em tabela) pode errar. O analista corrige o campo no próprio app; a correção é registrada
+  // (valor lido, valor corrigido e data), não se perde ao reanalisar o texto e aparece no relatório.
+  const OPC_SN = [['sim', 'Sim'], ['nao', 'Não']];
+  const lista = (v, pre) => G.splitCodes(v, pre);
+  const CAMPOS_FDS = [
+    ['Identificação', [
+      ['nome', 'Nome do produto', (p) => p.nome, (p, v) => { p.nome = v; }],
+      ['fornecedor', 'Fornecedor', (p) => p.fornecedor, (p, v) => { p.fornecedor = v; }],
+      ['codigoFornecedor', 'Código do produto no fornecedor', (p) => p.codigoFornecedor, (p, v) => { p.codigoFornecedor = v; }],
+      ['telefone', 'Telefone de emergência do fornecedor', (p) => p.emerg.telefoneFornecedor, (p, v) => { p.emerg.telefoneFornecedor = v; }],
+    ]],
+    ['Revisão e idioma', [
+      ['dataRevisao', 'Data da revisão', (p) => p.fds.dataRevisao, (p, v) => { p.fds.dataRevisao = v; }, { type: 'date' }],
+      ['versao', 'Versão', (p) => p.fds.versao, (p, v) => { p.fds.versao = v; }],
+      ['portugues', 'A FDS está em português?', (p) => (p.fds.portugues === true ? 'sim' : p.fds.portugues === false ? 'nao' : ''), (p, v) => { p.fds.portugues = v === 'sim' ? true : v === 'nao' ? false : null; }, { opts: OPC_SN }],
+    ]],
+    ['Classificação GHS', [
+      ['h', 'Frases H (separadas por espaço)', (p) => (p.ghs.h || []).join(' '), (p, v) => { p.ghs.h = lista(v, 'H'); }],
+      ['p', 'Frases P (separadas por espaço)', (p) => (p.ghs.p || []).join(' '), (p, v) => { p.ghs.p = lista(v, 'P'); p.ghs.pComb = p.ghs.p.slice(); }],
+      ['palavra', 'Palavra de advertência', (p) => p.ghs.palavra, (p, v) => { p.ghs.palavra = v; }, { opts: [['Perigo', 'Perigo'], ['Atenção', 'Atenção']] }],
+    ]],
+    ['Composição', [
+      ['cas', 'Componentes (números CAS, separados por espaço ou vírgula)', (p) => (p.fds.cas || []).join(', '), (p, v) => { p.fds.cas = String(v).split(/[\s,;]+/).filter((x) => /^\d{2,7}-\d{2}-\d$/.test(x)); }],
+      ['composicao', 'Resumo da composição', (p) => p.fds.composicao, (p, v) => { p.fds.composicao = v; }],
+    ]],
+    ['Transporte', [
+      ['onu', 'Número ONU (4 dígitos)', (p) => p.imdg.onu, (p, v) => { p.imdg.onu = String(v).replace(/\D/g, '').slice(0, 4); p.imdg.naoRegulado = !p.imdg.onu && !p.imdg.classe; }],
+      ['nomeEmbarque', 'Nome apropriado para embarque', (p) => p.imdg.nome, (p, v) => { p.imdg.nome = v; }],
+      ['classe', 'Classe de risco (ex.: 3, 6.1, 8)', (p) => p.imdg.classe, (p, v) => { p.imdg.classe = v; p.imdg.naoRegulado = !p.imdg.onu && !p.imdg.classe; }],
+      ['subrisco', 'Risco subsidiário', (p) => p.imdg.subrisco, (p, v) => { p.imdg.subrisco = v; }],
+      ['pg', 'Grupo de embalagem', (p) => p.imdg.pg, (p, v) => { p.imdg.pg = v; }, { opts: [['I', 'I'], ['II', 'II'], ['III', 'III']] }],
+      ['numeroRisco', 'Número de risco', (p) => p.imdg.numeroRisco, (p, v) => { p.imdg.numeroRisco = v; }],
+      ['ems', 'EmS', (p) => p.imdg.ems, (p, v) => { p.imdg.ems = v; }],
+      ['poluente', 'Poluente marinho', (p) => (p.imdg.poluente ? 'sim' : 'nao'), (p, v) => { p.imdg.poluente = v === 'sim'; }, { opts: OPC_SN, semVazio: true }],
+      ['pontoFulgor', 'Ponto de fulgor (°C)', (p) => p.imdg.pontoFulgor, (p, v) => { const n = parseFloat(String(v).replace(',', '.')); p.imdg.pontoFulgor = v === '' || isNaN(n) ? '' : n; }],
+    ]],
+    ['Físico-químico', [
+      ['ph', 'pH', (p) => p.fds.ph, (p, v) => { p.fds.ph = v; }],
+      ['estado', 'Estado físico', (p) => p.comp.estado, (p, v) => { p.comp.estado = v; }, { opts: [['liquido', 'Líquido'], ['solido', 'Sólido']] }],
+      ['tempMax', 'Temperatura máxima de armazenamento (Seção 7)', (p) => p.comp.tempMax, (p, v) => { p.comp.tempMax = v; }],
+    ]],
+  ];
+  const CAMPO_POR_CHAVE = {}; CAMPOS_FDS.forEach((g) => g[1].forEach((f) => { CAMPO_POR_CHAVE[f[0]] = f; }));
+  const str = (v) => (v == null ? '' : String(v));
+  function rederivaGhs(p) { const dv = G.derive(p.ghs.h || []); p.ghs.pictos = dv.pictos; if (!p.ghs.palavra || (p.fds.corrigidos || {}).palavra == null) p.ghs.palavra = dv.palavra || p.ghs.palavra; }
+  // reaplica as correções depois de uma nova leitura do texto
+  function reaplicarCorrecoes(p) {
+    const cor = p.fds && p.fds.corrigidos; if (!cor) return;
+    Object.keys(cor).forEach((k) => { const f = CAMPO_POR_CHAVE[k]; if (f) f[3](p, cor[k].atual); });
+    if (cor.h != null) rederivaGhs(p);
+    if (cor.palavra != null) CAMPO_POR_CHAVE.palavra[3](p, cor.palavra.atual);
+  }
+  function editorFds(p, rerender) {
+    p.fds.corrigidos = p.fds.corrigidos || {};
+    const campos = []; // [chave, elemento]
+    const grupos = CAMPOS_FDS.map(([titulo, fs]) => h('div', {}, h('h4', { style: 'margin:10px 0 4px' }, titulo), h('div', { class: 'grid g2' }, fs.map((f) => {
+      const [chave, rot, get, , o] = f; o && o.opts; const cur = str(get(p));
+      let el;
+      if (o && o.opts) el = h('select', {}, o.semVazio ? null : h('option', { value: '' }, 'Não informado'), o.opts.map((x) => h('option', { value: x[0], ...(cur === x[0] ? { selected: true } : {}) }, x[1])));
+      else el = h('input', { type: (o && o.type) || 'text', value: cur });
+      campos.push([chave, el]);
+      const cor = p.fds.corrigidos[chave];
+      return h('label', { class: 'f' }, h('span', {}, rot + (cor ? ' (corrigido à mão)' : '')), el, cor ? h('small', {}, 'Valor lido: ' + (cor.lido === '' ? 'vazio' : cor.lido)) : null);
+    }))));
+    const salvar = () => {
+      let n = 0; let hMudou = false;
+      campos.forEach(([chave, el]) => {
+        const f = CAMPO_POR_CHAVE[chave]; const antes = str(f[2](p)); const novo = el.value.trim();
+        if (novo === antes.trim()) return;
+        const ant = p.fds.corrigidos[chave];
+        f[3](p, novo); n++; if (chave === 'h') hMudou = true;
+        const depois = str(f[2](p));
+        if (ant && depois === ant.lido) delete p.fds.corrigidos[chave]; // voltou ao valor lido
+        else p.fds.corrigidos[chave] = { rotulo: f[1], lido: ant ? ant.lido : antes, atual: depois, em: new Date().toISOString() };
+      });
+      if (hMudou) { rederivaGhs(p); p.comp.grupos = E.gruposSugeridos(p); }
+      if (!n) { U.toast('Nenhum campo foi alterado.'); return; }
+      if (!p.fds.analisada) { p.fds.analisada = true; p.fds.manual = true; p.fds.secoesOk = p.fds.secoesOk || {}; }
+      U.salvarJa(p); U.toast(n + ' campo(s) corrigido(s). Revise os campos derivados nas etapas seguintes.'); rerender && rerender();
+    };
+    const feitos = Object.keys(p.fds.corrigidos);
+    const desfaz = feitos.length ? h('div', { style: 'margin-top:10px' }, h('h4', {}, 'Campos corrigidos à mão (' + feitos.length + ')'),
+      h('ul', { style: 'margin:0 0 0 18px' }, feitos.map((k) => { const c = p.fds.corrigidos[k]; return h('li', { class: 'small' }, c.rotulo + ': lido "' + (c.lido || 'vazio') + '", corrigido para "' + (c.atual || 'vazio') + '" ', h('button', { class: 'btn sm ghost', onclick: () => { CAMPO_POR_CHAVE[k][3](p, c.lido); if (k === 'h') rederivaGhs(p); delete p.fds.corrigidos[k]; U.salvarJa(p); rerender && rerender(); } }, 'Desfazer')); }))) : null;
+    return h('details', { class: 'card', open: !p.fds.analisada || feitos.length > 0 }, h('summary', { style: 'cursor:pointer;font-weight:600' }, 'Corrigir dados lidos da FDS (leitura errada ou incompleta)'),
+      h('p', { class: 'small' }, 'Se o app leu algum dado errado ou não leu, corrija aqui. As correções ficam registradas no relatório, não se perdem se você analisar o texto de novo, e podem ser desfeitas. Sem o texto da FDS, você pode preencher tudo à mão: o produto fica marcado como "dados informados manualmente".'),
+      grupos, h('div', { class: 'row', style: 'margin-top:10px' }, h('button', { class: 'btn', onclick: salvar }, 'Salvar correções')), desfaz);
+  }
+  // seção que o leitor não achou: cola o texto dela e o app analisa de novo (as correções feitas à mão são mantidas)
+  function colarSecao(p, n, texto, rerender) {
+    const t = String(texto || '').trim(); if (t.length < 10) { U.toast('Cole o texto da seção.'); return; }
+    const novo = (p.fds.texto || '') + '\n\nSeção ' + n + '. ' + O.FDS.SEC_TITLES[n - 1] + '\n' + t + '\n';
+    const res = O.FDS.parse(novo); aplicarFds(p, novo, res);
+    p.fds.secoesOk[n] = true; p.fds.secoesColadas = (p.fds.secoesColadas || []).filter((x) => x !== n).concat([n]);
+    U.salvarJa(p); U.toast('Seção ' + n + ' incluída e FDS analisada de novo.'); rerender && rerender();
   }
 
   function fdsPanel(p, rerender) {
@@ -66,7 +165,7 @@
     const ex = h('select', { 'aria-label': 'FDS de exemplo' }, h('option', { value: '' }, 'FDS de exemplo (demonstração)'), h('option', { value: 'gasolina' }, 'Gasolina (produto armazenado pelo terminal)'), h('option', { value: 'solvente' }, 'Solvente inflamável'), h('option', { value: 'alcalino' }, 'Limpador alcalino'), h('option', { value: 'benzeno' }, 'Desengraxante com benzeno (reprova)'));
     ex.addEventListener('change', () => { if (ex.value) { ta.value = O.SAMPLES[ex.value]; analisar(); } });
     return h('div', { class: 'card' }, h('h3', {}, 'Análise da FDS'), h('p', { class: 'small' }, 'A análise lê o texto, localiza as 16 seções e sugere frases H e P, componentes (CAS), classificação de transporte, incompatibilidades e indícios de CMR e PFC. Os valores são sugestões: você confirma cada etapa.'),
-      ta, h('div', { class: 'row', style: 'margin:8px 0' }, h('button', { class: 'btn', onclick: analisar }, 'Analisar texto'), h('button', { class: 'btn ghost', onclick: () => file.click() }, 'Carregar arquivo'), file, h('div', { style: 'min-width:240px' }, ex)), out);
+      ta, h('div', { class: 'row', style: 'margin:8px 0' }, h('button', { class: 'btn', onclick: analisar }, 'Analisar texto'), h('button', { class: 'btn ghost', onclick: () => file.click() }, 'Carregar arquivo'), file, h('div', { style: 'min-width:240px' }, ex)), out, editorFds(p, rerender));
   }
 
   const listaInput = (p, path, label, prefix, hint) => {
@@ -279,14 +378,27 @@
           chk.appendChild(lab);
         });
         w.appendChild(h('details', { open: !p.fds.analisada }, h('summary', {}, 'Conferência das 16 seções'), chk));
+        // seção que o leitor não achou: pode ser erro de leitura do PDF
+        const faltam = Object.keys(p.fds.secoesOk || {}).filter((k) => !p.fds.secoesOk[k]);
+        if (faltam.length) {
+          w.appendChild(U.alert('warn', 'O leitor não encontrou: ' + faltam.map((k) => 'Seção ' + k).join(', '), 'Se a seção existe no PDF, foi erro de leitura (comum em PDF em tabela). Marque-a como presente ou cole o texto dela abaixo; não é preciso pedir nova FDS ao fornecedor.'));
+          faltam.forEach((k) => {
+            const ta = h('textarea', { rows: 4, placeholder: 'Cole aqui o texto da Seção ' + k + ' copiado do PDF' });
+            w.appendChild(h('details', { class: 'card' }, h('summary', { style: 'cursor:pointer;font-weight:600' }, 'Seção ' + k + ' ' + O.FDS.SEC_TITLES[k - 1] + ': existe no PDF'), ta,
+              h('div', { class: 'row', style: 'margin-top:6px' }, h('button', { class: 'btn sm', onclick: () => colarSecao(p, +k, ta.value, api.rerender) }, 'Incluir o texto e analisar de novo'),
+                h('button', { class: 'btn sm ghost', onclick: () => { p.fds.secoesOk[k] = true; U.salvarJa(p); api.rerender(); } }, 'Só marcar como presente'))));
+          });
+        }
         w.appendChild(U.radio(p, 'fds.completa', [{ v: true, label: 'Sim' }, { v: false, label: 'Não', hint: 'Solicitar correção ao fornecedor' }], { onChange: api.rerender }));
+        if (p.fds.completa === false) w.appendChild(h('div', { class: 'card' }, U.flag(p, 'fds.seguirIncompleta', 'Seguir a análise mesmo com a FDS incompleta (decisão do responsável técnico)', 'A pendência com o fornecedor continua e o produto só sai condicionado, com a sua justificativa.', api.rerender),
+          p.fds.seguirIncompleta ? U.input(p, 'fds.justIncompleta', { rows: 2, label: 'Justificativa para seguir sem a FDS completa' }) : null));
         if (p.fds.completa === false) w.appendChild(pendenciaBox(p, api, 'fds', ['FDS sem as 16 seções da ABNT NBR 14725:2023: ' + Object.keys(p.fds.secoesOk || {}).filter((k) => !p.fds.secoesOk[k]).map((k) => k + ' ' + O.FDS.SEC_TITLES[k - 1]).join('; ')]));
         return w;
       },
       validar: (p) => {
         const e = [];
         if (p.fds.completa === null) e.push('Responda se a FDS está completa.');
-        if (p.fds.completa === false) e.push('FDS incompleta: registre a pendência e solicite correção ao fornecedor. Não é possível avançar.');
+        if (p.fds.completa === false && !(p.fds.seguirIncompleta && String(p.fds.justIncompleta || '').trim())) e.push('FDS incompleta: registre a pendência com o fornecedor, ou escolha "Seguir a análise mesmo com a FDS incompleta" e escreva a justificativa. Se a seção existe no PDF, cole o texto dela ou marque como presente.');
         if (p.fds.completa === true && Object.values(p.fds.secoesOk || {}).some((v) => v === false)) e.push('Há seções marcadas como ausentes. Marque-as como presentes ou responda "Não".');
         if (p.fds.completa === true && !Object.keys(p.fds.secoesOk || {}).length) e.push('Confira as 16 seções antes de confirmar.');
         return e;
