@@ -1090,6 +1090,29 @@
       h('button', { class: 'btn ghost', onclick: async () => { if (await U.confirm('Carregar demonstração', 'Serão adicionados 2 locais e 2 produtos fictícios.', 'Carregar')) { O.Demo.criar(); O.route(); } } }, 'Carregar demonstração'),
       h('button', { class: 'btn danger', onclick: async () => { if (await U.confirm('Apagar tudo', 'Todos os produtos, locais e configurações deste navegador serão apagados. Uma cópia automática fica guardada para restaurar.', 'Apagar')) { S.limpar(); O.route(); } } }, 'Apagar tudo'))));
 
+    // limpeza seletiva da base: mantém só os produtos escolhidos e renumera os registros
+    {
+      const sel = new Set(); const op = { locais: true, bacias: true, consultas: true, fila: true, itensManuais: false, renumerar: true };
+      const area = h('div'); const previa = h('div', { class: 'small', style: 'margin:8px 0' });
+      const mostra = () => {
+        if (!sel.size) { previa.textContent = 'Marque os produtos que devem ficar.'; return; }
+        const r = S.limpezaSeletiva([...sel], op, false);
+        previa.innerHTML = ''; previa.appendChild(h('div', {}, 'Ficam ' + r.produtos + ' produto(s), ' + r.locais + ' local(is), ' + r.bacias + ' bacia(s) e ' + r.consultas + ' consulta(s). Saem ' + r.produtosRemovidos + ' produto(s), ' + r.locaisRemovidos + ' local(is), ' + r.baciasRemovidas + ' bacia(s), ' + r.consultasRemovidas + ' consulta(s)' + (op.fila ? ' e ' + r.filaRemovida + ' item(ns) da fila' : '') + '.'));
+        if (r.renum.length) previa.appendChild(h('ul', { style: 'margin:4px 0 0 18px' }, r.renum.map((x) => h('li', {}, x[1] + ': ' + x[2] + ' passa a ' + x[3]))));
+      };
+      const lista = h('div', { class: 'opts' }, S.produtos().map((p) => { const id = 'lp' + p.id; const inp = h('input', { type: 'checkbox', id }); const lab = h('label', { class: 'opt', for: id }, inp, h('span', {}, h('b', {}, p.nome || 'Sem nome'), h('small', {}, ((D.STATUS[p.status] || D.STATUS.em_analise)[0]) + (p.dec && p.dec.numero ? ' | ' + p.dec.numero : '')))); inp.addEventListener('change', () => { if (inp.checked) sel.add(p.id); else sel.delete(p.id); lab.classList.toggle('sel', inp.checked); mostra(); }); return lab; }));
+      const flag = (k, rot) => { const id = 'lo' + k; const inp = h('input', { type: 'checkbox', id, ...(op[k] ? { checked: true } : {}) }); inp.addEventListener('change', () => { op[k] = inp.checked; mostra(); }); return h('label', { class: 'opt' + (op[k] ? ' sel' : ''), for: id }, inp, h('span', {}, h('b', {}, rot))); };
+      area.append(lista, h('div', { class: 'opts', style: 'margin-top:8px' }, flag('locais', 'Manter só os locais usados pelos produtos escolhidos'), flag('bacias', 'Manter só as bacias que contêm os produtos escolhidos'), flag('consultas', 'Manter só as consultas de compatibilidade entre os produtos escolhidos'), flag('fila', 'Esvaziar a fila de homologação'), flag('itensManuais', 'Apagar os itens cadastrados à mão nos locais mantidos'), flag('renumerar', 'Renumerar os registros de homologação (HOM-aaaa-001...)')), previa,
+        h('div', { class: 'row' }, h('button', { class: 'btn danger', onclick: async () => {
+          if (!sel.size) { U.toast('Marque ao menos um produto.'); return; }
+          const r = S.limpezaSeletiva([...sel], op, false);
+          if (!(await U.confirm('Limpar a base', 'Ficam ' + r.produtos + ' produto(s); saem ' + r.produtosRemovidos + ' produto(s), ' + r.locaisRemovidos + ' local(is), ' + r.baciasRemovidas + ' bacia(s) e ' + r.consultasRemovidas + ' consulta(s)' + (op.fila ? ' e a fila inteira' : '') + '. Uma cópia automática fica guardada em "Cópias automáticas" para restaurar. Recomendo exportar um backup antes.', 'Limpar'))) return;
+          try { S.limpezaSeletiva([...sel], op, true); U.toast('Base limpa.'); O.route(); } catch (e) { U.toast(e.message); }
+        } }, 'Limpar a base e manter só os marcados'), h('button', { class: 'btn ghost', onclick: () => { S.produtos().filter((p) => ['homologado', 'condicionado'].includes(p.status)).forEach((p) => sel.add(p.id)); [...lista.querySelectorAll('input')].forEach((i, k) => { const p = S.produtos()[k]; i.checked = sel.has(p.id); i.parentNode.classList.toggle('sel', i.checked); }); mostra(); } }, 'Marcar os homologados')));
+      mostra();
+      root.appendChild(h('div', { class: 'card' }, h('h3', {}, 'Limpar a base e manter só alguns produtos'), h('p', { class: 'small' }, 'Remove os produtos que você não marcar e o que se refere a eles, mantém as configurações e o logotipo, e renumera os registros de homologação dos que ficam (pela data da decisão). Antes de aplicar, o app guarda uma cópia automática; mesmo assim, exporte um backup. A ação não pode ser desfeita sem restaurar essa cópia.'), area));
+    }
+
     // espaço de armazenamento do navegador
     {
       const u = S.uso(); const pc = Math.min(1, u.total / u.limite); const mb = (c) => (c * u.bpc / 1048576).toFixed(2).replace('.', ',') + ' MB';

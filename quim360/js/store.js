@@ -12,7 +12,7 @@
   function migrar(d) { let v = d.v || 1; while (v < SCHEMA_VERSION) { if (MIGRACOES[v]) d = MIGRACOES[v](d); v += 1; d.v = v; } return d; }
   let mem = null; let somenteLeitura = false; let falhaGravacao = false; let avisoBackup = '';
   // IndexedDB: um registro com o estado inteiro ("estado/principal") e as cópias automáticas ("backups/<slot>")
-  const DB_NOME = 'quim360'; const SLOTS = ['migracao', 'importacao', 'apagar', 'localstorage'];
+  const DB_NOME = 'quim360'; const SLOTS = ['migracao', 'importacao', 'apagar', 'localstorage', 'limpeza'];
   let db = null; let modo = 'ls'; let iniciado = false; let infoQuota = null; let bkMeta = {}; let usoCache = null; let cadeia = Promise.resolve(); let pendente = null;
   function abrirDb() {
     return new Promise((ok, err) => {
@@ -236,11 +236,40 @@
       if (!ok) { mem = anterior; usoCache = null; falhaGravacao = false; throw new Error('Sem espaço no navegador para gravar os dados importados. Nada foi alterado: libere espaço (apague textos de FDS ou cópias automáticas) e tente de novo.'); }
       O.emit && O.emit('store');
     },
+    // Limpeza seletiva: mantém só os produtos escolhidos (e o que se refere a eles) e renumera os registros de homologação.
+    // opt: { locais, bacias, consultas, fila, itensManuais, renumerar } (true = aplicar). Calcula sem alterar quando aplicar === false.
+    limpezaSeletiva(ids, opt, aplicar) {
+      const d = load(); opt = opt || {}; const keep = new Set(ids);
+      const prods = d.produtos.filter((p) => keep.has(p.id));
+      const usaLocal = new Set(); prods.forEach((p) => { if (p.ctx && p.ctx.localId) usaLocal.add(p.ctx.localId); if (p.estoque && p.estoque.localId) usaLocal.add(p.estoque.localId); (p.movs || []).forEach((m) => { if (m.localId) usaLocal.add(m.localId); }); });
+      const locais = opt.locais ? d.locais.filter((l) => usaLocal.has(l.id)) : d.locais.slice();
+      const bacias = (opt.bacias ? d.bacias.filter((b) => (b.produtos || []).some((id) => keep.has(id))) : d.bacias.slice()).map((b) => Object.assign({}, b, { produtos: (b.produtos || []).filter((id) => keep.has(id)) }));
+      const consultas = {}; Object.keys(d.consultas || {}).forEach((k) => { const [a, b] = k.split('|'); if (!opt.consultas || (keep.has(a) && keep.has(b))) consultas[k] = d.consultas[k]; });
+      // renumeração: pela data da decisão, com o ano da decisão
+      const comNumero = prods.filter((p) => p.dec && p.dec.numero).slice().sort((a, b) => String(a.dec.data || '').localeCompare(String(b.dec.data || '')) || String(a.atualizadoEm || '').localeCompare(String(b.atualizadoEm || '')));
+      const renum = opt.renumerar ? comNumero.map((p, i) => [p.id, p.nome, p.dec.numero, 'HOM-' + (String(p.dec.data || '').slice(0, 4) || new Date().getFullYear()) + '-' + String(i + 1).padStart(3, '0')]) : [];
+      const resumo = { produtos: prods.length, produtosRemovidos: d.produtos.length - prods.length, locais: locais.length, locaisRemovidos: d.locais.length - locais.length, bacias: bacias.length, baciasRemovidas: d.bacias.length - bacias.length, consultas: Object.keys(consultas).length, consultasRemovidas: Object.keys(d.consultas || {}).length - Object.keys(consultas).length, filaRemovida: opt.fila ? d.fila.length : 0, renum };
+      if (aplicar === false) return resumo;
+      if (somenteLeitura) throw new Error('Os dados deste navegador são de uma versão mais nova do app: atualize o app antes de limpar.');
+      guardaBackup('limpeza', 'Antes da limpeza seletiva da base', JSON.stringify(d));
+      d.produtos = prods;
+      d.produtos.forEach((p) => { // referências a produtos removidos
+        if (p.mudanca && p.mudanca.substituiId && !keep.has(p.mudanca.substituiId)) p.mudanca.substituiId = '';
+        if (p.sim && p.sim.refId && !keep.has(p.sim.refId)) { p.sim.refId = ''; p.sim.ativa = false; }
+      });
+      d.locais = locais; d.bacias = bacias; d.consultas = consultas;
+      if (opt.itensManuais) d.locais.forEach((l) => { l.itens = []; });
+      if (opt.fila) d.fila = [];
+      renum.forEach(([id, , , novo]) => { const p = d.produtos.find((x) => x.id === id); if (p) p.dec.numero = novo; });
+      if (opt.renumerar) d.seq = renum.length;
+      usoCache = null; save();
+      return resumo;
+    },
     limpar() { const copia = JSON.stringify(load()); guardaBackup('apagar', 'Antes de apagar tudo', copia); mem = blank(); save(); },
     // cópias automáticas guardadas neste navegador
     backups() {
       if (modo === 'idb') return Object.keys(bkMeta).map((slot) => ({ slot, quando: bkMeta[slot].quando, motivo: bkMeta[slot].motivo, tamanho: bkMeta[slot].tamanho }));
-      return SLOTS.slice(0, 3).map((slot) => { try { const x = JSON.parse(localStorage.getItem(KEY_BK + slot)); return x ? { slot, quando: x.quando, motivo: x.motivo, tamanho: (x.dados || '').length } : null; } catch (e) { return null; } }).filter(Boolean);
+      return SLOTS.filter((x) => x !== 'localstorage').map((slot) => { try { const x = JSON.parse(localStorage.getItem(KEY_BK + slot)); return x ? { slot, quando: x.quando, motivo: x.motivo, tamanho: (x.dados || '').length } : null; } catch (e) { return null; } }).filter(Boolean);
     },
     async backupTexto(slot) {
       if (modo === 'idb') { try { const x = await tx('backups', 'readonly', (st) => st.get(slot)); return x ? x.dados : ''; } catch (e) { return ''; } }
