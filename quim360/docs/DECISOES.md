@@ -30,7 +30,7 @@ Decisões do responsável do projeto, por tema. Cada item diz o que foi decidido
 ## Documentos
 - Dossiê de evidência por **local** e do **terminal**, em versão **completa** e **resumida** (cliente ou órgão).
 - Lista de inspeção em campo para imprimir; modelo de planilha para a fila de homologação.
-- Plano de ação: cada ação pode ser editada (texto) ou eliminada (com motivo registrado e possibilidade de restaurar).
+- Plano de ação: cada ação pode ser editada (texto) ou eliminada (com motivo registrado e possibilidade de restaurar), e o usuário pode adicionar ações manuais.
 - Logotipo editável: inserir, trocar, tirar ou voltar ao padrão.
 
 ## Citação legal

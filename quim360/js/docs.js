@@ -471,6 +471,7 @@
       add('Cadastrar o produto na lista de homologados e fixar o QR Code no local de armazenamento', 'Etapa 13 | Rastreabilidade', 'Responsável técnico', 'Na homologação');
       if (p.fds.dataRevisao) { const d = new Date(p.fds.dataRevisao); d.setFullYear(d.getFullYear() + lim); add('Solicitar nova versão da FDS ao fornecedor', 'ABNT NBR 14725', 'Compras / SST', fmtData(d.toISOString())); }
     }
+    (p.acoesManuais || []).forEach((m) => add('manual:' + m.id, 'Ação criada pelo usuário', m.papel || 'Responsável técnico', '', 'A fazer'));
     if (p.status === 'pendente' || (!A.length && p.status === 'em_analise')) add('Registrar o retorno do fornecedor ou do parecer e retomar a análise na etapa pendente', 'Pendência da análise', 'Responsável técnico', '', 'Pendente');
     const reg = p.acoesPlano || {};
     const Af = A.filter((r) => !(reg[r[1]] || {}).eliminada).map((r, i) => [String(i + 1)].concat(r.slice(1))); // ações eliminadas pelo usuário saem da lista
@@ -555,6 +556,7 @@
     rq.itens.filter((i) => i.resp === 'nc').forEach((i) => add('Corrigir o requisito ' + i.id + ' da NBR 17160: ' + i.texto.split(/;|\. /)[0].replace(/\.$/, '') + (i.obs ? ' (' + i.obs + ')' : ''), 'NBR 17160 | ' + i.id + ' | Checklist do local', 'Gestor do local'));
     if (rq.semInspecao) add('Realizar e registrar a inspeção do armazém antes da primeira utilização', 'NBR 17160 | 6.3.9.1', 'Gestor do local');
     else if (rq.vencida) add('Realizar a inspeção do armazém, vencida desde ' + fmtData(rq.proxima), 'NBR 17160 | 6.3.9', 'Gestor do local');
+    (local.acoesManuais || []).forEach((m) => add('manual:' + m.id, 'Ação criada pelo usuário', m.papel || 'Gestor do local'));
     (local.inspecoes || []).filter((x) => x.resultado === 'pendencias').forEach((x) => add('Resolver a pendência da inspeção de ' + fmtData(x.data) + ': ' + nz(x.obs, 'sem descrição'), 'Inspeção de ' + fmtData(x.data) + ' | ' + nz(x.resp, 'responsável não informado'), 'Gestor do local'));
     return A;
   }

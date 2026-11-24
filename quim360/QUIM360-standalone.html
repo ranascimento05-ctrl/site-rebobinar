@@ -24986,7 +24986,7 @@ var vfs = {
     const fim = [];
     for (let i = 0; i < out.length; i++) {
       const l = out[i];
-      if (/^[A-Za-zÀ-ÿ][^:]{2,70}:$/.test(l) && i + 1 < out.length && out[i + 1] && !/:$/.test(out[i + 1]) && !/^\d{1,2}\s*[-–.]\s*[A-ZÀ-Ý]/.test(out[i + 1]) && !/^[•\-–·]/.test(out[i + 1])) { fim.push(l + ' ' + out[i + 1]); i++; } else fim.push(l);
+      if (/^[A-Za-zÀ-ÿ][^:]{2,70}:$/.test(l) && i + 1 < out.length && out[i + 1] && !/:$/.test(out[i + 1]) && !/^\d{1,2}\s*[-–.]\s*[A-ZÀ-Ý]/.test(out[i + 1]) && !/^se[cç][aã]o\s*\d{1,2}\b/i.test(out[i + 1]) && !/^[•\-–·]/.test(out[i + 1])) { fim.push(l + ' ' + out[i + 1]); i++; } else fim.push(l);
     }
     const cab = [];
     if (nome) cab.push('Nome do produto: ' + nome);
@@ -25053,6 +25053,27 @@ var vfs = {
     c.numeroRisco = firstMatch(s14, [/n[uú]mero de risco\s*[:\-]?\s*(\d{2,3}|X\d{2,3})/i]);
     c.poluenteMarinho = /poluente marinho|marine pollutant/i.test(s14) && !/n[aã]o (?:[eé] )?(?:considerado )?poluente marinho|not (?:a )?marine pollutant/i.test(s14);
     c.ems = firstMatch(s14, [/EmS\s*[:\-]?\s*(F-[A-Z],?\s*S-[A-Z])/i]);
+    // PDFs em tabela: o pdf.js separa rótulos e valores, e as buscas por "rótulo: valor" falham ou pegam o texto errado.
+    // Alternativas por padrão do texto, usadas só quando a busca direta vem vazia ou errada.
+    const linhas = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    if (!c.nome || /^\d+$/.test(String(c.nome).trim())) {
+      const top = linhas(text).slice(0, 8).find((l) => l.length >= 3 && l.length <= 80 && !/:$/.test(l) && !/^(nome do produto|data da revis|vers[aã]o|fds\b|ficha|se[cç][aã]o|conforme|n[aã]o dispon|l[ií]quido|s[óo]lido|g[aá]s\b|identificador|tipo do produto|detalhes|telefone|:)/i.test(l));
+      if (top) c.nome = top;
+    }
+    if (!c.fornecedor || /usos relevantes|desaconselhados|^detalhes|^telefone/i.test(c.fornecedor)) {
+      const emp = linhas(secoes[1] || text).find((l) => l.length >= 5 && l.length <= 100 && !/:/.test(l) && /\b(ltda\.?|s\.?\/?a\.?|eireli|epp|inc\.?|gmbh|ltd\.?|llc|ind[uú]stria|com[eé]rcio|qu[ií]mica)\b/i.test(l));
+      c.fornecedor = emp || (/usos relevantes|desaconselhados/i.test(c.fornecedor || '') ? '' : c.fornecedor);
+    }
+    if (!c.telEmergenciaFornecedor) c.telEmergenciaFornecedor = firstMatch(secoes[1] || text, [/(?:linha\s+\w+|emerg[eê]ncia)[^:\n]{0,40}:\s*(\+?\d[\d\s().\-]{7,24}\d)/i]) || '';
+    if (!c.classeRisco || !c.grupoEmbalagem || !c.nomeEmbarque) {
+      const L14 = linhas(s14);
+      for (let i = 1; i + 1 < L14.length; i++) {
+        if (/^[1-9](?:\.\d)?$/.test(L14[i]) && /^(?:I{1,3})$/.test(L14[i + 1]) && !/^(?:n[uú]mero|classe|grupo|:)/i.test(L14[i - 1])) {
+          if (!c.classeRisco) c.classeRisco = L14[i]; if (!c.grupoEmbalagem) c.grupoEmbalagem = L14[i + 1]; if (!c.nomeEmbarque && L14[i - 1].length > 2 && !/^\d+$/.test(L14[i - 1])) c.nomeEmbarque = L14[i - 1];
+          break;
+        }
+      }
+    }
 
     // ponto de fulgor
     const pf = firstMatch(secoes[9] || text, [/ponto de fulgor\s*[:\-]?\s*(?:[^\d\-]{0,40})(-?\d{1,3}(?:[.,]\d+)?)\s*°?\s*c/i, /flash point\s*[:\-]?\s*(-?\d{1,3}(?:[.,]\d+)?)/i]);
@@ -26114,6 +26135,7 @@ var vfs = {
       add('Cadastrar o produto na lista de homologados e fixar o QR Code no local de armazenamento', 'Etapa 13 | Rastreabilidade', 'Responsável técnico', 'Na homologação');
       if (p.fds.dataRevisao) { const d = new Date(p.fds.dataRevisao); d.setFullYear(d.getFullYear() + lim); add('Solicitar nova versão da FDS ao fornecedor', 'ABNT NBR 14725', 'Compras / SST', fmtData(d.toISOString())); }
     }
+    (p.acoesManuais || []).forEach((m) => add('manual:' + m.id, 'Ação criada pelo usuário', m.papel || 'Responsável técnico', '', 'A fazer'));
     if (p.status === 'pendente' || (!A.length && p.status === 'em_analise')) add('Registrar o retorno do fornecedor ou do parecer e retomar a análise na etapa pendente', 'Pendência da análise', 'Responsável técnico', '', 'Pendente');
     const reg = p.acoesPlano || {};
     const Af = A.filter((r) => !(reg[r[1]] || {}).eliminada).map((r, i) => [String(i + 1)].concat(r.slice(1))); // ações eliminadas pelo usuário saem da lista
@@ -26198,6 +26220,7 @@ var vfs = {
     rq.itens.filter((i) => i.resp === 'nc').forEach((i) => add('Corrigir o requisito ' + i.id + ' da NBR 17160: ' + i.texto.split(/;|\. /)[0].replace(/\.$/, '') + (i.obs ? ' (' + i.obs + ')' : ''), 'NBR 17160 | ' + i.id + ' | Checklist do local', 'Gestor do local'));
     if (rq.semInspecao) add('Realizar e registrar a inspeção do armazém antes da primeira utilização', 'NBR 17160 | 6.3.9.1', 'Gestor do local');
     else if (rq.vencida) add('Realizar a inspeção do armazém, vencida desde ' + fmtData(rq.proxima), 'NBR 17160 | 6.3.9', 'Gestor do local');
+    (local.acoesManuais || []).forEach((m) => add('manual:' + m.id, 'Ação criada pelo usuário', m.papel || 'Gestor do local'));
     (local.inspecoes || []).filter((x) => x.resultado === 'pendencias').forEach((x) => add('Resolver a pendência da inspeção de ' + fmtData(x.data) + ': ' + nz(x.obs, 'sem descrição'), 'Inspeção de ' + fmtData(x.data) + ' | ' + nz(x.resp, 'responsável não informado'), 'Gestor do local'));
     return A;
   }
@@ -28493,6 +28516,14 @@ var vfs = {
     const contatos = () => S.config().contatos || [];
     const salva = c.salva;
     const card = h('div', { class: 'card' }, h('h3', {}, c.titulo), h('p', { class: 'small' }, c.intro));
+    // ação criada pelo usuário (para tarefas que o app não conhece); depois funciona como as demais: responsável, prazo, e-mail, editar e eliminar
+    const novaAcao = () => {
+      if (!c.novaManual) return null;
+      const t = h('textarea', { rows: 2, placeholder: 'Descreva a ação (por exemplo: pedir parecer ao Higiene Ocupacional sobre o produto)' });
+      const quem = h('input', { type: 'text', placeholder: 'Responsável ou função (opcional)', style: 'min-width:240px' });
+      return h('details', { style: 'margin:8px 0' }, h('summary', { style: 'cursor:pointer;font-weight:600' }, 'Adicionar ação'), t, h('div', { class: 'row', style: 'margin-top:6px' }, quem,
+        h('button', { class: 'btn sm', onclick: () => { if (!t.value.trim()) { U.toast('Descreva a ação.'); return; } c.novaManual(t.value.trim(), quem.value.trim() || c.papelManual); salva(); O.route(); } }, 'Incluir no plano')));
+    };
     // ações eliminadas ficam registradas (com o motivo) e podem ser restauradas
     const elimSec = () => {
       const ks = Object.keys(reg).filter((k) => reg[k] && reg[k].eliminada);
@@ -28500,6 +28531,7 @@ var vfs = {
       return h('details', { style: 'margin-top:12px' }, h('summary', { style: 'cursor:pointer;font-weight:600' }, 'Ações eliminadas (' + ks.length + ')'),
         ks.map((k) => { const r = reg[k]; return h('div', { class: 'row', style: 'padding:6px 0;border-top:1px solid #26324d' }, h('div', { style: 'flex:1;min-width:240px' }, h('b', {}, r.texto || k), h('div', { class: 'small' }, 'Eliminada em ' + (r.eliminadaEm ? D.fmtData(r.eliminadaEm) : '—') + ' | Motivo: ' + (r.motivoElim || '—'))), h('button', { class: 'btn sm ghost', onclick: () => { delete r.eliminada; delete r.motivoElim; delete r.eliminadaEm; salva(); O.route(); } }, 'Restaurar')); }));
     };
+    { const na = novaAcao(); if (na) card.appendChild(na); }
     if (!acoes.length) { card.appendChild(h('p', { class: 'muted' }, 'Nenhuma ação em aberto.')); const es = elimSec(); if (es) card.appendChild(es); return card; }
     card.appendChild(h('datalist', { id: 'dl-contatos' }, contatos().map((x) => h('option', { value: x.nome }))));
     const lista = (e) => String(e || '').split(/[;,\s]+/).filter((x) => /@/.test(x));
@@ -28565,14 +28597,14 @@ var vfs = {
     p.acoesPlano = p.acoesPlano || {};
     const prods = S.produtos(); const info = D.listaAcoes(p, prods);
     return V.painelAcoes({ titulo: 'Plano de ação: responsáveis e envio ', intro: 'As ações vêm das etapas da análise. Informe o responsável e o e-mail de cada ação (pode ser mais de um e-mail, separados por ponto e vírgula) e envie o pedido: o app abre o seu programa de e-mail com o texto pronto, com o produto, o local de armazenamento e a ação solicitada. O envio é feito por você; o app registra quando o e-mail foi aberto.',
-      reg: p.acoesPlano, acoes: info.acoes, email: (sel, dest) => D.emailAcoes(p, prods, sel, dest), salva: () => U.salvarJa(p), rodape: 'O responsável, o prazo e a situação aparecem no documento "Plano de ação" (Word e PDF). Os nomes e e-mails usados ficam salvos como contatos para as próximas ações.' });
+      reg: p.acoesPlano, acoes: info.acoes, email: (sel, dest) => D.emailAcoes(p, prods, sel, dest), salva: () => U.salvarJa(p), papelManual: 'Responsável técnico', novaManual: (texto, papel) => { const id = 'm' + Date.now().toString(36); p.acoesManuais = (p.acoesManuais || []).concat([{ id, papel }]); p.acoesPlano['manual:' + id] = { texto }; U.salvarJa(p); }, rodape: 'O responsável, o prazo e a situação aparecem no documento "Plano de ação" (Word e PDF). Os nomes e e-mails usados ficam salvos como contatos para as próximas ações.' });
   };
   // ações do local: não conformidades do checklist e inspeções
   V.acoesLocalCard = (l) => {
     l.acoesPlano = l.acoesPlano || {};
     const prods = S.produtos(); const acoes = D.listaAcoesLocal(l, prods);
     return V.painelAcoes({ titulo: 'Ações do local: não conformidades e inspeções ', intro: 'Reúne os cenários de risco grave da análise de risco, o que ficou não conforme no checklist da NBR 17160, a inspeção que falta ou venceu e as pendências das inspeções. Informe o responsável e o e-mail e envie o pedido, com a descrição do local e do que está em estoque nele.',
-      reg: l.acoesPlano, acoes, email: (sel, dest) => D.emailAcoesLocal(l, prods, sel, dest), salva: () => S.salvarLocal(l) });
+      reg: l.acoesPlano, acoes, email: (sel, dest) => D.emailAcoesLocal(l, prods, sel, dest), salva: () => S.salvarLocal(l), papelManual: 'Gestor do local', novaManual: (texto, papel) => { const id = 'm' + Date.now().toString(36); l.acoesManuais = (l.acoesManuais || []).concat([{ id, papel }]); l.acoesPlano['manual:' + id] = { texto }; S.salvarLocal(l); } });
   };
 
   // ------------------------------------------------------------ vencimentos e pendências (painel)

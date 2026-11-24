@@ -406,6 +406,14 @@
     const contatos = () => S.config().contatos || [];
     const salva = c.salva;
     const card = h('div', { class: 'card' }, h('h3', {}, c.titulo), h('p', { class: 'small' }, c.intro));
+    // ação criada pelo usuário (para tarefas que o app não conhece); depois funciona como as demais: responsável, prazo, e-mail, editar e eliminar
+    const novaAcao = () => {
+      if (!c.novaManual) return null;
+      const t = h('textarea', { rows: 2, placeholder: 'Descreva a ação (por exemplo: pedir parecer ao Higiene Ocupacional sobre o produto)' });
+      const quem = h('input', { type: 'text', placeholder: 'Responsável ou função (opcional)', style: 'min-width:240px' });
+      return h('details', { style: 'margin:8px 0' }, h('summary', { style: 'cursor:pointer;font-weight:600' }, 'Adicionar ação'), t, h('div', { class: 'row', style: 'margin-top:6px' }, quem,
+        h('button', { class: 'btn sm', onclick: () => { if (!t.value.trim()) { U.toast('Descreva a ação.'); return; } c.novaManual(t.value.trim(), quem.value.trim() || c.papelManual); salva(); O.route(); } }, 'Incluir no plano')));
+    };
     // ações eliminadas ficam registradas (com o motivo) e podem ser restauradas
     const elimSec = () => {
       const ks = Object.keys(reg).filter((k) => reg[k] && reg[k].eliminada);
@@ -413,6 +421,7 @@
       return h('details', { style: 'margin-top:12px' }, h('summary', { style: 'cursor:pointer;font-weight:600' }, 'Ações eliminadas (' + ks.length + ')'),
         ks.map((k) => { const r = reg[k]; return h('div', { class: 'row', style: 'padding:6px 0;border-top:1px solid #26324d' }, h('div', { style: 'flex:1;min-width:240px' }, h('b', {}, r.texto || k), h('div', { class: 'small' }, 'Eliminada em ' + (r.eliminadaEm ? D.fmtData(r.eliminadaEm) : '—') + ' | Motivo: ' + (r.motivoElim || '—'))), h('button', { class: 'btn sm ghost', onclick: () => { delete r.eliminada; delete r.motivoElim; delete r.eliminadaEm; salva(); O.route(); } }, 'Restaurar')); }));
     };
+    { const na = novaAcao(); if (na) card.appendChild(na); }
     if (!acoes.length) { card.appendChild(h('p', { class: 'muted' }, 'Nenhuma ação em aberto.')); const es = elimSec(); if (es) card.appendChild(es); return card; }
     card.appendChild(h('datalist', { id: 'dl-contatos' }, contatos().map((x) => h('option', { value: x.nome }))));
     const lista = (e) => String(e || '').split(/[;,\s]+/).filter((x) => /@/.test(x));
@@ -478,14 +487,14 @@
     p.acoesPlano = p.acoesPlano || {};
     const prods = S.produtos(); const info = D.listaAcoes(p, prods);
     return V.painelAcoes({ titulo: 'Plano de ação: responsáveis e envio ', intro: 'As ações vêm das etapas da análise. Informe o responsável e o e-mail de cada ação (pode ser mais de um e-mail, separados por ponto e vírgula) e envie o pedido: o app abre o seu programa de e-mail com o texto pronto, com o produto, o local de armazenamento e a ação solicitada. O envio é feito por você; o app registra quando o e-mail foi aberto.',
-      reg: p.acoesPlano, acoes: info.acoes, email: (sel, dest) => D.emailAcoes(p, prods, sel, dest), salva: () => U.salvarJa(p), rodape: 'O responsável, o prazo e a situação aparecem no documento "Plano de ação" (Word e PDF). Os nomes e e-mails usados ficam salvos como contatos para as próximas ações.' });
+      reg: p.acoesPlano, acoes: info.acoes, email: (sel, dest) => D.emailAcoes(p, prods, sel, dest), salva: () => U.salvarJa(p), papelManual: 'Responsável técnico', novaManual: (texto, papel) => { const id = 'm' + Date.now().toString(36); p.acoesManuais = (p.acoesManuais || []).concat([{ id, papel }]); p.acoesPlano['manual:' + id] = { texto }; U.salvarJa(p); }, rodape: 'O responsável, o prazo e a situação aparecem no documento "Plano de ação" (Word e PDF). Os nomes e e-mails usados ficam salvos como contatos para as próximas ações.' });
   };
   // ações do local: não conformidades do checklist e inspeções
   V.acoesLocalCard = (l) => {
     l.acoesPlano = l.acoesPlano || {};
     const prods = S.produtos(); const acoes = D.listaAcoesLocal(l, prods);
     return V.painelAcoes({ titulo: 'Ações do local: não conformidades e inspeções ', intro: 'Reúne os cenários de risco grave da análise de risco, o que ficou não conforme no checklist da NBR 17160, a inspeção que falta ou venceu e as pendências das inspeções. Informe o responsável e o e-mail e envie o pedido, com a descrição do local e do que está em estoque nele.',
-      reg: l.acoesPlano, acoes, email: (sel, dest) => D.emailAcoesLocal(l, prods, sel, dest), salva: () => S.salvarLocal(l) });
+      reg: l.acoesPlano, acoes, email: (sel, dest) => D.emailAcoesLocal(l, prods, sel, dest), salva: () => S.salvarLocal(l), papelManual: 'Gestor do local', novaManual: (texto, papel) => { const id = 'm' + Date.now().toString(36); l.acoesManuais = (l.acoesManuais || []).concat([{ id, papel }]); l.acoesPlano['manual:' + id] = { texto }; S.salvarLocal(l); } });
   };
 
   // ------------------------------------------------------------ vencimentos e pendências (painel)

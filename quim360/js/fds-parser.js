@@ -122,7 +122,7 @@
     const fim = [];
     for (let i = 0; i < out.length; i++) {
       const l = out[i];
-      if (/^[A-Za-zÀ-ÿ][^:]{2,70}:$/.test(l) && i + 1 < out.length && out[i + 1] && !/:$/.test(out[i + 1]) && !/^\d{1,2}\s*[-–.]\s*[A-ZÀ-Ý]/.test(out[i + 1]) && !/^[•\-–·]/.test(out[i + 1])) { fim.push(l + ' ' + out[i + 1]); i++; } else fim.push(l);
+      if (/^[A-Za-zÀ-ÿ][^:]{2,70}:$/.test(l) && i + 1 < out.length && out[i + 1] && !/:$/.test(out[i + 1]) && !/^\d{1,2}\s*[-–.]\s*[A-ZÀ-Ý]/.test(out[i + 1]) && !/^se[cç][aã]o\s*\d{1,2}\b/i.test(out[i + 1]) && !/^[•\-–·]/.test(out[i + 1])) { fim.push(l + ' ' + out[i + 1]); i++; } else fim.push(l);
     }
     const cab = [];
     if (nome) cab.push('Nome do produto: ' + nome);
@@ -189,6 +189,27 @@
     c.numeroRisco = firstMatch(s14, [/n[uú]mero de risco\s*[:\-]?\s*(\d{2,3}|X\d{2,3})/i]);
     c.poluenteMarinho = /poluente marinho|marine pollutant/i.test(s14) && !/n[aã]o (?:[eé] )?(?:considerado )?poluente marinho|not (?:a )?marine pollutant/i.test(s14);
     c.ems = firstMatch(s14, [/EmS\s*[:\-]?\s*(F-[A-Z],?\s*S-[A-Z])/i]);
+    // PDFs em tabela: o pdf.js separa rótulos e valores, e as buscas por "rótulo: valor" falham ou pegam o texto errado.
+    // Alternativas por padrão do texto, usadas só quando a busca direta vem vazia ou errada.
+    const linhas = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    if (!c.nome || /^\d+$/.test(String(c.nome).trim())) {
+      const top = linhas(text).slice(0, 8).find((l) => l.length >= 3 && l.length <= 80 && !/:$/.test(l) && !/^(nome do produto|data da revis|vers[aã]o|fds\b|ficha|se[cç][aã]o|conforme|n[aã]o dispon|l[ií]quido|s[óo]lido|g[aá]s\b|identificador|tipo do produto|detalhes|telefone|:)/i.test(l));
+      if (top) c.nome = top;
+    }
+    if (!c.fornecedor || /usos relevantes|desaconselhados|^detalhes|^telefone/i.test(c.fornecedor)) {
+      const emp = linhas(secoes[1] || text).find((l) => l.length >= 5 && l.length <= 100 && !/:/.test(l) && /\b(ltda\.?|s\.?\/?a\.?|eireli|epp|inc\.?|gmbh|ltd\.?|llc|ind[uú]stria|com[eé]rcio|qu[ií]mica)\b/i.test(l));
+      c.fornecedor = emp || (/usos relevantes|desaconselhados/i.test(c.fornecedor || '') ? '' : c.fornecedor);
+    }
+    if (!c.telEmergenciaFornecedor) c.telEmergenciaFornecedor = firstMatch(secoes[1] || text, [/(?:linha\s+\w+|emerg[eê]ncia)[^:\n]{0,40}:\s*(\+?\d[\d\s().\-]{7,24}\d)/i]) || '';
+    if (!c.classeRisco || !c.grupoEmbalagem || !c.nomeEmbarque) {
+      const L14 = linhas(s14);
+      for (let i = 1; i + 1 < L14.length; i++) {
+        if (/^[1-9](?:\.\d)?$/.test(L14[i]) && /^(?:I{1,3})$/.test(L14[i + 1]) && !/^(?:n[uú]mero|classe|grupo|:)/i.test(L14[i - 1])) {
+          if (!c.classeRisco) c.classeRisco = L14[i]; if (!c.grupoEmbalagem) c.grupoEmbalagem = L14[i + 1]; if (!c.nomeEmbarque && L14[i - 1].length > 2 && !/^\d+$/.test(L14[i - 1])) c.nomeEmbarque = L14[i - 1];
+          break;
+        }
+      }
+    }
 
     // ponto de fulgor
     const pf = firstMatch(secoes[9] || text, [/ponto de fulgor\s*[:\-]?\s*(?:[^\d\-]{0,40})(-?\d{1,3}(?:[.,]\d+)?)\s*°?\s*c/i, /flash point\s*[:\-]?\s*(-?\d{1,3}(?:[.,]\d+)?)/i]);
