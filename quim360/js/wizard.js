@@ -679,13 +679,20 @@
           w.appendChild(U.input(hl, 'l.volMaterialM3', { type: 'number', label: 'Volume de material que pode vazar (m³), opcional', onInput: () => { S.salvarLocal(loc); drawC(); } }));
         } else w.appendChild(U.alert('', 'Local não selecionado', 'Escolha o local de armazenamento na etapa "Onde será usado e armazenado" para informar a área do setor.'));
         w.appendChild(h('h4', {}, 'Dados para a classe de perigo à água (Anexo F)'));
+        w.appendChild(h('details', { class: 'sug' }, h('summary', { style: 'cursor:pointer;font-weight:600' }, 'Como responder estes campos'),
+          h('ul', { style: 'margin:6px 0 0 18px' },
+            h('li', { class: 'small' }, h('b', {}, 'Toxicidade aguda oral e dérmica: '), 'abra a Seção 11 da FDS. Se houver valores (DL50 ou ATE) para ingestão e para pele, deixe desmarcado. Marque só se a FDS disser "não disponível" ou não trouxer esses dados.'),
+            h('li', { class: 'small' }, h('b', {}, 'Informações ecológicas: '), 'abra a Seção 12. Se houver dados de toxicidade ao ambiente (CL50, CE50, peixe, daphnia, algas), deixe desmarcado. Marque só se a seção estiver vazia ou "não disponível".'),
+            h('li', { class: 'small' }, h('b', {}, 'Ensaio ecotoxicológico: '), 'só serve para produto sem frase H ambiental (H400 a H412). Se o produto tem H410, por exemplo, deixe "Sem ensaio informado".'),
+            h('li', { class: 'small' }, h('b', {}, 'Facilmente biodegradável e sem bioacumulação: '), 'marque só se a Seção 12 afirmar as duas coisas para o produto (degradação rápida e potencial de bioacumulação baixo ou BCF baixo). Na dúvida, deixe desmarcado.'),
+            h('li', { class: 'small' }, h('b', {}, 'Na dúvida, o mais seguro é '), h('b', {}, 'marcar "não traz dados"'), ' (soma pontos de precaução e estima mais água de extinção) e ', h('b', {}, 'não marcar'), ' a biodegradabilidade (que reduz pontos). Os pontos viram a classe de perigo à água (CPA) e o volume de água a reter.'))));
         w.appendChild(h('div', { class: 'opts' },
           U.flag(p, 'cpa.semToxAguda', 'A FDS não traz dados de toxicidade aguda oral e dérmica', 'Soma 4 pontos de precaução (F.2.3.1).', drawC),
           U.flag(p, 'cpa.semAmbiental', 'A FDS não traz informações ecológicas (Seção 12)', 'Soma 8 pontos de precaução (F.2.3.2).', drawC),
           U.select(p, 'cpa.ensaio', O.NBR17160.F2_ENSAIO.map((x) => [x[0], x[1]]), { label: 'Sem frase H ambiental, mas com ensaio ecotoxicológico (peixe CL50 96 h, pulga d\'água CE50 48 h ou algas CEr50 72 h)', empty: 'Sem ensaio informado', onChange: drawC }),
           U.flag(p, 'cpa.biodegradavel', 'Facilmente biodegradável e sem potencial de bioacumulação (comprovado)', 'Reduz 2 pontos da precaução ambiental.', drawC)));
         drawC(); w.appendChild(boxC);
-        w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'comp.limite', { label: 'Quantidade máxima armazenada', ph: 'Ex.: 200 L' }), U.input(p, 'comp.tempMax', { label: 'Temperatura máxima de armazenamento (Seção 7)', ph: 'Ex.: 35 °C' })));
+        w.appendChild(h('div', { class: 'grid g2' }, U.input(p, 'comp.limite', { label: 'Quantidade máxima armazenada', ph: 'Ex.: 200 L', hint: 'Decisão sua: o máximo deste produto que o local pode ter ao mesmo tempo (considere o limite da NBR 17160 do local, o espaço e a bacia). Vira ação no plano para fixar e controlar o estoque. Pode ficar em branco.' }), U.input(p, 'comp.tempMax', { label: 'Temperatura máxima de armazenamento (Seção 7)', ph: 'Ex.: 35 °C', hint: 'Só se a Seção 7 da FDS indicar uma temperatura máxima (por exemplo, "armazenar abaixo de 40 °C"). Se a FDS diz apenas "local fresco", deixe em branco.' })));
         w.appendChild(U.alert('', 'Base', 'ABNT NBR 17160:2024: classe de armazenamento (Anexo D) e matriz de incompatibilidade (Figura 1), mais os grupos de reatividade da Seção 10 da FDS. A norma lembra que a classificação não é a única base: avalie combustão, gases, corrosivos e instáveis formados.'));
         return w;
       },
